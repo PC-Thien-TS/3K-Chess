@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-wei: #991b1b;
+  --color-shu: #065f46;
+  --color-wu: #1e3a8a;
+  --color-gold: #d4af37;
+  --color-ink: #0a0a0a;
+}
+
+@layer base {
+  body {
+    @apply bg-ink text-zinc-100 font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight;
+  }
+}
+
+/* Custom ink-wash effect utilities */
+@layer utilities {
+  .ink-bleed {
+    filter: url('#ink-wash-filter');
+  }
+
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10;
+  }
+
+  .text-glow-gold {
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+  }
+}
