@@ -7,6 +7,7 @@ import { Faction, BotDifficulty } from '@/src/rules/classicThreeKingdomRules';
 import { cn } from '@/src/lib/utils';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
+const AUTHENTIC_DISABLED_MESSAGE = 'Authentic Three Kingdoms mode is under construction.';
 
 export default function CreateRoom() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function CreateRoom() {
   const wsUrlAvailable = !!(import.meta as any).env.VITE_WS_URL;
   const [roomMode, setRoomMode] = useState<'local' | 'online'>(wsUrlAvailable ? 'online' : 'local');
   const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(gameMode === 'authentic' ? AUTHENTIC_DISABLED_MESSAGE : null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,11 @@ export default function CreateRoom() {
     // Persist name
     localStorage.setItem('last_commander_name', name);
     
+    if (gameMode === 'authentic') {
+      setError(AUTHENTIC_DISABLED_MESSAGE);
+      return;
+    }
+
     setError(null);
     setIsCreating(true);
 
@@ -170,6 +176,7 @@ export default function CreateRoom() {
                   onClick={() => {
                     setGameMode(mode);
                     setSearchParams({ mode });
+                    setError(mode === 'authentic' ? AUTHENTIC_DISABLED_MESSAGE : null);
                   }}
                   className={cn(
                     "p-6 rounded-3xl border text-left transition-all",
@@ -188,7 +195,7 @@ export default function CreateRoom() {
             </div>
             {gameMode === 'authentic' && (
               <p className="text-[10px] text-amber-300/80 font-serif italic">
-                Authentic Three Kingdoms mode is under tactical construction.
+                {AUTHENTIC_DISABLED_MESSAGE}
               </p>
             )}
           </div>
@@ -376,10 +383,10 @@ export default function CreateRoom() {
 
             <button 
               type="submit"
-              disabled={isCreating || (roomMode === 'online' && !wsUrlAvailable)}
+              disabled={isCreating || gameMode === 'authentic' || (roomMode === 'online' && !wsUrlAvailable)}
               className="w-full bg-gold hover:bg-white text-black py-6 rounded-[2rem] font-bold uppercase tracking-[0.4em] text-xs transition-all shadow-[0_0_30px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              <Sword size={20} /> {isCreating ? "Initializing..." : "Initialize Room"}
+              <Sword size={20} /> {gameMode === 'authentic' ? "Under Construction" : isCreating ? "Initializing..." : "Initialize Room"}
             </button>
 
             {roomMode === 'online' && !wsUrlAvailable && (

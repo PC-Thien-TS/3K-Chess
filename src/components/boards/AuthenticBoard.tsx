@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { ShieldAlert, Wrench, ScrollText } from 'lucide-react';
 import { GAME_MODE_META } from '@/shared/gameModes';
-import { AUTHENTIC_BOARD_NOTE, AUTHENTIC_MODE_STATUS } from '@/src/rules/authenticThreeKingdomRules';
+
+const AUTHENTIC_PLACEHOLDER_MESSAGE = 'Authentic Three Kingdoms mode is under construction.';
 
 interface AuthenticBoardProps {
   roomCode?: string;
@@ -15,7 +16,7 @@ export default function AuthenticBoard({
   context = 'practice'
 }: AuthenticBoardProps) {
   const modeMeta = GAME_MODE_META.authentic;
-  const returnHref = context === 'replay' ? '/archive' : roomCode ? `/rooms/${roomCode}` : '/setup?mode=authentic';
+  const returnHref = context === 'replay' ? '/archive' : roomCode ? `/rooms/${roomCode}` : '/setup?mode=classic';
   const returnLabel = context === 'replay' ? 'Return to Archive' : roomCode ? 'Return to Lobby' : 'Return to Setup';
 
   return (
@@ -26,17 +27,15 @@ export default function AuthenticBoard({
           <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.35em] text-gold">
             <span className="px-4 py-2 rounded-full border border-gold/20 bg-gold/10">{modeMeta.shortLabel}</span>
             <span className="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-zinc-400">{roomMode} mode</span>
-            {context === 'replay' && (
-              <span className="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-zinc-400">Replay</span>
-            )}
+            <span className="px-4 py-2 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-200">Placeholder</span>
           </div>
 
           <div className="space-y-4">
             <h1 className="text-4xl md:text-6xl font-serif font-black text-white uppercase tracking-[0.08em] leading-tight">
               {modeMeta.label}
             </h1>
-            <p className="text-zinc-400 font-serif italic text-lg leading-relaxed">
-              {AUTHENTIC_MODE_STATUS}
+            <p className="text-zinc-300 font-serif italic text-lg leading-relaxed">
+              {AUTHENTIC_PLACEHOLDER_MESSAGE}
             </p>
           </div>
 
@@ -44,9 +43,11 @@ export default function AuthenticBoard({
             <div className="rounded-[2rem] border border-gold/15 bg-gold/5 p-6">
               <div className="flex items-center gap-3 text-gold mb-3">
                 <ShieldAlert size={20} />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Mode Status</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Status</span>
               </div>
-              <p className="text-sm text-zinc-300 leading-relaxed">{AUTHENTIC_BOARD_NOTE}</p>
+              <p className="text-sm text-zinc-300 leading-relaxed">
+                Authentic mode is visible for planning, but match start and gameplay are intentionally disabled in this build.
+              </p>
             </div>
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
               <div className="flex items-center gap-3 text-zinc-300 mb-3">
@@ -54,7 +55,7 @@ export default function AuthenticBoard({
                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Classic Availability</span>
               </div>
               <p className="text-sm text-zinc-400 leading-relaxed">
-                Classic mode remains fully playable with the current rules, bots, online sync, replay, and archive flow.
+                Classic mode remains the only playable path for local matches, online rooms, replay, and archive flows.
               </p>
             </div>
           </div>

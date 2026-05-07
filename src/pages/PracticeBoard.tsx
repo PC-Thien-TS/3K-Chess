@@ -1519,9 +1519,9 @@ function ClassicPracticeBoard() {
 export default function PracticeBoard() {
   const location = useLocation();
   const { config } = useMatchContext();
-  const gameMode = normalizeGameMode((location.state as any)?.gameMode ?? config.gameMode, DEFAULT_GAME_MODE);
+  const requestedMode = normalizeGameMode((location.state as any)?.gameMode ?? config.gameMode, DEFAULT_GAME_MODE);
 
-  if (gameMode === 'authentic') {
+  if (requestedMode === 'authentic') {
     return (
       <AuthenticBoard
         roomCode={(location.state as any)?.roomCode}

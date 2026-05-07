@@ -59,14 +59,14 @@ export default function Home() {
             transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
             className="flex flex-col md:flex-row items-center justify-center gap-8 pt-8"
           >
-            <Link to="/setup" className="group relative bg-gold text-black font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_60px_rgba(212,175,55,0.4)] hover:bg-white overflow-hidden">
+            <Link to="/setup?mode=classic" className="group relative bg-gold text-black font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_60px_rgba(212,175,55,0.4)] hover:bg-white overflow-hidden">
                <span className="relative z-10 flex items-center gap-3">
                  Begin Conquest <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
                </span>
                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
             </Link>
             
-            <Link to="/rooms/create" className="group relative glass-dark border border-white/10 text-white font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 hover:bg-white/10 overflow-hidden">
+            <Link to="/rooms/create?mode=classic" className="group relative glass-dark border border-white/10 text-white font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 hover:bg-white/10 overflow-hidden">
                <span className="relative z-10 flex items-center gap-3">
                  Forge War Room <Play size={20} className="text-gold group-hover:scale-125 transition-transform" fill="currentColor" />
                </span>
@@ -336,10 +336,10 @@ export default function Home() {
         <div className="relative z-10 max-w-3xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8">ARE YOU READY TO <br className="hidden md:block" /> UNITE THE LAND?</h2>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <Link to="/setup" className="bg-gold text-ink font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:scale-105 transition-transform">
+            <Link to="/setup?mode=classic" className="bg-gold text-ink font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:scale-105 transition-transform">
               Play vs AI
             </Link>
-            <Link to="/rooms/create" className="bg-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/20 transition-colors">
+            <Link to="/rooms/create?mode=classic" className="bg-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/20 transition-colors">
                Create War Room
             </Link>
             <Link to="/archive" className="bg-white/5 border border-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/10 transition-colors">

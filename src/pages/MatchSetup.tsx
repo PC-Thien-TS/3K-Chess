@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
+const AUTHENTIC_DISABLED_MESSAGE = 'Authentic Three Kingdoms mode is under construction.';
 
 const FACTION_DETAILS = {
   Shu: {
@@ -46,11 +47,12 @@ export default function MatchSetup() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { config, updateConfig } = useMatchContext();
-  const initialGameMode = normalizeGameMode(searchParams.get('mode') || config.gameMode, DEFAULT_GAME_MODE);
+  const initialGameMode = normalizeGameMode(searchParams.get('mode'), DEFAULT_GAME_MODE);
   
   const [localFactions, setLocalFactions] = useState(config.factions);
   const [localPrimary, setLocalPrimary] = useState(config.primaryKingdom);
   const [localGameMode, setLocalGameMode] = useState<GameMode>(initialGameMode);
+  const [modeNotice, setModeNotice] = useState<string | null>(initialGameMode === 'authentic' ? AUTHENTIC_DISABLED_MESSAGE : null);
 
   const handleControlToggle = (faction: Faction) => {
     setLocalFactions(prev => {
@@ -79,17 +81,22 @@ export default function MatchSetup() {
   };
 
   const handleStart = () => {
+    if (localGameMode === 'authentic') {
+      setModeNotice(AUTHENTIC_DISABLED_MESSAGE);
+      return;
+    }
     updateConfig({
-      gameMode: localGameMode,
+      gameMode: 'classic',
       factions: localFactions,
       primaryKingdom: localPrimary
     });
-    navigate('/practice', { state: { gameMode: localGameMode } });
+    navigate('/practice', { state: { gameMode: 'classic' } });
   };
 
   const handleModeSelect = (mode: GameMode) => {
     setLocalGameMode(mode);
     setSearchParams({ mode });
+    setModeNotice(mode === 'authentic' ? AUTHENTIC_DISABLED_MESSAGE : null);
   };
 
   return (
@@ -143,7 +150,12 @@ export default function MatchSetup() {
 
       {localGameMode === 'authentic' && (
         <div className="w-full max-w-5xl mb-12 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] p-6 text-amber-100 text-sm font-serif italic">
-          Authentic Three Kingdoms mode is under tactical construction.
+          {AUTHENTIC_DISABLED_MESSAGE}
+        </div>
+      )}
+      {modeNotice && localGameMode === 'classic' && (
+        <div className="w-full max-w-5xl mb-12 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] p-6 text-amber-100 text-sm font-serif italic">
+          {modeNotice}
         </div>
       )}
 
@@ -292,9 +304,10 @@ export default function MatchSetup() {
           </button>
           <button 
             onClick={handleStart}
+            disabled={localGameMode === 'authentic'}
             className="flex-[2] md:flex-none px-16 py-6 bg-gold text-black rounded-2xl text-[12px] font-black uppercase tracking-[0.4em] shadow-[0_20px_50px_rgba(212,175,55,0.35)] hover:bg-white hover:scale-[1.05] active:scale-95 transition-all flex items-center justify-center gap-4"
           >
-            SEAL FATE
+            {localGameMode === 'authentic' ? 'UNDER CONSTRUCTION' : 'SEAL FATE'}
             <ChevronRight size={20} className="animate-pulse" />
           </button>
         </div>

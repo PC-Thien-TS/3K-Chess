@@ -22,6 +22,7 @@ import { useMatchContext } from '@/src/context/MatchContext';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { OnlineWarRoom } from '@/server/protocol';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
+const AUTHENTIC_DISABLED_MESSAGE = 'Authentic Three Kingdoms mode is under construction.';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {
@@ -258,6 +259,10 @@ export default function WarRoomLobby() {
 
   const startMatch = () => {
     if (!canStart || !room) return;
+    if (activeGameMode === 'authentic') {
+      setError(AUTHENTIC_DISABLED_MESSAGE);
+      return;
+    }
     setIsStarting(true);
     setError(null);
 
@@ -571,10 +576,10 @@ export default function WarRoomLobby() {
 
               <button 
                 onClick={startMatch}
-                disabled={!canStart || isStarting}
+                disabled={!canStart || isStarting || activeGameMode === 'authentic'}
                 className={cn(
                   "w-full py-8 rounded-[3rem] font-black uppercase tracking-[0.5em] text-sm transition-all flex items-center justify-center gap-4 border overflow-hidden relative",
-                  canStart 
+                  canStart && activeGameMode !== 'authentic'
                     ? "bg-gold text-black border-gold hover:bg-white shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:-translate-y-1" 
                     : "bg-white/5 border-white/5 text-zinc-700 cursor-not-allowed"
                 )}
@@ -585,10 +590,10 @@ export default function WarRoomLobby() {
                     </>
                 ) : (
                     <>
-                        <Sword size={24} /> {canStart ? "Start Incursion" : "Awaiting Readiness"}
+                        <Sword size={24} /> {activeGameMode === 'authentic' ? "Under Construction" : canStart ? "Start Incursion" : "Awaiting Readiness"}
                     </>
                 )}
-                {canStart && !isStarting && (
+                {canStart && !isStarting && activeGameMode !== 'authentic' && (
                     <div className="absolute inset-0 bg-white/20 animate-pulse-slow pointer-events-none" />
                 )}
               </button>

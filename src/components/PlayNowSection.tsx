@@ -8,7 +8,7 @@ const modes = [
     title: "Quick Match",
     desc: "Jump into a casual local 3-player match with custom kingdom setup.",
     btnText: "Play as Guest",
-    path: "/setup",
+    path: "/setup?mode=classic",
     icon: Play,
     active: true
   },
@@ -16,7 +16,7 @@ const modes = [
     title: "Play vs AI",
     desc: "Practice tactics against AI-controlled kingdoms before entering real battles.",
     btnText: "Start Practice",
-    path: "/setup",
+    path: "/setup?mode=classic",
     icon: User,
     active: true
   },
@@ -24,7 +24,7 @@ const modes = [
     title: "Create Room",
     desc: "Invite friends and customize your private battlefield.",
     btnText: "Create Room",
-    path: "/rooms/create",
+    path: "/rooms/create?mode=classic",
     icon: PlusCircle,
     active: true
   },
