@@ -20,93 +20,127 @@ export default function CreateRoom() {
   const [selectedFaction, setSelectedFaction] = useState<Faction>('Shu');
   const [allowBots, setAllowBots] = useState(true);
   const [defaultDifficulty, setDefaultDifficulty] = useState<BotDifficulty>('normal');
-  const [roomMode, setRoomMode] = useState<'local' | 'online'>('local');
+  const wsUrlAvailable = !!(import.meta as any).env.VITE_WS_URL;
+  const [roomMode, setRoomMode] = useState<'local' | 'online'>(wsUrlAvailable ? 'online' : 'local');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hostName.trim() || isCreating) return;
+    const name = hostName.trim();
+    if (!name || isCreating) return;
+    
     setError(null);
+    setIsCreating(true);
 
-    if (roomMode === 'online') {
-      const wsUrl = (import.meta as any).env.VITE_WS_URL;
-      if (!wsUrl) {
-        setError("WebSocket server not configured. Online matches are currently unavailable.");
+    if ((import.meta as any).env.DEV) {
+      console.log(`[Strategic Command] Opening Chamber: Mode=${roomMode}, WS_Configured=${!!(import.meta as any).env.VITE_WS_URL}`);
+    }
+
+    const timeout = setTimeout(() => {
+      if (isCreating) {
+        setError("Strategic Delay: Room initialization timed out. Please try again.");
+        setIsCreating(false);
+      }
+    }, 5000);
+
+    try {
+      if (roomMode === 'online') {
+        const wsUrl = (import.meta as any).env.VITE_WS_URL;
+        if (!wsUrl) {
+          clearTimeout(timeout);
+          setError("WebSocket server not configured. Use Local Simulation or configure VITE_WS_URL.");
+          setIsCreating(false);
+          return;
+        }
+
+        onlineRoomClient.connect();
+        
+        const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
+          clearTimeout(timeout);
+          setError(`Strategic Failure: ${err}`);
+          setIsCreating(false);
+          unsubscribeError();
+        });
+
+        const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
+          clearTimeout(timeout);
+          if ((import.meta as any).env.DEV) {
+            console.log(`[Strategic Command] Online Chamber Synchronized: ${room.roomCode}`);
+          }
+          navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online' } });
+          setIsCreating(false);
+          unsubscribeState();
+          unsubscribeError();
+        });
+
+        onlineRoomClient.createRoom({
+          hostName: name,
+          preferredFaction: selectedFaction as any,
+          allowBots,
+          botDifficultyDefault: defaultDifficulty as any
+        });
         return;
       }
 
-      setIsCreating(true);
-      onlineRoomClient.connect();
-      
-      const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
-        setError(`Strategic Failure: ${err}`);
-        setIsCreating(false);
-        unsubscribeError();
-      });
-
-      const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
-        navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online' } });
-        setIsCreating(false);
-        unsubscribeState();
-        unsubscribeError();
-      });
-
-      onlineRoomClient.createRoom({
-        hostName,
-        preferredFaction: selectedFaction as any,
-        allowBots,
-        botDifficultyDefault: defaultDifficulty
-      });
-      return;
-    }
-
-    const roomCode = generateRoomCode();
-    
-    // Initialize slots
-    const slots: Record<Exclude<Faction, 'None'>, RoomFactionSlot> = {
-      Shu: { faction: 'Shu', occupantType: 'empty', ready: false },
-      Wei: { faction: 'Wei', occupantType: 'empty', ready: false },
-      Wu: { faction: 'Wu', occupantType: 'empty', ready: false }
-    };
-
-    // Set host
-    slots[selectedFaction as Exclude<Faction, 'None'>] = {
-      faction: selectedFaction as any,
-      occupantType: 'human',
-      playerName: hostName,
-      ready: true
-    };
-
-    // Optionally add bots to remaining slots
-    if (allowBots) {
-      (Object.keys(slots) as Faction[]).forEach(f => {
-        if (f !== selectedFaction) {
-          slots[f as Exclude<Faction, 'None'>] = {
-            faction: f as any,
-            occupantType: 'bot',
-            botDifficulty: defaultDifficulty,
-            ready: true
-          };
-        }
-      });
-    }
-
-    const newRoom: WarRoom = {
-      roomCode,
-      hostName,
-      createdAt: new Date().toISOString(),
-      status: 'waiting',
-      slots,
-      roomRules: {
-        ruleset: '3K_CHESS_STANDARD_V1',
-        allowBots,
-        botDifficultyDefault: defaultDifficulty
+      // Local Simulation Mode
+      const roomCode = generateRoomCode();
+      if ((import.meta as any).env.DEV) {
+        console.log(`[Strategic Command] Initializing Local Archive: ${roomCode}`);
       }
-    };
+      
+      const slots: Record<Exclude<Faction, 'None'>, RoomFactionSlot> = {
+        Shu: { faction: 'Shu', occupantType: 'empty', ready: false },
+        Wei: { faction: 'Wei', occupantType: 'empty', ready: false },
+        Wu: { faction: 'Wu', occupantType: 'empty', ready: false }
+      };
 
-    saveWarRoom(newRoom);
-    navigate(`/rooms/${roomCode}`);
+      slots[selectedFaction as Exclude<Faction, 'None'>] = {
+        faction: selectedFaction as any,
+        occupantType: 'human',
+        playerName: name,
+        ready: true
+      };
+
+      if (allowBots) {
+        (Object.keys(slots) as Faction[]).forEach(f => {
+          if (f !== selectedFaction) {
+            slots[f as Exclude<Faction, 'None'>] = {
+              faction: f as any,
+              occupantType: 'bot',
+              botDifficulty: defaultDifficulty,
+              ready: true
+            };
+          }
+        });
+      }
+
+      const newRoom: WarRoom = {
+        roomCode,
+        hostName: name,
+        createdAt: new Date().toISOString(),
+        status: 'waiting',
+        slots,
+        roomRules: {
+          ruleset: '3K_CHESS_STANDARD_V1',
+          allowBots,
+          botDifficultyDefault: defaultDifficulty
+        }
+      };
+
+      saveWarRoom(newRoom);
+      clearTimeout(timeout);
+      
+      if ((import.meta as any).env.DEV) {
+        console.log(`[Strategic Command] Mission Accepted. Navigating to Chamber ${roomCode}`);
+      }
+      
+      navigate(`/rooms/${roomCode}`, { state: { mode: 'local' } });
+    } catch (err: any) {
+      clearTimeout(timeout);
+      setError(err?.message || "Tactical Error: Failed to secure the war room.");
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -245,11 +279,17 @@ export default function CreateRoom() {
 
             <button 
               type="submit"
-              disabled={isCreating}
+              disabled={isCreating || (roomMode === 'online' && !wsUrlAvailable)}
               className="w-full bg-gold hover:bg-white text-black py-6 rounded-[2rem] font-bold uppercase tracking-[0.4em] text-xs transition-all shadow-[0_0_30px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 disabled:opacity-50"
             >
               <Sword size={20} /> {isCreating ? "Initializing..." : "Initialize Room"}
             </button>
+
+            {roomMode === 'online' && !wsUrlAvailable && (
+              <p className="text-rose-500/80 text-[10px] font-serif italic text-center mt-4">
+                Online WebSocket requires a deployed backend. Use Local Simulation to create a room without a server.
+              </p>
+            )}
 
             {error && (
               <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-6 rounded-2xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-3 mt-4">

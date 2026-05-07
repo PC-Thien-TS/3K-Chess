@@ -24,6 +24,7 @@ const modes = [
     title: "Create Room",
     desc: "Invite friends and customize your private battlefield.",
     btnText: "Create Room",
+    path: "/rooms/create",
     icon: PlusCircle,
     active: true
   },
@@ -59,7 +60,7 @@ export default function PlayNowSection() {
               )}
               disabled={!mode.active && mode.title === "Ranked Mode"}
               onClick={() => {
-                if(mode.title === "Create Room") alert("Room creation coming soon!");
+                // Actions handled by path or disabled state
               }}
             >
               {mode.btnText}

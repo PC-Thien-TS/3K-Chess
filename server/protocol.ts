@@ -1,5 +1,5 @@
-import { Faction, BotDifficulty, RecordedMove } from '../src/rules/threeKingdomRules';
-import { WarRoom, RoomFactionSlot } from '../src/storage/warRooms';
+export type { OnlineWarRoom };
+import { Faction, OnlineWarRoom } from './types';
 
 export enum ClientMessage {
   CREATE_ROOM = 'CREATE_ROOM',
@@ -24,20 +24,11 @@ export enum ServerMessage {
   ERROR = 'ERROR',
 }
 
-export interface OnlineRoomSlot extends RoomFactionSlot {
-  clientId?: string;
-}
-
-export interface OnlineWarRoom extends Omit<WarRoom, 'slots'> {
-  hostClientId: string;
-  slots: Record<Exclude<Faction, 'None'>, OnlineRoomSlot>;
-}
-
 export interface CreateRoomPayload {
   hostName: string;
-  preferredFaction: Exclude<Faction, 'None'>;
+  preferredFaction: Faction;
   allowBots: boolean;
-  botDifficultyDefault: BotDifficulty;
+  botDifficultyDefault: "easy" | "normal" | "hard";
 }
 
 export interface JoinRoomPayload {
@@ -47,7 +38,7 @@ export interface JoinRoomPayload {
 
 export interface SlotActionPayload {
   roomCode: string;
-  faction: Exclude<Faction, 'None'>;
+  faction: Faction;
 }
 
 export interface JoinSlotPayload extends SlotActionPayload {
@@ -55,7 +46,7 @@ export interface JoinSlotPayload extends SlotActionPayload {
 }
 
 export interface AddBotPayload extends SlotActionPayload {
-  difficulty: BotDifficulty;
+  difficulty: "easy" | "normal" | "hard";
 }
 
 export interface SetReadyPayload extends SlotActionPayload {
@@ -64,11 +55,11 @@ export interface SetReadyPayload extends SlotActionPayload {
 
 export interface SubmitMovePayload {
   roomCode: string;
-  move: RecordedMove;
+  move: any; 
   clientGameState?: {
-    currentTurn: Faction;
-    eliminatedFactions: Faction[];
-    winner: Faction | null;
-    status: 'PLAYING' | 'FINISHED';
+    currentTurn: any;
+    eliminatedFactions: any[];
+    winner: any;
+    status: string;
   };
 }

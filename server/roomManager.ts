@@ -1,20 +1,24 @@
-import { OnlineWarRoom, OnlineRoomSlot, CreateRoomPayload, JoinRoomPayload, JoinSlotPayload, SlotActionPayload, AddBotPayload, SetReadyPayload, SubmitMovePayload } from './protocol';
-import { Faction } from '../src/rules/threeKingdomRules';
-import { generateRoomCode, validateWarRoom } from '../src/storage/warRooms';
+import { OnlineWarRoom, Faction, OnlineRoomSlot } from './types';
+import { CreateRoomPayload, JoinRoomPayload, JoinSlotPayload, SlotActionPayload, AddBotPayload, SetReadyPayload, SubmitMovePayload } from './protocol';
+
+/**
+ * TODO: Backend v2 - Implement server-authoritative chess rule validation.
+ * Currently, moves are validated by the client and broadcasted by the server.
+ */
 
 class RoomManager {
   private rooms: Map<string, OnlineWarRoom> = new Map();
 
   createRoom(payload: CreateRoomPayload, clientId: string): OnlineWarRoom {
-    const roomCode = generateRoomCode();
+    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     
-    const slots: Record<Exclude<Faction, 'None'>, OnlineRoomSlot> = {
+    const slots: OnlineWarRoom['slots'] = {
       Shu: { faction: 'Shu', occupantType: 'empty', ready: false },
       Wei: { faction: 'Wei', occupantType: 'empty', ready: false },
       Wu: { faction: 'Wu', occupantType: 'empty', ready: false }
     };
 
-    slots[payload.preferredFaction] = {
+    slots[payload.preferredFaction as Exclude<Faction, 'None'>] = {
       faction: payload.preferredFaction,
       occupantType: 'human',
       playerName: payload.hostName,
@@ -53,10 +57,6 @@ class RoomManager {
     return room;
   }
 
-  getRoom(roomCode: string): OnlineWarRoom | null {
-    return this.rooms.get(roomCode) || null;
-  }
-
   joinRoom(payload: JoinRoomPayload, clientId: string): OnlineWarRoom {
     const room = this.rooms.get(payload.roomCode);
     if (!room) throw new Error("Chamber not found in active archives.");
@@ -78,12 +78,12 @@ class RoomManager {
 
   joinSlot(payload: JoinSlotPayload, clientId: string): OnlineWarRoom {
     const room = this.rooms.get(payload.roomCode);
-    if (!room) throw new Error("Room not found");
+    if (!room) throw new Error("Strategic Chamber not found");
     
-    const slot = room.slots[payload.faction];
+    const slot = room.slots[payload.faction as Exclude<Faction, 'None'>];
     if (slot.occupantType !== 'empty') throw new Error("Sector already occupied");
 
-    room.slots[payload.faction] = {
+    room.slots[payload.faction as Exclude<Faction, 'None'>] = {
       faction: payload.faction,
       occupantType: 'human',
       playerName: payload.playerName,
@@ -98,10 +98,10 @@ class RoomManager {
     const room = this.rooms.get(payload.roomCode);
     if (!room) throw new Error("Room not found");
     
-    const slot = room.slots[payload.faction];
-    if (slot.clientId !== clientId && room.hostClientId !== clientId) throw new Error("Unauthorized slot modification");
+    const slot = room.slots[payload.faction as Exclude<Faction, 'None'>];
+    if (slot.clientId !== clientId && room.hostClientId !== clientId) throw new Error("Unauthorized tactical adjustment");
 
-    room.slots[payload.faction] = {
+    room.slots[payload.faction as Exclude<Faction, 'None'>] = {
       faction: payload.faction,
       occupantType: 'empty',
       ready: false
@@ -113,10 +113,10 @@ class RoomManager {
   addBot(payload: AddBotPayload, clientId: string): OnlineWarRoom {
     const room = this.rooms.get(payload.roomCode);
     if (!room) throw new Error("Room not found");
-    if (room.hostClientId !== clientId) throw new Error("Only host can deploy bots");
-    if (!room.roomRules.allowBots) throw new Error("Bots forbidden in this room");
+    if (room.hostClientId !== clientId) throw new Error("Only host can deploy Strategic Automata");
+    if (!room.roomRules.allowBots) throw new Error("Automata prohibited in this chamber");
 
-    room.slots[payload.faction] = {
+    room.slots[payload.faction as Exclude<Faction, 'None'>] = {
       faction: payload.faction,
       occupantType: 'bot',
       botDifficulty: payload.difficulty,
@@ -129,9 +129,9 @@ class RoomManager {
   removeBot(payload: SlotActionPayload, clientId: string): OnlineWarRoom {
     const room = this.rooms.get(payload.roomCode);
     if (!room) throw new Error("Room not found");
-    if (room.hostClientId !== clientId) throw new Error("Only host can rescind bots");
+    if (room.hostClientId !== clientId) throw new Error("Only host can rescind Automata");
 
-    room.slots[payload.faction] = {
+    room.slots[payload.faction as Exclude<Faction, 'None'>] = {
       faction: payload.faction,
       occupantType: 'empty',
       ready: false
@@ -144,8 +144,8 @@ class RoomManager {
     const room = this.rooms.get(payload.roomCode);
     if (!room) throw new Error("Room not found");
     
-    const slot = room.slots[payload.faction];
-    if (slot.clientId !== clientId) throw new Error("Cannot signal readiness for another");
+    const slot = room.slots[payload.faction as Exclude<Faction, 'None'>];
+    if (slot.clientId !== clientId) throw new Error("Cannot signal readiness for another commander");
 
     slot.ready = payload.ready;
     return room;
@@ -154,20 +154,29 @@ class RoomManager {
   startMatch(roomCode: string, clientId: string): OnlineWarRoom {
     const room = this.rooms.get(roomCode);
     if (!room) throw new Error("Room not found");
-    if (room.hostClientId !== clientId) throw new Error("Only host can initiate incursion");
+    if (room.hostClientId !== clientId) throw new Error("Only host can initiate the incursion");
 
     const slots = Object.values(room.slots);
-    if (slots.some(s => s.occupantType === 'empty')) throw new Error("All sectors must be occupied");
-    if (slots.some(s => !s.ready)) throw new Error("All commanders must be ready");
+    if (slots.some(s => s.occupantType === 'empty')) throw new Error("All kingdom fronts must be occupied");
+    if (slots.some(s => !s.ready)) throw new Error("All commanders must signal readiness");
+    
+    const humanCount = slots.filter(s => s.occupantType === 'human').length;
+    if (humanCount === 0) throw new Error("Strategic Error: Zero human commanders present");
 
     room.status = 'playing';
     return room;
   }
 
-  leaveRoom(clientId: string): { roomCode: string; room: OnlineWarRoom } | null {
+  getRoom(roomCode: string): OnlineWarRoom | null {
+    return this.rooms.get(roomCode) || null;
+  }
+
+  leaveRoom(clientId: string): { roomCode: string; room: OnlineWarRoom | null } | null {
     for (const [code, room] of this.rooms.entries()) {
       let changed = false;
-      (Object.keys(room.slots) as Exclude<Faction, 'None'>[]).forEach(f => {
+      const factions = Object.keys(room.slots) as Exclude<Faction, 'None'>[];
+      
+      factions.forEach(f => {
         if (room.slots[f].clientId === clientId) {
           room.slots[f] = {
             faction: f,
@@ -180,14 +189,13 @@ class RoomManager {
       
       if (changed) {
         if (room.hostClientId === clientId) {
-          // If host leaves, try to assign new host or delete
           const nextHuman = Object.values(room.slots).find(s => s.occupantType === 'human');
           if (nextHuman && nextHuman.clientId) {
             room.hostClientId = nextHuman.clientId;
-            room.hostName = nextHuman.playerName || "New Host";
+            room.hostName = nextHuman.playerName || "New Strategist";
           } else {
             this.rooms.delete(code);
-            return { roomCode: code, room: null as any };
+            return { roomCode: code, room: null };
           }
         }
         return { roomCode: code, room };

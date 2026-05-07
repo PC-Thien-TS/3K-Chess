@@ -140,9 +140,7 @@ export default function JoinRoom() {
             Access Chamber
           </button>
           
-          <p className="text-[10px] text-zinc-600 font-serif italic text-center mt-4 uppercase tracking-widest">
-            Simulated access for local prototype
-          </p>
+          {/* Action buttons removed placeholder text */}
         </form>
       </div>
     </div>
