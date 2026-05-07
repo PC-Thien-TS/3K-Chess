@@ -35,6 +35,11 @@ export default function WarRoomLobby() {
   const navigate = useNavigate();
   const location = useLocation();
   const { updateConfig } = useMatchContext();
+  const [commanderName] = useState(() => {
+    const stateName = ((location.state as any)?.playerName || "").trim();
+    if (stateName) return stateName;
+    return (localStorage.getItem('last_commander_name') || "Commander").trim() || "Commander";
+  });
   
   const [room, setRoom] = useState<WarRoom | OnlineWarRoom | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,17 +102,11 @@ export default function WarRoomLobby() {
         }
       });
 
-      const stateName = (location.state as any)?.playerName;
-      if (stateName) {
-        if ((import.meta as any).env.DEV) {
-          console.log(`[Strategic Command] Synchronizing with Cloud Chamber: ${roomCode} for ${stateName}`);
-        }
-        onlineRoomClient.joinRoom({ roomCode, playerName: stateName });
-      } else {
-        // Just listen for state for now, maybe prompt for name later if we're just spectating or joining
-        // For now, let's try to join as a generic commander if name is missing from state
-        onlineRoomClient.joinRoom({ roomCode, playerName: localStorage.getItem('last_commander_name') || "Commander" });
+      if ((import.meta as any).env.DEV) {
+        console.log(`[Strategic Command] Synchronizing with Cloud Chamber: ${roomCode} for ${commanderName}`);
       }
+
+      onlineRoomClient.joinRoom({ roomCode, playerName: commanderName });
 
       return () => {
         unsubState();
@@ -127,15 +126,14 @@ export default function WarRoomLobby() {
         setRoom(found);
         setIsLoading(false);
         
-        const stateName = (location.state as any)?.playerName;
-        if (stateName) {
+        if (commanderName) {
             const firstEmpty = FACTIONS.find(f => found.slots[f].occupantType === 'empty');
             if (firstEmpty) {
                 const updated = { ...found };
                 updated.slots[firstEmpty] = {
                     faction: firstEmpty,
                     occupantType: 'human',
-                    playerName: stateName,
+                    playerName: commanderName,
                     ready: false
                 };
                 saveWarRoom(updated);
@@ -154,7 +152,7 @@ export default function WarRoomLobby() {
         }
       }
     }
-  }, [roomCode, roomMode]);
+  }, [roomCode, roomMode, commanderName]);
 
   const handleCopyCode = () => {
     if (room?.roomCode) {
@@ -232,6 +230,23 @@ export default function WarRoomLobby() {
     if (slot.occupantType === 'human') {
         updateSlot(faction, { ready: !slot.ready });
     }
+  };
+
+  const claimedFaction = roomMode === 'online' && room
+    ? FACTIONS.find(f => (room as OnlineWarRoom).slots[f].clientId === onlineRoomClient.socketId) || null
+    : null;
+
+  const claimSlot = (faction: Faction) => {
+    if (roomMode === 'online' && claimedFaction) {
+      setError(`Strategic Assignment Locked: You already command ${claimedFaction}.`);
+      return;
+    }
+
+    updateSlot(faction, {
+      occupantType: 'human',
+      playerName: roomMode === 'online' ? commanderName : localStorage.getItem('last_commander_name') || 'Local Recruit',
+      ready: false,
+    });
   };
 
   const canStart = room && FACTIONS.every(f => (room.slots as any)[f].occupantType !== 'empty' && (room.slots as any)[f].ready);
@@ -393,8 +408,9 @@ export default function WarRoomLobby() {
                           </div>
                           <div className="flex flex-col gap-4 w-full px-4">
                              <button 
-                                onClick={() => updateSlot(fct, { occupantType: 'human', playerName: localStorage.getItem('last_commander_name') || 'Local Recruit', ready: false })}
-                                className="w-full bg-white/5 hover:bg-white/10 text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] border border-white/5 transition-all hover:scale-105 active:scale-95"
+                                onClick={() => claimSlot(fct)}
+                                disabled={roomMode === 'online' && !!claimedFaction}
+                                className="w-full bg-white/5 hover:bg-white/10 text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] border border-white/5 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                              >
                                 Claim Command
                              </button>

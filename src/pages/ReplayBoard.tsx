@@ -21,6 +21,7 @@ import {
 import { cn } from '@/src/lib/utils';
 import { 
   Faction, 
+  PieceType,
   Piece, 
   MatchRecord, 
   RecordedMove, 
@@ -28,6 +29,7 @@ import {
   validateBoardIntegrity
 } from '@/src/rules/threeKingdomRules';
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
+import BoardPieceToken from '@/src/components/BoardPieceToken';
 
 const FACTION_COLORS = {
   Shu: 'text-rose-500 bg-black border-rose-500/50 shadow-rose-900/40',
@@ -178,7 +180,7 @@ export default function ReplayBoard() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start px-4">
         {/* Board Area */}
         <div className="xl:col-span-8 space-y-8">
-          <div className="relative aspect-square w-full max-w-[850px] mx-auto glass-dark border-4 border-white/5 rounded-[4rem] p-10 md:p-14 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden">
+          <div className="relative aspect-square w-full max-w-[850px] mx-auto overflow-hidden rounded-[3.5rem] border border-[#5d4926]/40 bg-[#100d09] p-4 sm:p-6 md:p-10 shadow-[0_28px_80px_rgba(0,0,0,0.7)]">
              {/* Dynamic Faction Background (Very Subtle) */}
              <AnimatePresence mode="wait">
                 <motion.div
@@ -186,17 +188,25 @@ export default function ReplayBoard() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 pointer-events-none opacity-[0.03]"
+                  className="absolute inset-0 pointer-events-none opacity-[0.08]"
                 >
-                   <div className={cn("absolute inset-0 bg-gradient-to-br from-current to-transparent", lastMove ? FACTION_COLORS[lastMove.faction] : "text-zinc-500")} />
+                   <div className={cn("absolute inset-0 bg-gradient-to-br from-current via-transparent to-transparent", lastMove ? FACTION_COLORS[lastMove.faction] : "text-zinc-500")} />
                 </motion.div>
              </AnimatePresence>
 
-             {/* Grid Texture */}
-             <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay pointer-events-none" 
-                  style={{ backgroundImage: 'radial-gradient(circle, #D4AF37 1.5px, transparent 1.5px)', backgroundSize: '3rem 3rem' }} />
+             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
+             <div className="absolute inset-[1.15%] rounded-[3rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
+             <div className="absolute left-[24%] top-[4%] h-[22%] w-[52%] rounded-full bg-rose-500/[0.08] blur-3xl pointer-events-none" />
+             <div className="absolute left-[4%] top-[24%] h-[52%] w-[22%] rounded-full bg-emerald-500/[0.08] blur-3xl pointer-events-none" />
+             <div className="absolute left-[24%] bottom-[4%] h-[22%] w-[52%] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+             <div className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-overlay [background-image:linear-gradient(120deg,rgba(255,255,255,0.16)_0,transparent_22%,rgba(255,255,255,0.08)_36%,transparent_52%,rgba(0,0,0,0.18)_72%,transparent_100%)]" />
+             <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
+                <div className="absolute left-1/2 top-[4%] -translate-x-1/2 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-rose-500/[0.06]">SHU</div>
+                <div className="absolute left-[4%] top-1/2 -translate-y-1/2 -rotate-90 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-emerald-500/[0.06]">WU</div>
+                <div className="absolute bottom-[4%] left-1/2 -translate-x-1/2 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06]">WEI</div>
+             </div>
              
-             <div className="relative w-full h-full grid grid-cols-17 grid-rows-17 border border-gold/10">
+             <div className="relative w-full h-full grid grid-cols-17 grid-rows-17 rounded-[2.5rem] border border-gold/[0.12] shadow-[inset_0_0_60px_rgba(0,0,0,0.55)]">
                 {Array.from({ length: ROWS * COLS }).map((_, i) => {
                   const x = i % COLS;
                   const y = Math.floor(i / COLS);
@@ -210,19 +220,20 @@ export default function ReplayBoard() {
                     <div 
                       key={i} 
                       className={cn(
-                        "relative border-[0.5px] border-white/[0.03] transition-all",
-                        isHighlighted && "bg-gold/[0.08]"
+                        "relative border-[0.5px] border-[#e0c58d]/[0.08] transition-all",
+                        isHighlighted && "bg-gold/[0.10]"
                       )}
                     >
                       {isHighlighted && (
                           <div className={cn(
-                              "absolute inset-0 border-2 transition-all duration-700",
-                              isCapture ? "border-rose-500/40 bg-rose-500/10" : "border-gold/30 bg-gold/5"
+                              "absolute inset-[8%] rounded-2xl border transition-all duration-700",
+                              isCapture ? "border-rose-400/55 bg-rose-500/[0.12] shadow-[0_0_16px_rgba(244,63,94,0.28)]" : "border-gold/45 bg-gold/[0.08]"
                           )} />
                       )}
                       
                       {/* Grid Ornament */}
                       {(x === 8 || y === 8) && <div className="absolute inset-0 bg-white/[0.02]" />}
+                      <div className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#8a734b]/55" />
                     </div>
                   );
                 })}
@@ -233,20 +244,17 @@ export default function ReplayBoard() {
                       key={piece.id}
                       layoutId={piece.id}
                       transition={{ type: "spring", damping: 30, stiffness: 150 }}
-                      className="absolute w-[5.88%] h-[5.88%] flex items-center justify-center z-10 p-[1.5%]"
+                      className="absolute z-10 flex h-[5.88%] w-[5.88%] items-center justify-center p-[1.25%]"
                       style={{ 
                         left: `${(piece.x / COLS) * 100}%`, 
                         top: `${(piece.y / ROWS) * 100}%` 
                       }}
                     >
-                       <div className={cn(
-                         "w-full h-full rounded-2xl border-2 flex items-center justify-center font-serif font-black text-[8px] md:text-xs shadow-2xl relative transition-all group",
-                         FACTION_COLORS[piece.faction]
-                       )}>
-                         <div className="absolute inset-0 rounded-2xl border border-white/20" />
-                         <div className="absolute -inset-1 bg-current opacity-20 blur-sm rounded-2xl scale-0 group-hover:scale-100 transition-transform" />
-                         <span className="relative z-10 filter drop-shadow-md">{piece.type}</span>
-                       </div>
+                      <BoardPieceToken
+                        faction={piece.faction}
+                        pieceType={piece.type as PieceType}
+                        compact
+                      />
                     </motion.div>
                 ))}
              </div>

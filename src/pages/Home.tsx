@@ -66,7 +66,7 @@ export default function Home() {
                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
             </Link>
             
-            <Link to="/create" className="group relative glass-dark border border-white/10 text-white font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 hover:bg-white/10 overflow-hidden">
+            <Link to="/rooms/create" className="group relative glass-dark border border-white/10 text-white font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 hover:bg-white/10 overflow-hidden">
                <span className="relative z-10 flex items-center gap-3">
                  Forge War Room <Play size={20} className="text-gold group-hover:scale-125 transition-transform" fill="currentColor" />
                </span>
@@ -96,7 +96,7 @@ export default function Home() {
 
         {/* Cinematic Scroll Indicator */}
         <div className="absolute bottom-12 left-0 right-0 flex justify-center py-4">
-           <Link to="#features" className="flex flex-col items-center gap-4 group cursor-pointer transition-all">
+           <a href="/#play-now" className="flex flex-col items-center gap-4 group cursor-pointer transition-all">
               <span className="text-[9px] font-black uppercase tracking-[0.6em] text-zinc-600 group-hover:text-gold transition-colors">Descend</span>
               <div className="w-px h-16 bg-white/10 relative overflow-hidden">
                  <motion.div 
@@ -105,7 +105,7 @@ export default function Home() {
                     className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-transparent via-gold to-transparent" 
                  />
               </div>
-           </Link>
+           </a>
         </div>
       </section>
 

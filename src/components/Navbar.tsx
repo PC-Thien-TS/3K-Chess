@@ -1,13 +1,12 @@
-import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Sword, Book, Trophy, ShoppingBag, Shield } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
 const navItems = [
-  { name: 'How to Play', path: '#how-to-play', icon: Book },
-  { name: 'Community', path: '#community', icon: Trophy },
-  { name: 'Lore', path: '#lore', icon: Shield },
-  { name: 'Shop', path: '#shop', icon: ShoppingBag },
+  { name: 'How to Play', path: '/#how-to-play', icon: Book },
+  { name: 'Community', path: '/#community', icon: Trophy },
+  { name: 'Lore', path: '/#lore', icon: Shield },
+  { name: 'Shop', path: '/#shop', icon: ShoppingBag },
 ];
 
 export default function Navbar() {
@@ -18,7 +17,7 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         className="glass-dark px-8 py-3 rounded-full flex items-center gap-8 shadow-2xl pointer-events-auto"
       >
-        <a href="#" className="flex items-center gap-2 group">
+        <a href="/" className="flex items-center gap-2 group">
           <Sword className="text-gold transition-transform group-hover:rotate-12" size={24} />
           <span className="font-serif font-bold text-xl tracking-wider text-gold">3K CHESS</span>
         </a>
@@ -43,7 +42,7 @@ export default function Navbar() {
         </div>
 
         <a 
-          href="#play-now" 
+          href="/#play-now" 
           className="bg-gold text-ink text-[10px] font-bold px-5 py-2 rounded-full uppercase tracking-widest hover:scale-105 transition-transform"
         >
           Play Free

@@ -29,6 +29,7 @@ import { useMatchContext } from '@/src/context/MatchContext';
 import { saveMatchRecord, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import { Save, Download, PlayCircle } from 'lucide-react';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
+import BoardPieceToken from '@/src/components/BoardPieceToken';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {
@@ -122,6 +123,13 @@ export default function PracticeBoard() {
   const playerFaction = (location.state as any)?.playerFaction;
   const isHost = (location.state as any)?.isHost;
   const lastProcessedMoveId = React.useRef<string | null>(null);
+  const latestMove = history[0] || null;
+  const isRemoteWaiting =
+    roomMode === 'online' &&
+    !!playerFaction &&
+    turn !== playerFaction &&
+    controlModes[turn] !== 'Bot' &&
+    !winner;
 
   const getNextFaction = (currentTurn: Faction, currentPieces: Piece[], currentEliminated: Faction[]): Faction | null => {
     const activeFactions = FACTIONS.filter(f => !currentEliminated.includes(f));
@@ -1076,43 +1084,58 @@ export default function PracticeBoard() {
 
         {/* Main Board Area */}
         <div className="lg:col-span-6 flex flex-col items-center">
-          <div className="relative w-full max-w-[800px] aspect-square p-3 md:p-8 bg-[#0a0a0a] border-[12px] border-[#1a1a1a] rounded-lg shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden">
-            {/* Wooden/Parchment Texture Overlay */}
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]" />
-            <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.95)] pointer-events-none" />
+          <div className="relative w-full max-w-[820px] aspect-square overflow-hidden rounded-[2.25rem] border border-[#5d4926]/40 bg-[#100d09] p-3 sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
+            <div className="absolute inset-[1.25%] rounded-[2rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
+            <div className="absolute inset-[2.2%] rounded-[1.8rem] border border-black/35 shadow-[inset_0_0_80px_rgba(0,0,0,0.72)]" />
+            <div className="absolute left-[24%] top-[4%] h-[22%] w-[52%] rounded-full bg-rose-500/[0.08] blur-3xl pointer-events-none" />
+            <div className="absolute left-[4%] top-[24%] h-[52%] w-[22%] rounded-full bg-emerald-500/[0.08] blur-3xl pointer-events-none" />
+            <div className="absolute left-[24%] bottom-[4%] h-[22%] w-[52%] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.09] mix-blend-overlay [background-image:linear-gradient(120deg,rgba(255,255,255,0.16)_0,transparent_22%,rgba(255,255,255,0.08)_36%,transparent_52%,rgba(0,0,0,0.18)_72%,transparent_100%)]" />
 
             {/* Traditional Grid Overlay */}
-            <div className="absolute inset-0 pointer-events-none p-3 md:p-8">
-              <svg viewBox="0 0 170 170" className="w-full h-full stroke-zinc-800/80 fill-none" strokeWidth="0.4">
+            <div className="absolute inset-0 pointer-events-none p-3 sm:p-4 md:p-7">
+              <svg viewBox="0 0 170 170" className="w-full h-full fill-none" strokeWidth="0.52">
+                <defs>
+                  <linearGradient id="board-grid-v1" x1="0%" x2="100%">
+                    <stop offset="0%" stopColor="rgba(244, 215, 160, 0.10)" />
+                    <stop offset="50%" stopColor="rgba(225, 194, 136, 0.45)" />
+                    <stop offset="100%" stopColor="rgba(244, 215, 160, 0.10)" />
+                  </linearGradient>
+                </defs>
+                <rect x="5" y="5" width="160" height="160" rx="2" stroke="rgba(212,175,55,0.18)" />
                 {/* Vertical Lines */}
                 {[...Array(17)].map((_, i) => (
-                  <line key={`v-${i}`} x1={i * 10 + 5} y1={5} x2={i * 10 + 5} y2={165} opacity={i < 4 || i > 12 ? 0.2 : 1} />
+                  <line key={`v-${i}`} x1={i * 10 + 5} y1={5} x2={i * 10 + 5} y2={165} stroke="url(#board-grid-v1)" opacity={i < 4 || i > 12 ? 0.35 : 1} />
                 ))}
                 {/* Horizontal Lines */}
                 {[...Array(17)].map((_, i) => (
-                  <line key={`h-${i}`} x1={5} y1={i * 10 + 5} x2={165} y2={i * 10 + 5} opacity={i < 4 || i > 12 ? 0.2 : 1} />
+                  <line key={`h-${i}`} x1={5} y1={i * 10 + 5} x2={165} y2={i * 10 + 5} stroke="url(#board-grid-v1)" opacity={i < 4 || i > 12 ? 0.35 : 1} />
                 ))}
+                <rect x="71.5" y="1.5" width="27" height="27" rx="3" fill="rgba(127,29,29,0.08)" stroke="rgba(251,113,133,0.18)" />
+                <rect x="1.5" y="71.5" width="27" height="27" rx="3" fill="rgba(6,95,70,0.08)" stroke="rgba(52,211,153,0.18)" />
+                <rect x="71.5" y="141.5" width="27" height="27" rx="3" fill="rgba(30,64,175,0.08)" stroke="rgba(96,165,250,0.18)" />
                 
                 {/* Palace Diagonals - Shu (Top) */}
-                <g className="stroke-rose-900/60 stroke-[0.8]">
+                <g className="stroke-[rgba(251,113,133,0.34)] stroke-[0.9]">
                   <line x1={75} y1={5} x2={95} y2={25} />
                   <line x1={95} y1={5} x2={75} y2={25} />
                 </g>
                 
                 {/* Palace Diagonals - Wu (Left) */}
-                <g className="stroke-emerald-900/60 stroke-[0.8]">
+                <g className="stroke-[rgba(52,211,153,0.34)] stroke-[0.9]">
                   <line x1={5} y1={75} x2={25} y2={95} />
                   <line x1={25} y1={75} x2={5} y2={95} />
                 </g>
                 
                 {/* Palace Diagonals - Wei (Bottom) */}
-                <g className="stroke-blue-900/60 stroke-[0.8]">
+                <g className="stroke-[rgba(96,165,250,0.34)] stroke-[0.9]">
                   <line x1={75} y1={145} x2={95} y2={165} />
                   <line x1={95} y1={145} x2={75} y2={165} />
                 </g>
 
                 {/* River Boundary Decorations */}
-                <g className="stroke-gold/20 stroke-[0.6] stroke-dash-2">
+                <g className="stroke-[rgba(212,175,55,0.34)] stroke-[0.8]" strokeDasharray="2.4 2.4">
                   {/* Vertical River */}
                   <line x1={65} y1={45} x2={65} y2={125} />
                   {/* Horizontal River Top */}
@@ -1124,7 +1147,7 @@ export default function PracticeBoard() {
             </div>
 
             {/* Faction Large Aesthetic Character Labels */}
-            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-20 select-none overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-20 select-none overflow-hidden opacity-0">
               <div className="text-[180px] font-serif text-rose-900/10 -mt-16 blur-[1px]">蜀</div>
               <div className="flex justify-between w-full">
                 <div className="text-[180px] font-serif text-emerald-900/10 -ml-20 blur-[1px]">吴</div>
@@ -1133,10 +1156,19 @@ export default function PracticeBoard() {
               <div className="text-[180px] font-serif text-blue-900/10 -mb-16 blur-[1px]">魏</div>
             </div>
 
+            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-10 sm:p-14 md:p-20 select-none overflow-hidden">
+              <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-rose-500/[0.06] -mt-6">SHU</div>
+              <div className="flex justify-between w-full">
+                <div className="-ml-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-emerald-500/[0.06] -rotate-90">WU</div>
+                <div className="invisible -mr-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06]">WEI</div>
+              </div>
+              <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06] -mb-6">WEI</div>
+            </div>
+
             {/* Central Battlefield Legend */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-40">
-              <span className="text-[10px] font-black uppercase tracking-[1.5em] text-zinc-900 font-serif translate-y-[-50px]">Inter-Kingdom River</span>
-              <span className="text-[10px] font-black uppercase tracking-[1.5em] text-zinc-900 font-serif translate-y-[50px]">Chasm of Three Fates</span>
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-55">
+              <span className="translate-y-[-48px] text-[9px] font-black uppercase tracking-[1.2em] text-[#453726] sm:text-[10px]">Inter-Kingdom River</span>
+              <span className="translate-y-[48px] text-[9px] font-black uppercase tracking-[1.2em] text-[#453726] sm:text-[10px]">Chasm of Three Fates</span>
             </div>
 
             {/* Interactive Grid Points */}
@@ -1151,6 +1183,10 @@ export default function PracticeBoard() {
                 [...Array(COLS)].map((_, x) => {
                   const piece = pieces.find(p => p.x === x && p.y === y);
                   const isSelected = selectedId === piece?.id;
+                  const isLegalMove = legalMoves.some(m => m.to.x === x && m.to.y === y);
+                  const isLastMoveFrom = !!latestMove && latestMove.from.x === x && latestMove.from.y === y;
+                  const isLastMoveTo = !!latestMove && latestMove.to.x === x && latestMove.to.y === y;
+                  const isCheckedGeneral = !!piece && piece.type === 'G' && isFactionInCheck(piece.faction, pieces).inCheck;
                   
                   // Check if this piece is an attacker for any faction in check
                   let isAttacker = false;
@@ -1165,24 +1201,40 @@ export default function PracticeBoard() {
                     <div 
                       key={`${x}-${y}`}
                       onClick={() => handlePointClick(x, y)}
-                      className="relative flex items-center justify-center cursor-pointer group"
+                      className={cn(
+                        "relative flex items-center justify-center group",
+                        isRemoteWaiting ? "cursor-not-allowed" : "cursor-pointer",
+                      )}
                     >
-                      {/* Grid Intersection Crosshair */}
-                      <div className="absolute w-2.5 h-0.5 bg-zinc-800/10 group-hover:bg-gold/40 transition-colors" />
-                      <div className="absolute h-2.5 w-0.5 bg-zinc-800/10 group-hover:bg-gold/40 transition-colors" />
+                      {(isLastMoveFrom || isLastMoveTo) && (
+                        <div
+                          className={cn(
+                            "absolute inset-[9%] rounded-[0.9rem] border z-[1]",
+                            isLastMoveTo
+                              ? "border-gold/60 bg-gold/10 shadow-[0_0_18px_rgba(212,175,55,0.18)]"
+                              : "border-sky-200/35 bg-sky-200/5",
+                          )}
+                        />
+                      )}
+
+                      <div className="absolute h-[2px] w-3 rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55" />
+                      <div className="absolute h-3 w-[2px] rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55" />
+                      <div className="absolute h-[4px] w-[4px] rounded-full bg-[#8a734b]/65 shadow-[0_0_6px_rgba(212,175,55,0.18)]" />
                       
                       {/* Legal Move Indicators */}
-                      {legalMoves.some(m => m.to.x === x && m.to.y === y) && (
+                      {isLegalMove && (
                         <motion.div 
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           className={cn(
-                            "absolute w-4 h-4 rounded-full z-40 transition-all",
-                            pieces.some(p => p.x === x && p.y === y) 
-                              ? "border-[3px] border-rose-500 animate-pulse bg-rose-500/30 scale-150 shadow-[0_0_20px_rgba(244,63,94,0.6)]" 
-                              : "bg-gold border-2 border-white shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                            "absolute z-40 transition-all",
+                            piece
+                              ? "h-7 w-7 rounded-full border-2 border-rose-400/80 bg-rose-500/[0.16] shadow-[0_0_20px_rgba(244,63,94,0.42)]"
+                              : "h-5 w-5 rounded-full border border-gold/80 bg-gold/55 shadow-[0_0_18px_rgba(212,175,55,0.42)]",
                           )} 
-                        />
+                        >
+                          {piece && <div className="absolute inset-[22%] rotate-45 border border-rose-200/70" />}
+                        </motion.div>
                       )}
 
                       {piece && (
@@ -1190,28 +1242,17 @@ export default function PracticeBoard() {
                           layoutId={piece.id}
                           onMouseEnter={() => setHoveredPoint({ x, y })}
                           onMouseLeave={() => setHoveredPoint(null)}
-                          className={cn(
-                            "absolute w-[88%] h-[88%] rounded-full flex flex-col items-center justify-center shadow-2xl border-2 transition-all cursor-grab active:cursor-grabbing",
-                            FACTION_COLORS[piece.faction],
-                            isSelected ? "scale-125 border-white shadow-gold/60 z-30 ring-[6px] ring-gold/20" : "hover:scale-110 z-20",
-                            "ring-1 ring-white/20",
-                            (piece.type === 'G' && isFactionInCheck(piece.faction, pieces).inCheck) && "animate-pulse ring-8 ring-rose-500/40 border-white shadow-[0_0_40px_rgba(244,63,94,0.6)]",
-                            isAttacker && "ring-4 ring-gold/50 shadow-[0_0_25px_rgba(212,175,55,0.6)]"
-                          )}
+                          className="absolute z-20 h-[90%] w-[90%] cursor-grab transition-all active:cursor-grabbing"
                         >
-                          <span className="relative z-10 leading-none text-xs md:text-lg font-black font-serif italic">{piece.type}</span>
-                          <span className="text-[7px] font-black uppercase tracking-widest opacity-40 mt-0.5 line-clamp-1">{piece.faction[0]}</span>
-                          
-                          {/* Polished token depth effect */}
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-black/40 via-transparent to-white/20" />
-                          <div className="absolute inset-1.5 rounded-full border border-white/10 opacity-20 shadow-inner" />
-                          
-                          {isSelected && (
-                            <motion.div 
-                              layoutId="selection-glow"
-                              className="absolute inset-[-6px] rounded-full border-2 border-gold/60 animate-pulse" 
-                            />
-                          )}
+                          <BoardPieceToken
+                            faction={piece.faction}
+                            pieceType={piece.type}
+                            selected={isSelected}
+                            inCheck={isCheckedGeneral}
+                            attacker={isAttacker}
+                            dimmed={isRemoteWaiting && piece.faction === playerFaction}
+                            interactive
+                          />
                         </motion.div>
                       )}
                     </div>
@@ -1219,6 +1260,14 @@ export default function PracticeBoard() {
                 })
               ))}
             </div>
+
+            {isRemoteWaiting && (
+              <div className="pointer-events-none absolute inset-x-[9%] top-[3.5%] z-30 rounded-full border border-white/10 bg-black/55 px-4 py-2 text-center shadow-[0_12px_30px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+                <span className="text-[10px] font-black uppercase tracking-[0.32em] text-zinc-200">
+                  Awaiting {turn} commander
+                </span>
+              </div>
+            )}
           </div>
           
           <div className="mt-10 flex items-center gap-6 py-6 px-10 glass-dark border border-white/5 rounded-3xl shadow-2xl max-w-2xl relative overflow-hidden group">
