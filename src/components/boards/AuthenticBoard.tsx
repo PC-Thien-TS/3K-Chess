@@ -5,7 +5,6 @@ import { GAME_MODE_META } from '@/shared/gameModes';
 import { cn } from '@/src/lib/utils';
 import {
   applyAuthenticMove,
-  AUTHENTIC_ALLIANCE_POINTS,
   AUTHENTIC_BOARD_NOTE,
   AUTHENTIC_COLS,
   AUTHENTIC_FACTIONS,
@@ -23,9 +22,7 @@ import {
   getAllianceStatus,
   getAuthenticFactionLabel,
   getAuthenticLegalMoves,
-  getAuthenticTerritory,
   getHanStatus,
-  isAuthenticPalacePoint,
   validateAuthenticMove,
   type AuthenticBoardState,
   type AuthenticCapturedPieceRecord,
@@ -79,6 +76,47 @@ const PIECE_THEME: Record<AuthenticFactionOrNeutral, { rim: string; ink: string;
     shadow: 'shadow-[0_10px_20px_rgba(180,120,20,0.18)]',
   },
 };
+
+const BOARD_MIN = 8.75;
+const BOARD_MAX = 91.25;
+const BOARD_SPAN = BOARD_MAX - BOARD_MIN;
+const GRID_INTERVALS = 16;
+const HALF_STEP = BOARD_SPAN / GRID_INTERVALS / 2;
+
+function coordinateToPercent(coord: number) {
+  return BOARD_MIN + (coord / GRID_INTERVALS) * BOARD_SPAN;
+}
+
+function coordinateToStyle(x: number, y: number) {
+  return {
+    left: `${coordinateToPercent(x)}%`,
+    top: `${coordinateToPercent(y)}%`,
+  };
+}
+
+function regionBounds(minCoord: number, maxCoord: number) {
+  const min = coordinateToPercent(minCoord);
+  const max = coordinateToPercent(maxCoord);
+  const start = Math.max(BOARD_MIN, min - HALF_STEP);
+  const end = Math.min(BOARD_MAX, max + HALF_STEP);
+  return {
+    start,
+    size: end - start,
+  };
+}
+
+function svgPoint(coord: number) {
+  return coordinateToPercent(coord);
+}
+
+const SHU_X = regionBounds(3, 13);
+const SHU_Y = regionBounds(0, 4);
+const WEI_X = regionBounds(3, 13);
+const WEI_Y = regionBounds(12, 16);
+const WU_X = regionBounds(0, 4);
+const WU_Y = regionBounds(3, 13);
+const HAN_X = regionBounds(6, 10);
+const HAN_Y = regionBounds(6, 10);
 
 function PieceToken({
   piece,
@@ -183,6 +221,11 @@ export default function AuthenticBoard({
   const checkedPriorityText = gameState.checkedPriorityQueue.length
     ? gameState.checkedPriorityQueue.join(' -> ')
     : 'None';
+  const devLog = (...args: unknown[]) => {
+    if ((import.meta as any).env.DEV) {
+      console.log(...args);
+    }
+  };
 
   const resetBoard = () => {
     setGameState(createInitialAuthenticState());
@@ -193,6 +236,22 @@ export default function AuthenticBoard({
   const handlePointClick = (x: number, y: number) => {
     const point = { x, y };
     const pieceAtPoint = findAuthenticPieceAt(gameState.pieces, point);
+
+    devLog('[Authentic Click]', {
+      x,
+      y,
+      selectedPiece: selectedPiece
+        ? {
+            id: selectedPiece.id,
+            type: selectedPiece.type,
+            owner: selectedPiece.owner,
+            x: selectedPiece.x,
+            y: selectedPiece.y,
+          }
+        : null,
+      currentTurn: gameState.currentTurn,
+      legalMoveCount: legalMoves.length,
+    });
 
     if (!isInteractive) {
       setStatus(AUTHENTIC_LOCAL_ONLY_MESSAGE);
@@ -235,6 +294,12 @@ export default function AuthenticBoard({
       gameState.hanController,
       gameState.allianceState
     );
+
+    devLog('[Authentic Click] validation', {
+      legal: validation.legal,
+      reason: validation.reason,
+      targetOccupied: !!pieceAtPoint,
+    });
 
     if (!validation.legal) {
       setStatus(validation.reason || AUTHENTIC_MOVE_BLOCKED_MESSAGE);
@@ -283,84 +348,178 @@ export default function AuthenticBoard({
               <div className="absolute bottom-[5%] left-[16%] h-[28%] w-[68%] rounded-[45%] bg-slate-300/18 blur-3xl" />
               <div className="absolute left-[34%] top-[34%] h-[32%] w-[32%] rounded-[45%] bg-amber-300/12 blur-3xl" />
               <div className="absolute inset-[4.5%] rounded-[2.2rem] border border-[#704c28]/18" />
+              <div
+                className="absolute rounded-[1.6rem] bg-rose-100/22"
+                style={{
+                  left: `${SHU_X.start}%`,
+                  top: `${SHU_Y.start}%`,
+                  width: `${SHU_X.size}%`,
+                  height: `${SHU_Y.size}%`,
+                }}
+              />
+              <div
+                className="absolute rounded-[1.6rem] bg-emerald-100/18"
+                style={{
+                  left: `${WU_X.start}%`,
+                  top: `${WU_Y.start}%`,
+                  width: `${WU_X.size}%`,
+                  height: `${WU_Y.size}%`,
+                }}
+              />
+              <div
+                className="absolute rounded-[1.6rem] bg-slate-100/18"
+                style={{
+                  left: `${WEI_X.start}%`,
+                  top: `${WEI_Y.start}%`,
+                  width: `${WEI_X.size}%`,
+                  height: `${WEI_Y.size}%`,
+                }}
+              />
+              <div
+                className="absolute rounded-[1.4rem] bg-amber-100/24"
+                style={{
+                  left: `${HAN_X.start}%`,
+                  top: `${HAN_Y.start}%`,
+                  width: `${HAN_X.size}%`,
+                  height: `${HAN_Y.size}%`,
+                }}
+              />
 
-              <div className="relative z-10 grid h-full w-full grid-cols-17 grid-rows-17">
+              <svg viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+                {Array.from({ length: AUTHENTIC_COLS }).map((_, x) => {
+                  const pos = svgPoint(x);
+                  return (
+                    <line
+                      key={`v-${x}`}
+                      x1={pos}
+                      y1={BOARD_MIN}
+                      x2={pos}
+                      y2={BOARD_MAX}
+                      stroke="rgba(71,45,22,0.28)"
+                      strokeWidth="0.28"
+                    />
+                  );
+                })}
+                {Array.from({ length: AUTHENTIC_ROWS }).map((_, y) => {
+                  const pos = svgPoint(y);
+                  return (
+                    <line
+                      key={`h-${y}`}
+                      x1={BOARD_MIN}
+                      y1={pos}
+                      x2={BOARD_MAX}
+                      y2={pos}
+                      stroke="rgba(71,45,22,0.28)"
+                      strokeWidth="0.28"
+                    />
+                  );
+                })}
+
+                <line x1={svgPoint(7)} y1={svgPoint(0)} x2={svgPoint(9)} y2={svgPoint(2)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
+                <line x1={svgPoint(9)} y1={svgPoint(0)} x2={svgPoint(7)} y2={svgPoint(2)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
+                <line x1={svgPoint(0)} y1={svgPoint(7)} x2={svgPoint(2)} y2={svgPoint(9)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
+                <line x1={svgPoint(2)} y1={svgPoint(7)} x2={svgPoint(0)} y2={svgPoint(9)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
+                <line x1={svgPoint(7)} y1={svgPoint(14)} x2={svgPoint(9)} y2={svgPoint(16)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
+                <line x1={svgPoint(9)} y1={svgPoint(14)} x2={svgPoint(7)} y2={svgPoint(16)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
+
+                <circle cx={svgPoint(8)} cy={svgPoint(8)} r="10.8" fill="none" stroke="rgba(107,73,38,0.16)" strokeWidth="0.24" />
+                <circle cx={svgPoint(8)} cy={svgPoint(8)} r="13.6" fill="none" stroke="rgba(107,73,38,0.08)" strokeWidth="0.22" />
+              </svg>
+
+              <div className="absolute inset-0">
                 {Array.from({ length: AUTHENTIC_ROWS * AUTHENTIC_COLS }).map((_, i) => {
                   const x = i % AUTHENTIC_COLS;
                   const y = Math.floor(i / AUTHENTIC_COLS);
                   const point = { x, y };
-                  const territory = getAuthenticTerritory(x, y);
                   const piece = findAuthenticPieceAt(gameState.pieces, point);
                   const allianceFaction = getAlliancePointFaction(point);
-                  const isSelected = piece?.id === selectedId;
                   const isLegalMove = legalMoves.some((move) => move.x === x && move.y === y);
-                  const isLastMove =
-                    !!gameState.lastMove &&
-                    (samePoint(gameState.lastMove.from, point) || samePoint(gameState.lastMove.to, point));
-                  const isPalaceCell =
-                    isAuthenticPalacePoint(x, y, 'Shu') ||
-                    isAuthenticPalacePoint(x, y, 'Wu') ||
-                    isAuthenticPalacePoint(x, y, 'Wei');
+                  const isLastMoveFrom = !!gameState.lastMove && samePoint(gameState.lastMove.from, point);
+                  const isLastMoveTo = !!gameState.lastMove && samePoint(gameState.lastMove.to, point);
                   const isAccent = AUTHENTIC_POINT_ACCENTS.some((accent) => samePoint(accent, point));
-                  const isHanEmperorSeat = x === 8 && y === 8;
+                  const markerOnPiece = isLegalMove && !!piece;
 
                   return (
-                    <button
-                      key={`${x}-${y}`}
-                      type="button"
-                      onClick={() => handlePointClick(x, y)}
-                      className={cn(
-                        'relative min-h-0 min-w-0 border border-[#55391d]/[0.18] transition-all',
-                        territory === 'Shu' && 'bg-rose-100/22',
-                        territory === 'Wei' && 'bg-slate-100/18',
-                        territory === 'Wu' && 'bg-emerald-100/18',
-                        territory === 'Han' && 'bg-amber-100/24',
-                        isInteractive ? 'cursor-pointer' : 'cursor-default',
-                        isLastMove && 'bg-amber-200/22'
-                      )}
-                    >
-                      <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_49%,rgba(71,45,22,0.09)_50%,transparent_51%),linear-gradient(180deg,transparent_49%,rgba(71,45,22,0.09)_50%,transparent_51%)]" />
-                      {isPalaceCell && (
-                        <>
-                          <div className="absolute left-[18%] right-[18%] top-1/2 h-px -translate-y-1/2 rotate-45 bg-[#593918]/55" />
-                          <div className="absolute left-[18%] right-[18%] top-1/2 h-px -translate-y-1/2 -rotate-45 bg-[#593918]/55" />
-                        </>
-                      )}
-                      {allianceFaction && (
-                        <div className="absolute inset-[23%] rotate-45 rounded-[0.25rem] border border-[#7a521f]/45 bg-amber-200/25">
-                          <div className="absolute inset-0 flex -rotate-45 items-center justify-center text-[0.38rem] font-black uppercase tracking-[0.1em] text-[#6a4517]">
-                            {allianceFaction[0]}
-                          </div>
-                        </div>
-                      )}
-                      {isHanEmperorSeat && (
-                        <div className="absolute inset-[12%] rounded-full border border-amber-700/40" />
-                      )}
-                      <div
+                    <React.Fragment key={`${x}-${y}`}>
+                      <button
+                        type="button"
+                        onClick={() => handlePointClick(x, y)}
                         className={cn(
-                          'absolute left-1/2 top-1/2 h-[16%] w-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5f4225]/60',
-                          isAccent && 'h-[22%] w-[22%] bg-[#4b3018]/75'
+                          'absolute z-10 rounded-full bg-transparent',
+                          isInteractive ? 'cursor-pointer' : 'cursor-default'
                         )}
+                        style={{
+                          ...coordinateToStyle(x, y),
+                          width: '6.25%',
+                          height: '6.25%',
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                        aria-label={`Point ${x}, ${y}`}
                       />
-                      {isLegalMove && (
-                        <div className="absolute inset-[17%] rounded-full border border-amber-700/45 bg-amber-100/15 shadow-[0_0_16px_rgba(180,120,20,0.24)]" />
-                      )}
-                      {piece && (
-                        <div className="absolute inset-[5%] flex items-center justify-center">
-                          <PieceToken piece={piece} selected={isSelected} ownedByCurrentTurn={piece.owner === gameState.currentTurn} />
+
+                      {(isAccent || isLastMoveFrom || isLastMoveTo || isLegalMove || allianceFaction || (x === 8 && y === 8)) && (
+                        <div
+                          className="pointer-events-none absolute z-20"
+                          style={{
+                            ...coordinateToStyle(x, y),
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          {isLastMoveFrom && (
+                            <div className="absolute left-1/2 top-1/2 h-[2.1rem] w-[2.1rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-300/45 bg-sky-100/10" />
+                          )}
+                          {isLastMoveTo && (
+                            <div className="absolute left-1/2 top-1/2 h-[2.5rem] w-[2.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-500/55 bg-amber-200/12 shadow-[0_0_18px_rgba(180,120,20,0.2)]" />
+                          )}
+                          {allianceFaction && (
+                            <div className="absolute left-1/2 top-1/2 flex h-[1.2rem] w-[1.2rem] -translate-x-1/2 -translate-y-1/2 rotate-45 items-center justify-center rounded-[0.18rem] border border-[#7a521f]/45 bg-amber-200/35">
+                              <span className="-rotate-45 text-[0.42rem] font-black uppercase tracking-[0.1em] text-[#6a4517]">
+                                {allianceFaction[0]}
+                              </span>
+                            </div>
+                          )}
+                          {x === 8 && y === 8 && (
+                            <div className="absolute left-1/2 top-1/2 h-[1.9rem] w-[1.9rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45" />
+                          )}
+                          {isAccent && (
+                            <div
+                              className={cn(
+                                'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5f4225]/60',
+                                isAccent ? 'h-[0.42rem] w-[0.42rem]' : 'h-[0.28rem] w-[0.28rem]'
+                              )}
+                            />
+                          )}
+                          {isLegalMove && !markerOnPiece && (
+                            <div className="absolute left-1/2 top-1/2 h-[1.05rem] w-[1.05rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45 bg-amber-100/30 shadow-[0_0_12px_rgba(180,120,20,0.22)]" />
+                          )}
+                          {markerOnPiece && (
+                            <div className="absolute left-1/2 top-1/2 h-[3.1rem] w-[3.1rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-rose-400/80 bg-rose-100/8 shadow-[0_0_18px_rgba(244,63,94,0.24)]" />
+                          )}
                         </div>
                       )}
-                    </button>
+                    </React.Fragment>
                   );
                 })}
-              </div>
 
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute left-[33.5%] right-[33.5%] top-[8.9%] h-px bg-[#4d3317]/70" />
-                <div className="absolute bottom-[33.5%] left-[8.9%] top-[33.5%] w-px bg-[#4d3317]/70" />
-                <div className="absolute bottom-[8.9%] left-[33.5%] right-[33.5%] h-px bg-[#4d3317]/70" />
-                <div className="absolute left-[36%] top-[36%] h-[28%] w-[28%] rounded-full border border-[#6b4926]/18" />
-                <div className="absolute left-[36%] top-[36%] h-[28%] w-[28%] scale-[1.24] rounded-full border border-[#6b4926]/10" />
+                {gameState.pieces.map((piece) => {
+                  const isSelected = piece.id === selectedId;
+                  return (
+                    <div
+                      key={piece.id}
+                      className="pointer-events-none absolute z-30 h-[9.2%] w-[9.2%] sm:h-[8.4%] sm:w-[8.4%]"
+                      style={{
+                        ...coordinateToStyle(piece.x, piece.y),
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                    >
+                      <PieceToken
+                        piece={piece}
+                        selected={isSelected}
+                        ownedByCurrentTurn={piece.owner === gameState.currentTurn}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
