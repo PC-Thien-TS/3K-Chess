@@ -8,7 +8,7 @@ import {
   getPieceName,
   BotDifficulty,
   findGeneral
-} from '../rules/threeKingdomRules';
+} from '../rules/classicThreeKingdomRules';
 
 const PIECE_VALUES: Record<string, number> = {
   'G': 1000,

@@ -1,5 +1,6 @@
 import { WarRoom, validateWarRoom, mapWarRoomToMatchSetup } from '../storage/warRooms';
 import { Faction } from './threeKingdomRules';
+import { GAME_MODE_RULESETS } from '@/shared/gameModes';
 
 export function runMultiplayerArchitectureQA() {
   console.group("⚔️ THREE KINGDOMS CHESS: MULTIPLAYER ARCHITECTURE QA");
@@ -25,7 +26,8 @@ export function runMultiplayerArchitectureQA() {
         Wu: { faction: 'Wu', occupantType: 'bot', botDifficulty: 'normal', ready: true }
     },
     roomRules: {
-        ruleset: '3K_CHESS_STANDARD_V1',
+        ruleset: GAME_MODE_RULESETS.classic,
+        gameMode: 'classic',
         allowBots: true,
         botDifficultyDefault: 'normal'
     }
