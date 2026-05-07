@@ -16,7 +16,7 @@ const FACTIONS: { id: Faction; name: string }[] = [
 
 export default function CreateRoom() {
   const navigate = useNavigate();
-  const [hostName, setHostName] = useState("");
+  const [hostName, setHostName] = useState(localStorage.getItem('last_commander_name') || "");
   const [selectedFaction, setSelectedFaction] = useState<Faction>('Shu');
   const [allowBots, setAllowBots] = useState(true);
   const [defaultDifficulty, setDefaultDifficulty] = useState<BotDifficulty>('normal');
@@ -29,6 +29,9 @@ export default function CreateRoom() {
     e.preventDefault();
     const name = hostName.trim();
     if (!name || isCreating) return;
+    
+    // Persist name
+    localStorage.setItem('last_commander_name', name);
     
     setError(null);
     setIsCreating(true);
@@ -68,7 +71,7 @@ export default function CreateRoom() {
           if ((import.meta as any).env.DEV) {
             console.log(`[Strategic Command] Online Chamber Synchronized: ${room.roomCode}`);
           }
-          navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online' } });
+          navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online', playerName: name } });
           setIsCreating(false);
           unsubscribeState();
           unsubscribeError();

@@ -61,6 +61,12 @@ class RoomManager {
     const room = this.rooms.get(payload.roomCode);
     if (!room) throw new Error("Chamber not found in active archives.");
     
+    // Check if clientId is already in a slot
+    const existingSlot = (['Shu', 'Wei', 'Wu'] as const).find(f => room.slots[f].clientId === clientId);
+    if (existingSlot) {
+      return room; // Already in a slot, just return the state
+    }
+
     // Automatically try to join an empty slot if possible
     const firstEmpty = (['Shu', 'Wei', 'Wu'] as const).find(f => room.slots[f].occupantType === 'empty');
     if (firstEmpty) {

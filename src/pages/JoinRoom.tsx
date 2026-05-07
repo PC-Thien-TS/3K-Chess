@@ -7,7 +7,7 @@ import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 export default function JoinRoom() {
   const navigate = useNavigate();
   const [roomCode, setRoomCode] = useState("");
-  const [playerName, setPlayerName] = useState("");
+  const [playerName, setPlayerName] = useState(localStorage.getItem('last_commander_name') || "");
   const [error, setError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
 
@@ -24,6 +24,9 @@ export default function JoinRoom() {
     }
 
     setIsJoining(true);
+    
+    // Persist name
+    localStorage.setItem('last_commander_name', playerName);
     
     // 1. Try local first as it's instant
     const localRoom = getWarRoom(code);

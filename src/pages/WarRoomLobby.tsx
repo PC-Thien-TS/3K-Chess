@@ -37,6 +37,7 @@ export default function WarRoomLobby() {
   const { updateConfig } = useMatchContext();
   
   const [room, setRoom] = useState<WarRoom | OnlineWarRoom | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export default function WarRoomLobby() {
 
   useEffect(() => {
     if (!roomCode) return;
+    setIsLoading(true);
 
     if (roomMode === 'online') {
       const wsUrl = (import.meta as any).env.VITE_WS_URL;
@@ -55,6 +57,7 @@ export default function WarRoomLobby() {
            setRoomMode('local');
         } else {
            setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+           setIsLoading(false);
         }
         return;
       }
@@ -63,31 +66,42 @@ export default function WarRoomLobby() {
       setIsConnected(onlineRoomClient.isConnected);
 
       const unsubState = onlineRoomClient.subscribeToRoomState((newRoom) => {
-        setRoom(newRoom);
-        setIsConnected(true);
+        if (newRoom.roomCode === roomCode) {
+          setRoom(newRoom);
+          setIsConnected(true);
+          setIsLoading(false);
+        }
       });
 
       const unsubError = onlineRoomClient.subscribeToErrors((err) => {
         setError(`Strategic Failure: ${err}`);
+        setIsLoading(false);
       });
 
       const unsubMatch = onlineRoomClient.subscribeToMatchStart((newRoom) => {
-        setRoom(newRoom);
-        setIsStarting(true);
-        const matchData = mapWarRoomToMatchSetup(newRoom as any);
-        setTimeout(() => {
-          updateConfig(matchData);
-          // Find which faction the local user is
-          const localFaction = (Object.entries(newRoom.slots) as [Faction, any][]).find(([f, s]) => s.clientId === onlineRoomClient.socketId)?.[0];
-          const isHost = onlineRoomClient.socketId === newRoom.hostClientId;
-          navigate('/practice', { state: { roomCode: newRoom.roomCode, mode: 'online', playerFaction: localFaction, isHost } });
-        }, 1200);
+        if (newRoom.roomCode === roomCode) {
+          setRoom(newRoom);
+          setIsStarting(true);
+          const matchData = mapWarRoomToMatchSetup(newRoom as any);
+          setTimeout(() => {
+            updateConfig(matchData);
+            const localFaction = (Object.entries(newRoom.slots) as [Faction, any][]).find(([f, s]) => s.clientId === onlineRoomClient.socketId)?.[0];
+            const isHost = onlineRoomClient.socketId === newRoom.hostClientId;
+            navigate('/practice', { state: { roomCode: newRoom.roomCode, mode: 'online', playerFaction: localFaction, isHost } });
+          }, 1200);
+        }
       });
 
-      // Request initial state or join if re-entering
       const stateName = (location.state as any)?.playerName;
       if (stateName) {
+        if ((import.meta as any).env.DEV) {
+          console.log(`[Strategic Command] Synchronizing with Cloud Chamber: ${roomCode} for ${stateName}`);
+        }
         onlineRoomClient.joinRoom({ roomCode, playerName: stateName });
+      } else {
+        // Just listen for state for now, maybe prompt for name later if we're just spectating or joining
+        // For now, let's try to join as a generic commander if name is missing from state
+        onlineRoomClient.joinRoom({ roomCode, playerName: localStorage.getItem('last_commander_name') || "Commander" });
       }
 
       return () => {
@@ -102,9 +116,11 @@ export default function WarRoomLobby() {
         if (!validation.valid) {
           setError(`Strategic Breach Detected: ${validation.errors[0]}`);
           setRoom(found);
+          setIsLoading(false);
           return;
         }
         setRoom(found);
+        setIsLoading(false);
         
         const stateName = (location.state as any)?.playerName;
         if (stateName) {
@@ -125,9 +141,11 @@ export default function WarRoomLobby() {
         const wsUrl = (import.meta as any).env.VITE_WS_URL;
         if (!wsUrl) {
             setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+            setIsLoading(false);
         } else {
             setError("Chamber not found locally. Attempting to locate in cloud repositories...");
             setRoomMode('online');
+            // Effect will re-run with online mode
         }
       }
     }
@@ -240,6 +258,43 @@ export default function WarRoomLobby() {
         setError(err.message || "Failed to initialize tactical sequence.");
     }
   };
+
+  if (isLoading && !room) {
+    return (
+      <div className="pt-24 min-h-screen flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+          <div className="w-24 h-24 rounded-full border-4 border-gold/20 border-t-gold animate-spin" />
+          <Sword className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gold animate-pulse" size={32} />
+        </div>
+        <div className="text-center">
+            <h2 className="text-2xl font-serif font-black text-white tracking-[0.3em] uppercase mb-2">Synchronizing War Room</h2>
+            <p className="text-zinc-500 font-serif italic uppercase text-[10px] tracking-widest animate-pulse">Contacting Strategic Command...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!room && error) {
+    return (
+      <div className="pt-24 min-h-screen flex flex-col items-center justify-center p-6">
+         <div className="glass-dark border border-rose-500/20 p-12 rounded-[3rem] max-w-md w-full text-center space-y-8">
+            <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500 mx-auto border border-rose-500/20">
+               <ShieldAlert size={40} />
+            </div>
+            <div className="space-y-2">
+               <h2 className="text-white text-2xl font-serif font-black uppercase tracking-widest">Tactical Breach</h2>
+               <p className="text-zinc-500 text-xs font-serif italic leading-relaxed">{error}</p>
+            </div>
+            <Link 
+              to="/rooms" 
+              className="block w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
+            >
+               Return to Council
+            </Link>
+         </div>
+      </div>
+    );
+  }
 
   if (!room) return null;
 
