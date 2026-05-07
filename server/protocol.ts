@@ -1,5 +1,6 @@
 export type { OnlineWarRoom };
 import { Faction, OnlineWarRoom } from './types';
+import { GameMode } from '../shared/gameModes';
 
 export enum ClientMessage {
   CREATE_ROOM = 'CREATE_ROOM',
@@ -27,6 +28,7 @@ export enum ServerMessage {
 export interface CreateRoomPayload {
   hostName: string;
   preferredFaction: Faction;
+  gameMode: GameMode;
   allowBots: boolean;
   botDifficultyDefault: "easy" | "normal" | "hard";
 }

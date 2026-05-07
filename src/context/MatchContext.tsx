@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Faction, FactionConfig, MatchConfig } from '../rules/threeKingdomRules';
+import { MatchConfig } from '../rules/classicThreeKingdomRules';
 
 interface MatchContextType {
   config: MatchConfig;
@@ -7,6 +7,7 @@ interface MatchContextType {
 }
 
 const DEFAULT_CONFIG: MatchConfig = {
+  gameMode: 'classic',
   factions: {
     Shu: { control: 'Human', difficulty: 'easy' },
     Wei: { control: 'Bot', difficulty: 'easy' },

@@ -1,3 +1,5 @@
+import { GameMode, GameRuleset } from '@/shared/gameModes';
+
 /**
  * Rule Engine v1 for 3-Player Three Kingdoms Chess
  * Normalized validation and centralized error messages.
@@ -50,6 +52,7 @@ export interface FactionConfig {
 }
 
 export interface MatchConfig {
+  gameMode: GameMode;
   factions: Record<Faction, FactionConfig>;
   primaryKingdom: Faction;
 }
@@ -88,7 +91,7 @@ export interface RecordedMove {
 export interface MatchRecord {
   id: string;
   createdAt: string;
-  ruleset: "3K_CHESS_STANDARD_V1";
+  ruleset: GameRuleset;
   setup: MatchConfig;
   winner: Faction | null;
   eliminatedFactions: Faction[];

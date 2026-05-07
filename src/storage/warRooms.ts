@@ -1,4 +1,5 @@
-import { Faction, BotDifficulty } from '../rules/threeKingdomRules';
+import { Faction, BotDifficulty } from '../rules/classicThreeKingdomRules';
+import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS, GameMode, GameRuleset, normalizeGameMode } from '@/shared/gameModes';
 
 export type RoomFactionSlot = {
   faction: Faction;
@@ -15,7 +16,8 @@ export interface WarRoom {
   status: 'waiting' | 'playing' | 'finished';
   slots: Record<Exclude<Faction, 'None'>, RoomFactionSlot>;
   roomRules: {
-    ruleset: '3K_CHESS_STANDARD_V1';
+    ruleset: GameRuleset;
+    gameMode: GameMode;
     allowBots: boolean;
     botDifficultyDefault: BotDifficulty;
   };
@@ -125,11 +127,18 @@ export function validateWarRoom(room: any): { valid: boolean; errors: string[] }
     });
   }
 
-  if (!room.roomRules || room.roomRules.ruleset !== '3K_CHESS_STANDARD_V1') {
+  if (!room.roomRules || !Object.values(GAME_MODE_RULESETS).includes(room.roomRules.ruleset)) {
     errors.push("Invalid ruleset configuration");
+  }
+  if (room.roomRules?.gameMode && !['classic', 'authentic'].includes(room.roomRules.gameMode)) {
+    errors.push("Invalid game mode configuration");
   }
 
   return { valid: errors.length === 0, errors };
+}
+
+export function getWarRoomGameMode(room: Pick<WarRoom, 'roomRules'> | null | undefined): GameMode {
+  return normalizeGameMode(room?.roomRules?.gameMode, DEFAULT_GAME_MODE);
 }
 
 /**
@@ -171,6 +180,7 @@ export function mapWarRoomToMatchSetup(room: WarRoom) {
   factionsConfig.None = { control: 'Human', difficulty: 'normal' };
 
   return {
+    gameMode: getWarRoomGameMode(room),
     factions: factionsConfig,
     primaryKingdom: 'Shu' as Faction
   };

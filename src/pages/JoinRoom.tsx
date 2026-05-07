@@ -5,6 +5,7 @@ import { ChevronLeft, Key, User, ShieldAlert } from 'lucide-react';
 import { getWarRoom, normalizeRoomCode, isValidRoomCode } from '@/src/storage/warRooms';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { cn } from '@/src/lib/utils';
+import { normalizeGameMode } from '@/shared/gameModes';
 
 export default function JoinRoom() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function JoinRoom() {
     // 1. Prioritize local first as it's instant and requested by requirements
     const localRoom = getWarRoom(code);
     if (localRoom) {
-        navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
+        navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local', gameMode: normalizeGameMode(localRoom.roomRules?.gameMode) } });
         return;
     }
     
@@ -67,7 +68,7 @@ export default function JoinRoom() {
 
     const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
         if (room.roomCode === code) {
-            navigate(`/rooms/${room.roomCode}`, { state: { playerName, mode: 'online' } });
+            navigate(`/rooms/${room.roomCode}`, { state: { playerName, mode: 'online', gameMode: normalizeGameMode((room as any).roomRules?.gameMode) } });
             cleanup();
         }
     });

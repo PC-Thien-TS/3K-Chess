@@ -1,3 +1,5 @@
+import { GameMode, GameRuleset } from '../shared/gameModes';
+
 export type Faction = "Shu" | "Wei" | "Wu" | "None";
 
 export interface OnlineRoomSlot {
@@ -17,7 +19,8 @@ export interface OnlineWarRoom {
   status: "waiting" | "playing" | "finished";
   slots: Record<Exclude<Faction, 'None'>, OnlineRoomSlot>;
   roomRules: {
-    ruleset: "3K_CHESS_STANDARD_V1";
+    ruleset: GameRuleset;
+    gameMode: GameMode;
     allowBots: boolean;
     botDifficultyDefault: "easy" | "normal" | "hard";
   };

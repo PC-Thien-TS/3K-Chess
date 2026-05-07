@@ -24,6 +24,7 @@ import {
   saveMatchRecord
 } from '@/src/storage/localMatchArchive';
 import { MatchRecord } from '@/src/rules/threeKingdomRules';
+import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTION_COLORS = {
   Shu: 'text-rose-500',
@@ -173,6 +174,9 @@ export default function MatchArchive() {
                        War Room: {match.source.roomCode}
                     </div>
                   )}
+                  <div className="inline-flex items-center gap-2 text-[8px] font-black text-white uppercase tracking-[0.2em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
+                     Mode: {GAME_MODE_META[normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE)].shortLabel}
+                  </div>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-black group-hover:rotate-12 group-hover:scale-110 transition-all shadow-xl">
                   <PlayCircle size={24} />
@@ -254,7 +258,7 @@ export default function MatchArchive() {
               : "The great library awaits your first conquest. Lead your dynasty to glory and record your success here."}
           </p>
           {!searchTerm && (
-            <Link to="/setup" className="mt-10 bg-gold text-black px-12 py-5 rounded-2xl font-black uppercase tracking-[0.4em] text-xs transition-all hover:bg-white hover:scale-105 active:scale-95 shadow-2xl relative z-10">
+            <Link to="/setup?mode=classic" className="mt-10 bg-gold text-black px-12 py-5 rounded-2xl font-black uppercase tracking-[0.4em] text-xs transition-all hover:bg-white hover:scale-105 active:scale-95 shadow-2xl relative z-10">
                Begin First Campaign
             </Link>
           )}

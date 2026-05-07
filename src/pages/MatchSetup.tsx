@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sword, Shield, Zap, User, Cpu, ChevronRight, RotateCcw } from 'lucide-react';
-import { Faction, PlayerType, BotDifficulty, MatchConfig } from '../rules/threeKingdomRules';
+import { Faction, PlayerType, BotDifficulty, MatchConfig } from '../rules/classicThreeKingdomRules';
 import { useMatchContext } from '../context/MatchContext';
 import { cn } from '../lib/utils';
+import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 
@@ -43,10 +44,13 @@ const DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
 
 export default function MatchSetup() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { config, updateConfig } = useMatchContext();
+  const initialGameMode = normalizeGameMode(searchParams.get('mode') || config.gameMode, DEFAULT_GAME_MODE);
   
   const [localFactions, setLocalFactions] = useState(config.factions);
   const [localPrimary, setLocalPrimary] = useState(config.primaryKingdom);
+  const [localGameMode, setLocalGameMode] = useState<GameMode>(initialGameMode);
 
   const handleControlToggle = (faction: Faction) => {
     setLocalFactions(prev => {
@@ -76,10 +80,16 @@ export default function MatchSetup() {
 
   const handleStart = () => {
     updateConfig({
+      gameMode: localGameMode,
       factions: localFactions,
       primaryKingdom: localPrimary
     });
-    navigate('/practice');
+    navigate('/practice', { state: { gameMode: localGameMode } });
+  };
+
+  const handleModeSelect = (mode: GameMode) => {
+    setLocalGameMode(mode);
+    setSearchParams({ mode });
   };
 
   return (
@@ -98,6 +108,44 @@ export default function MatchSetup() {
           "The three powers have gathered at the river's edge. Finalize your command and seal the fate of the realm."
         </p>
       </motion.div>
+
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {(['classic', 'authentic'] as GameMode[]).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => handleModeSelect(mode)}
+            className={cn(
+              "text-left glass-dark border rounded-[2.5rem] p-8 transition-all shadow-2xl",
+              localGameMode === mode
+                ? "border-gold/40 bg-gold/[0.06]"
+                : "border-white/5 bg-white/[0.02] hover:border-white/10"
+            )}
+          >
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gold">
+                {GAME_MODE_META[mode].shortLabel}
+              </span>
+              <div className={cn(
+                "w-3 h-3 rounded-full border",
+                localGameMode === mode ? "bg-gold border-gold" : "border-white/20"
+              )} />
+            </div>
+            <h3 className="text-white text-2xl font-serif font-black uppercase tracking-tight mb-3">
+              {GAME_MODE_META[mode].label}
+            </h3>
+            <p className="text-zinc-500 font-serif italic text-sm leading-relaxed">
+              {GAME_MODE_META[mode].description}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {localGameMode === 'authentic' && (
+        <div className="w-full max-w-5xl mb-12 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] p-6 text-amber-100 text-sm font-serif italic">
+          Authentic Three Kingdoms mode is under tactical construction.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full max-w-7xl mb-16">
         {FACTIONS.map((f, idx) => (
@@ -228,6 +276,7 @@ export default function MatchSetup() {
         <div className="flex flex-col gap-2 relative z-10">
           <h4 className="text-gold font-serif font-black uppercase tracking-[0.4em] text-sm">Treaty of the Three Kingdoms</h4>
           <div className="flex items-center gap-4 text-zinc-500 text-[11px] font-serif italic tracking-wide">
+             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {GAME_MODE_META[localGameMode].shortLabel} Mode</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> 3-Dominion Battle</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> Traditional Protocol</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> Unified Objective</span>

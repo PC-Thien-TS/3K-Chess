@@ -1,5 +1,6 @@
 import { OnlineWarRoom, Faction, OnlineRoomSlot } from './types';
 import { CreateRoomPayload, JoinRoomPayload, JoinSlotPayload, SlotActionPayload, AddBotPayload, SetReadyPayload, SubmitMovePayload } from './protocol';
+import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS } from '../shared/gameModes';
 
 /**
  * TODO: Backend v2 - Implement server-authoritative chess rule validation.
@@ -11,6 +12,7 @@ class RoomManager {
 
   createRoom(payload: CreateRoomPayload, clientId: string): OnlineWarRoom {
     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const gameMode = payload.gameMode || DEFAULT_GAME_MODE;
     
     const slots: OnlineWarRoom['slots'] = {
       Shu: { faction: 'Shu', occupantType: 'empty', ready: false },
@@ -47,7 +49,8 @@ class RoomManager {
       status: 'waiting',
       slots,
       roomRules: {
-        ruleset: '3K_CHESS_STANDARD_V1',
+        ruleset: GAME_MODE_RULESETS[gameMode],
+        gameMode,
         allowBots: payload.allowBots,
         botDifficultyDefault: payload.botDifficultyDefault
       }

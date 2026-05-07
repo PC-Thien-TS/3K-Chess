@@ -22,7 +22,7 @@ import {
   MatchStats,
   RecordedMove,
   MatchRecord
-} from '@/src/rules/threeKingdomRules';
+} from '@/src/rules/classicThreeKingdomRules';
 import { chooseBotMove } from '@/src/ai/botAI';
 import { runRuleEngineDevTests } from '@/src/rules/threeKingdomRules.devTests';
 import { useMatchContext } from '@/src/context/MatchContext';
@@ -30,6 +30,8 @@ import { saveMatchRecord, exportMatchRecord } from '@/src/storage/localMatchArch
 import { Save, Download, PlayCircle } from 'lucide-react';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
+import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
+import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {
@@ -77,7 +79,7 @@ const getInitialPieces = (): Piece[] => {
   return piecesList;
 };
 
-export default function PracticeBoard() {
+function ClassicPracticeBoard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { config } = useMatchContext();
@@ -610,7 +612,7 @@ export default function PracticeBoard() {
   const createMatchRecord = (): MatchRecord => ({
     id: `match-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     createdAt: new Date().toISOString(),
-    ruleset: "3K_CHESS_STANDARD_V1",
+    ruleset: GAME_MODE_RULESETS.classic,
     setup: config,
     winner,
     eliminatedFactions: eliminated,
@@ -808,7 +810,7 @@ export default function PracticeBoard() {
                     if (roomCode) {
                       navigate(`/rooms/${roomCode}`);
                     } else {
-                      navigate('/setup');
+                      navigate(`/setup?mode=${config.gameMode}`);
                     }
                   }}
                   className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-5 rounded-2xl font-black uppercase tracking-[0.4em] text-xs transition-all flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95"
@@ -1028,7 +1030,7 @@ export default function PracticeBoard() {
               if (roomCode) {
                 navigate(`/rooms/${roomCode}`);
               } else {
-                navigate('/setup');
+                navigate(`/setup?mode=${config.gameMode}`);
               }
             }}
             className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/5 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
@@ -1512,6 +1514,24 @@ export default function PracticeBoard() {
       </div>
     </div>
   );
+}
+
+export default function PracticeBoard() {
+  const location = useLocation();
+  const { config } = useMatchContext();
+  const gameMode = normalizeGameMode((location.state as any)?.gameMode ?? config.gameMode, DEFAULT_GAME_MODE);
+
+  if (gameMode === 'authentic') {
+    return (
+      <AuthenticBoard
+        roomCode={(location.state as any)?.roomCode}
+        roomMode={(location.state as any)?.mode || 'local'}
+        context="practice"
+      />
+    );
+  }
+
+  return <ClassicPracticeBoard />;
 }
 
 function Zap({ size, className, fill }: { size: number, className?: string, fill?: string }) {

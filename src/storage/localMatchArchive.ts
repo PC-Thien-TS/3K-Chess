@@ -1,4 +1,5 @@
 import { MatchRecord } from '../rules/threeKingdomRules';
+import { GAME_MODE_RULESETS } from '@/shared/gameModes';
 
 const STORAGE_KEY = 'threeKingdomsChess.matchArchive.v1';
 
@@ -43,10 +44,13 @@ export function exportMatchRecord(record: MatchRecord) {
 export function validateMatchRecord(record: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   if (!record.id) errors.push("Missing ID");
-  if (record.ruleset !== "3K_CHESS_STANDARD_V1") errors.push("Invalid or missing ruleset");
+  if (!Object.values(GAME_MODE_RULESETS).includes(record.ruleset)) errors.push("Invalid or missing ruleset");
   if (!Array.isArray(record.initialPieces)) errors.push("Missing initial pieces");
   if (!Array.isArray(record.moves)) errors.push("Missing moves array");
   if (!record.setup) errors.push("Missing setup configuration");
+  if (record.setup && record.setup.gameMode && !['classic', 'authentic'].includes(record.setup.gameMode)) {
+    errors.push("Invalid game mode");
+  }
   
   return {
     valid: errors.length === 0,

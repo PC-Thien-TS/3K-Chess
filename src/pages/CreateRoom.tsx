@@ -1,23 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Shield, Sword, User, Settings2, Zap } from 'lucide-react';
 import { generateRoomCode, saveWarRoom, WarRoom, RoomFactionSlot } from '@/src/storage/warRooms';
-import { Faction, BotDifficulty } from '@/src/rules/threeKingdomRules';
+import { Faction, BotDifficulty } from '@/src/rules/classicThreeKingdomRules';
 import { cn } from '@/src/lib/utils';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
-import { ServerMessage } from '@/server/protocol';
-
-const FACTIONS: { id: Faction; name: string }[] = [
-  { id: 'Shu', name: 'Kingdom of Shu' },
-  { id: 'Wei', name: 'Kingdom of Wei' },
-  { id: 'Wu', name: 'Kingdom of Wu' }
-];
+import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
 
 export default function CreateRoom() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [hostName, setHostName] = useState(localStorage.getItem('last_commander_name') || "");
   const [selectedFaction, setSelectedFaction] = useState<Faction>('Shu');
+  const [gameMode, setGameMode] = useState<GameMode>(normalizeGameMode(searchParams.get('mode'), DEFAULT_GAME_MODE));
   const [allowBots, setAllowBots] = useState(true);
   const [defaultDifficulty, setDefaultDifficulty] = useState<BotDifficulty>('normal');
   const wsUrlAvailable = !!(import.meta as any).env.VITE_WS_URL;
@@ -71,7 +67,7 @@ export default function CreateRoom() {
           if ((import.meta as any).env.DEV) {
             console.log(`[Strategic Command] Online Chamber Synchronized: ${room.roomCode}`);
           }
-          navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online', playerName: name } });
+          navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online', playerName: name, gameMode } });
           setIsCreating(false);
           unsubscribeState();
           unsubscribeError();
@@ -80,6 +76,7 @@ export default function CreateRoom() {
         onlineRoomClient.createRoom({
           hostName: name,
           preferredFaction: selectedFaction as any,
+          gameMode,
           allowBots,
           botDifficultyDefault: defaultDifficulty as any
         });
@@ -125,7 +122,8 @@ export default function CreateRoom() {
         status: 'waiting',
         slots,
         roomRules: {
-          ruleset: '3K_CHESS_STANDARD_V1',
+          ruleset: GAME_MODE_RULESETS[gameMode],
+          gameMode,
           allowBots,
           botDifficultyDefault: defaultDifficulty
         }
@@ -138,7 +136,7 @@ export default function CreateRoom() {
         console.log(`[Strategic Command] Mission Accepted. Navigating to Chamber ${roomCode}`);
       }
       
-      navigate(`/rooms/${roomCode}`, { state: { mode: 'local' } });
+      navigate(`/rooms/${roomCode}`, { state: { mode: 'local', gameMode } });
     } catch (err: any) {
       clearTimeout(timeout);
       setError(err?.message || "Tactical Error: Failed to secure the war room.");
@@ -160,6 +158,41 @@ export default function CreateRoom() {
         </p>
 
         <form onSubmit={handleCreate} className="space-y-10">
+          <div className="space-y-4">
+            <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
+              <Shield size={14} className="text-gold" /> Campaign Mode
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(['classic', 'authentic'] as GameMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => {
+                    setGameMode(mode);
+                    setSearchParams({ mode });
+                  }}
+                  className={cn(
+                    "p-6 rounded-3xl border text-left transition-all",
+                    gameMode === mode ? "bg-gold/10 border-gold" : "bg-white/[0.03] border-white/5 hover:border-white/10"
+                  )}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gold mb-2">
+                    {GAME_MODE_META[mode].shortLabel}
+                  </div>
+                  <h4 className="text-white text-base font-serif font-black uppercase mb-2">
+                    {GAME_MODE_META[mode].label}
+                  </h4>
+                  <p className="text-[10px] text-zinc-600 font-serif italic">{GAME_MODE_META[mode].description}</p>
+                </button>
+              ))}
+            </div>
+            {gameMode === 'authentic' && (
+              <p className="text-[10px] text-amber-300/80 font-serif italic">
+                Authentic Three Kingdoms mode is under tactical construction.
+              </p>
+            )}
+          </div>
+
           {/* Room Mode Toggle */}
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
@@ -183,7 +216,7 @@ export default function CreateRoom() {
                   )}>
                     <User size={16} />
                   </div>
-                  <h4 className={cn(
+                <h4 className={cn(
                     "text-[10px] font-bold uppercase tracking-widest",
                     roomMode === 'local' ? "text-white" : "text-zinc-500"
                   )}>Local Simulation</h4>
@@ -211,7 +244,7 @@ export default function CreateRoom() {
                   )}>
                     <Zap size={16} />
                   </div>
-                  <h4 className={cn(
+                <h4 className={cn(
                     "text-[10px] font-bold uppercase tracking-widest",
                     roomMode === 'online' ? "text-white" : "text-zinc-500"
                   )}>Online WebSocket</h4>

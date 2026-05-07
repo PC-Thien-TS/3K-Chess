@@ -27,9 +27,11 @@ import {
   RecordedMove, 
   getPieceName,
   validateBoardIntegrity
-} from '@/src/rules/threeKingdomRules';
+} from '@/src/rules/classicThreeKingdomRules';
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
+import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
+import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTION_COLORS = {
   Shu: 'text-rose-500 bg-black border-rose-500/50 shadow-rose-900/40',
@@ -127,6 +129,11 @@ export default function ReplayBoard() {
 
   if (!match) return null;
 
+  const replayMode = normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE);
+  if (replayMode === 'authentic') {
+    return <AuthenticBoard context="replay" />;
+  }
+
   const boardPieces = currentPieces();
 
   return (
@@ -146,6 +153,9 @@ export default function ReplayBoard() {
                    <Settings size={12} /> Unit {match.source.roomCode}
                 </span>
              )}
+             <span className="text-[10px] font-black text-white uppercase tracking-[0.3em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2">
+                <Settings size={12} className="text-gold" /> {GAME_MODE_META[replayMode].shortLabel}
+             </span>
              <div className="flex items-center gap-3 border-l border-white/10 pl-6 h-8">
                 <Trophy size={16} className="text-gold" /> 
                 <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Dominion:</span>
@@ -169,7 +179,7 @@ export default function ReplayBoard() {
                 <Download size={18} className="text-gold" /> Export Log
             </button>
             <button 
-                onClick={() => navigate('/setup')}
+                onClick={() => navigate(`/setup?mode=${replayMode}`)}
                 className="flex-1 lg:flex-none bg-gold text-black px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_15px_40px_rgba(212,175,55,0.3)] hover:bg-white hover:scale-[1.02] active:scale-95"
             >
                 <PlayCircle size={18} /> New Campaign

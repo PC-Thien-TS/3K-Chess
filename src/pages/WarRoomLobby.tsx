@@ -16,11 +16,12 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { getWarRoom, saveWarRoom, WarRoom, RoomFactionSlot, mapWarRoomToMatchSetup, validateWarRoom, normalizeRoomCode } from '@/src/storage/warRooms';
-import { Faction, BotDifficulty } from '@/src/rules/threeKingdomRules';
+import { Faction, BotDifficulty } from '@/src/rules/classicThreeKingdomRules';
 import { cn } from '@/src/lib/utils';
 import { useMatchContext } from '@/src/context/MatchContext';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { OnlineWarRoom } from '@/server/protocol';
+import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {
@@ -49,6 +50,7 @@ export default function WarRoomLobby() {
   const [roomMode, setRoomMode] = useState<'local' | 'online'>((location.state as any)?.mode || 'local');
   const [isConnected, setIsConnected] = useState(false);
   const [diagnostics, setDiagnostics] = useState<{ socketId?: string; lastEvent?: string } | null>(null);
+  const requestedGameMode = normalizeGameMode((location.state as any)?.gameMode, DEFAULT_GAME_MODE);
 
   useEffect(() => {
     if (!roomCode) return;
@@ -93,11 +95,12 @@ export default function WarRoomLobby() {
           setIsStarting(true);
           setDiagnostics(prev => ({ ...prev, lastEvent: 'MATCH_STARTED' }));
           const matchData = mapWarRoomToMatchSetup(newRoom as any);
+          const gameMode = normalizeGameMode((newRoom as any).roomRules?.gameMode, requestedGameMode);
           setTimeout(() => {
             updateConfig(matchData);
             const localFaction = (Object.entries(newRoom.slots) as [Faction, any][]).find(([f, s]) => s.clientId === onlineRoomClient.socketId)?.[0];
             const isHost = onlineRoomClient.socketId === newRoom.hostClientId;
-            navigate('/practice', { state: { roomCode: newRoom.roomCode, mode: 'online', playerFaction: localFaction, isHost } });
+            navigate('/practice', { state: { roomCode: newRoom.roomCode, mode: 'online', playerFaction: localFaction, isHost, gameMode } });
           }, 1200);
         }
       });
@@ -153,6 +156,8 @@ export default function WarRoomLobby() {
       }
     }
   }, [roomCode, roomMode, commanderName]);
+
+  const activeGameMode = normalizeGameMode((room as any)?.roomRules?.gameMode, requestedGameMode);
 
   const handleCopyCode = () => {
     if (room?.roomCode) {
@@ -271,7 +276,7 @@ export default function WarRoomLobby() {
         // UI delay for dramatic effect
         setTimeout(() => {
             updateConfig(matchData);
-            navigate('/practice', { state: { roomCode: room.roomCode, mode: 'local' } });
+            navigate('/practice', { state: { roomCode: room.roomCode, mode: 'local', gameMode: matchData.gameMode } });
         }, 1200);
     } catch (err: any) {
         setIsStarting(false);
@@ -515,7 +520,11 @@ export default function WarRoomLobby() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-x-12 gap-y-4 flex-1">
                       <div>
                           <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-widest block mb-1">Standard Of Rules</span>
-                          <p className="text-white text-xs font-serif italic">3K-Standard-V1</p>
+                          <p className="text-white text-xs font-serif italic">{(room as any).roomRules.ruleset}</p>
+                      </div>
+                      <div>
+                          <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-widest block mb-1">Campaign Mode</span>
+                          <p className="text-white text-xs font-serif italic">{GAME_MODE_META[activeGameMode].shortLabel}</p>
                       </div>
                       <div>
                           <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-widest block mb-1">Strategic AI</span>
