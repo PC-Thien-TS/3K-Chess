@@ -15,7 +15,7 @@ import {
   Sword,
   ShieldAlert
 } from 'lucide-react';
-import { getWarRoom, saveWarRoom, WarRoom, RoomFactionSlot, mapWarRoomToMatchSetup, validateWarRoom } from '@/src/storage/warRooms';
+import { getWarRoom, saveWarRoom, WarRoom, RoomFactionSlot, mapWarRoomToMatchSetup, validateWarRoom, normalizeRoomCode } from '@/src/storage/warRooms';
 import { Faction, BotDifficulty } from '@/src/rules/threeKingdomRules';
 import { cn } from '@/src/lib/utils';
 import { useMatchContext } from '@/src/context/MatchContext';
@@ -30,7 +30,8 @@ const FACTION_COLORS = {
 };
 
 export default function WarRoomLobby() {
-  const { roomCode } = useParams<{ roomCode: string }>();
+  const { roomCode: rawCode } = useParams<{ roomCode: string }>();
+  const roomCode = rawCode ? normalizeRoomCode(rawCode) : undefined;
   const navigate = useNavigate();
   const location = useLocation();
   const { updateConfig } = useMatchContext();
@@ -48,8 +49,13 @@ export default function WarRoomLobby() {
     if (roomMode === 'online') {
       const wsUrl = (import.meta as any).env.VITE_WS_URL;
       if (!wsUrl) {
-        setError("WebSocket server not configured. Online matches are currently unavailable. Switching to Local mode.");
-        setRoomMode('local');
+        const localFound = getWarRoom(roomCode || "");
+        if (localFound) {
+           setError("WebSocket server not configured. Reverting to Local Simulation of this chamber.");
+           setRoomMode('local');
+        } else {
+           setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+        }
         return;
       }
 
@@ -90,7 +96,7 @@ export default function WarRoomLobby() {
         unsubMatch();
       };
     } else {
-      const found = getWarRoom(roomCode);
+      const found = getWarRoom(roomCode || "");
       if (found) {
         const validation = validateWarRoom(found);
         if (!validation.valid) {
@@ -116,7 +122,13 @@ export default function WarRoomLobby() {
             }
         }
       } else {
-        navigate('/rooms');
+        const wsUrl = (import.meta as any).env.VITE_WS_URL;
+        if (!wsUrl) {
+            setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+        } else {
+            setError("Chamber not found locally. Attempting to locate in cloud repositories...");
+            setRoomMode('online');
+        }
       }
     }
   }, [roomCode, roomMode]);

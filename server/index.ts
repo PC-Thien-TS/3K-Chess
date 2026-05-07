@@ -63,6 +63,7 @@ io.on('connection', (socket) => {
       socket.emit(ServerMessage.ROOM_CREATED, room);
       console.log(`[Strategic Command] Chamber Established: ${room.roomCode}`);
     } catch (err: any) {
+      console.error(`[Strategic Command] CREATE_ROOM Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -74,6 +75,7 @@ io.on('connection', (socket) => {
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
       socket.emit(ServerMessage.ROOM_JOINED, room);
     } catch (err: any) {
+      console.error(`[Strategic Command] JOIN_ROOM Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -83,6 +85,7 @@ io.on('connection', (socket) => {
       const room = roomManager.joinSlot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
+      console.error(`[Strategic Command] JOIN_SLOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -92,6 +95,7 @@ io.on('connection', (socket) => {
       const room = roomManager.leaveSlot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
+      console.error(`[Strategic Command] LEAVE_SLOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -101,6 +105,7 @@ io.on('connection', (socket) => {
       const room = roomManager.addBot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
+      console.error(`[Strategic Command] ADD_BOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -110,6 +115,7 @@ io.on('connection', (socket) => {
       const room = roomManager.removeBot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
+      console.error(`[Strategic Command] REMOVE_BOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -119,6 +125,7 @@ io.on('connection', (socket) => {
       const room = roomManager.setReady(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
+      console.error(`[Strategic Command] SET_READY Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -128,6 +135,7 @@ io.on('connection', (socket) => {
       const room = roomManager.startMatch(payload.roomCode, socket.id);
       io.to(room.roomCode).emit(ServerMessage.MATCH_STARTED, room);
     } catch (err: any) {
+      console.error(`[Strategic Command] START_MATCH Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -139,6 +147,7 @@ io.on('connection', (socket) => {
         socket.to(room.roomCode).emit(ServerMessage.MOVE_BROADCAST, payload);
       }
     } catch (err: any) {
+      console.error(`[Strategic Command] SUBMIT_MOVE Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -169,6 +178,16 @@ io.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, () => {
+  console.log(`[Strategic Command] 3K Chess WebSocket server listening on port ${PORT}`);
   console.log(`[Strategic Command] Battlefield Cloud active at http://localhost:${PORT}`);
   console.log(`[Strategic Command] Allowed Origins: ${allowedOrigins.join(', ')}`);
+});
+
+// Safe Error Logging for unhandled errors
+process.on('uncaughtException', (err) => {
+  console.error('[Strategic Command] CRITICAL UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Strategic Command] UNHANDLED REJECTION at:', promise, 'reason:', reason);
 });

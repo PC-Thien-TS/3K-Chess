@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Key, User, ShieldAlert } from 'lucide-react';
-import { getWarRoom } from '@/src/storage/warRooms';
+import { getWarRoom, normalizeRoomCode } from '@/src/storage/warRooms';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 
 export default function JoinRoom() {
@@ -16,7 +16,7 @@ export default function JoinRoom() {
     if (isJoining) return;
     setError(null);
 
-    const code = roomCode.toUpperCase().trim();
+    const code = normalizeRoomCode(roomCode);
 
     if (!code.includes('-')) {
         setError("Invalid Room Code format. Expected (e.g. WU-ABCD)");
@@ -34,7 +34,7 @@ export default function JoinRoom() {
         if (localRoom) {
             navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
         } else {
-            setError("The targeted chamber does not exist in the local archives. (Online access unconfigured)");
+            setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
             setIsJoining(false);
         }
         return;
@@ -140,7 +140,10 @@ export default function JoinRoom() {
             Access Chamber
           </button>
           
-          {/* Action buttons removed placeholder text */}
+          <p className="text-[9px] text-zinc-600 font-serif italic text-center mt-4 uppercase tracking-widest leading-relaxed">
+            Local Simulation rooms only exist in this browser. <br/>
+            To join from another device, deploy the WebSocket backend.
+          </p>
         </form>
       </div>
     </div>

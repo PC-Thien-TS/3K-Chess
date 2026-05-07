@@ -33,22 +33,28 @@ export function generateRoomCode(): string {
   return `${prefix}-${code}`;
 }
 
+export function normalizeRoomCode(roomCode: string): string {
+  return roomCode.trim().toUpperCase();
+}
+
 export function saveWarRoom(room: WarRoom) {
   const rooms = listWarRooms();
-  const index = rooms.findIndex(r => r.roomCode === room.roomCode);
+  const normalizedCode = normalizeRoomCode(room.roomCode);
+  const index = rooms.findIndex(r => normalizeRoomCode(r.roomCode) === normalizedCode);
   let updated;
   if (index >= 0) {
     updated = [...rooms];
-    updated[index] = room;
+    updated[index] = { ...room, roomCode: normalizedCode };
   } else {
-    updated = [room, ...rooms].slice(0, 20);
+    updated = [{ ...room, roomCode: normalizedCode }, ...rooms].slice(0, 20);
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
 
 export function getWarRoom(roomCode: string): WarRoom | null {
   const rooms = listWarRooms();
-  return rooms.find(r => r.roomCode === roomCode) || null;
+  const normalized = normalizeRoomCode(roomCode);
+  return rooms.find(r => normalizeRoomCode(r.roomCode) === normalized) || null;
 }
 
 export function listWarRooms(): WarRoom[] {
@@ -67,7 +73,8 @@ export function listWarRooms(): WarRoom[] {
 
 export function deleteWarRoom(roomCode: string) {
   const rooms = listWarRooms();
-  const updated = rooms.filter(r => r.roomCode !== roomCode);
+  const normalized = normalizeRoomCode(roomCode);
+  const updated = rooms.filter(r => normalizeRoomCode(r.roomCode) !== normalized);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
 
