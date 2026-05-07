@@ -23,7 +23,6 @@ export default function CreateRoom() {
   const [roomMode, setRoomMode] = useState<'local' | 'online'>('local');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const onlineModeError = onlineRoomClient.configurationError;
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,16 +30,17 @@ export default function CreateRoom() {
     setError(null);
 
     if (roomMode === 'online') {
-      const connection = onlineRoomClient.connect();
-      if (!connection.ok) {
-        setError(connection.error);
+      const wsUrl = (import.meta as any).env.VITE_WS_URL;
+      if (!wsUrl) {
+        setError("WebSocket server not configured. Online matches are currently unavailable.");
         return;
       }
 
       setIsCreating(true);
+      onlineRoomClient.connect();
       
       const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
-        setError(err);
+        setError(`Strategic Failure: ${err}`);
         setIsCreating(false);
         unsubscribeError();
       });
@@ -147,12 +147,6 @@ export default function CreateRoom() {
             </button>
           </div>
 
-          {roomMode === 'online' && onlineModeError && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-2xl text-xs font-bold uppercase tracking-widest">
-              {onlineModeError}
-            </div>
-          )}
-
           {/* Host Name */}
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
@@ -249,18 +243,19 @@ export default function CreateRoom() {
             )}
           </div>
 
-          {error && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-2xl text-xs font-bold uppercase tracking-widest">
-              {error}
-            </div>
-          )}
+            <button 
+              type="submit"
+              disabled={isCreating}
+              className="w-full bg-gold hover:bg-white text-black py-6 rounded-[2rem] font-bold uppercase tracking-[0.4em] text-xs transition-all shadow-[0_0_30px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 disabled:opacity-50"
+            >
+              <Sword size={20} /> {isCreating ? "Initializing..." : "Initialize Room"}
+            </button>
 
-          <button 
-            type="submit"
-            className="w-full bg-gold hover:bg-white text-black py-6 rounded-[2rem] font-bold uppercase tracking-[0.4em] text-xs transition-all shadow-[0_0_30px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3"
-          >
-            <Sword size={20} /> Initialize Room
-          </button>
+            {error && (
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-6 rounded-2xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-3 mt-4">
+                <Shield size={16} /> {error}
+              </div>
+            )}
         </form>
       </div>
     </div>

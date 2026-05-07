@@ -46,12 +46,14 @@ export default function WarRoomLobby() {
     if (!roomCode) return;
 
     if (roomMode === 'online') {
-      const connection = onlineRoomClient.connect();
-      if (!connection.ok) {
-        setError(connection.error);
+      const wsUrl = (import.meta as any).env.VITE_WS_URL;
+      if (!wsUrl) {
+        setError("WebSocket server not configured. Online matches are currently unavailable. Switching to Local mode.");
+        setRoomMode('local');
         return;
       }
 
+      onlineRoomClient.connect();
       setIsConnected(onlineRoomClient.isConnected);
 
       const unsubState = onlineRoomClient.subscribeToRoomState((newRoom) => {
@@ -227,23 +229,7 @@ export default function WarRoomLobby() {
     }
   };
 
-  if (!room) {
-    return (
-      <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col items-center justify-center gap-6">
-        <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest">
-          <ChevronLeft size={16} /> Retreat to Council
-        </Link>
-        <div className="max-w-xl bg-white/[0.02] border border-white/5 rounded-[2rem] p-8 text-center">
-          <h1 className="text-3xl font-serif font-black text-white tracking-widest uppercase mb-4">
-            War Room Unavailable
-          </h1>
-          <p className="text-zinc-400 font-serif italic">
-            {error || "Loading tactical chamber..."}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (!room) return null;
 
   return (
     <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-10">

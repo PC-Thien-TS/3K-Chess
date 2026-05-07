@@ -28,17 +28,19 @@ export default function JoinRoom() {
     // 1. Try local first as it's instant
     const localRoom = getWarRoom(code);
     
-    // 2. Try online
-    const connection = onlineRoomClient.connect();
-    if (!connection.ok) {
-      if (localRoom) {
-        navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
-      } else {
-        setError(connection.error);
-        setIsJoining(false);
-      }
-      return;
+    // 2. Try online if configured
+    const wsUrl = (import.meta as any).env.VITE_WS_URL;
+    if (!wsUrl) {
+        if (localRoom) {
+            navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
+        } else {
+            setError("The targeted chamber does not exist in the local archives. (Online access unconfigured)");
+            setIsJoining(false);
+        }
+        return;
     }
+
+    onlineRoomClient.connect();
     
     const timeout = setTimeout(() => {
         if (localRoom) {
@@ -62,7 +64,7 @@ export default function JoinRoom() {
             navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
             cleanup();
         } else {
-            setError(err);
+            setError(`Cloud Breach: ${err}`);
             setIsJoining(false);
             cleanup();
         }

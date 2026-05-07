@@ -124,12 +124,12 @@ export default function PracticeBoard() {
     runRuleEngineDevTests();
 
     if (roomMode === 'online') {
-      const connection = onlineRoomClient.connect();
-      if (!connection.ok) {
-        setStatus(connection.error);
-        return;
+      const wsUrl = (import.meta as any).env.VITE_WS_URL;
+      if (!wsUrl) {
+         setStatus("Tactical Breach: WebSocket server not configured. Online synchrony unavailable.");
+         return;
       }
-
+      onlineRoomClient.connect();
       const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
         if (payload.move.id === lastProcessedMoveId.current) return;
         
