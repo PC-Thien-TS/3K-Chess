@@ -8,7 +8,8 @@ import { cn } from '../lib/utils';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
-const AUTHENTIC_PREVIEW_MESSAGE = 'Authentic Three Kingdoms mode is under construction.';
+const AUTHENTIC_PREVIEW_MESSAGE =
+  'Modern Three Kingdoms Xiangqi is available as a local-only board. Online rooms, bots, archive, and replay remain Classic-only.';
 
 const FACTION_DETAILS = {
   Shu: {
@@ -54,6 +55,13 @@ export default function MatchSetup() {
   const [localGameMode, setLocalGameMode] = useState<GameMode>(initialGameMode);
   const [modeNotice, setModeNotice] = useState<string | null>(initialGameMode === 'authentic' ? AUTHENTIC_PREVIEW_MESSAGE : null);
 
+  const getAuthenticHumanFactions = () => ({
+    ...localFactions,
+    Shu: { ...localFactions.Shu, control: 'Human' as const },
+    Wei: { ...localFactions.Wei, control: 'Human' as const },
+    Wu: { ...localFactions.Wu, control: 'Human' as const },
+  });
+
   const handleControlToggle = (faction: Faction) => {
     setLocalFactions(prev => {
       const next: PlayerType = prev[faction].control === 'Human' ? 'Bot' : 'Human';
@@ -81,12 +89,31 @@ export default function MatchSetup() {
   };
 
   const handleStart = () => {
+    const authenticHumanFactions = getAuthenticHumanFactions();
+    const nextFactions = localGameMode === 'authentic' ? authenticHumanFactions : localFactions;
+
     updateConfig({
       gameMode: localGameMode,
-      factions: localFactions,
+      factions: nextFactions,
       primaryKingdom: localPrimary
     });
-    navigate('/practice', { state: { gameMode: localGameMode, mode: 'local' } });
+    navigate('/practice', {
+      state: localGameMode === 'authentic'
+        ? {
+            gameMode: 'authentic',
+            roomMode: 'local',
+            mode: 'local',
+            controlModes: {
+              Shu: 'Human',
+              Wei: 'Human',
+              Wu: 'Human',
+            },
+          }
+        : {
+            gameMode: localGameMode,
+            mode: 'local',
+          },
+    });
   };
 
   const handleModeSelect = (mode: GameMode) => {
@@ -302,7 +329,7 @@ export default function MatchSetup() {
             onClick={handleStart}
             className="flex-[2] md:flex-none px-16 py-6 bg-gold text-black rounded-2xl text-[12px] font-black uppercase tracking-[0.4em] shadow-[0_20px_50px_rgba(212,175,55,0.35)] hover:bg-white hover:scale-[1.05] active:scale-95 transition-all flex items-center justify-center gap-4"
           >
-            {localGameMode === 'authentic' ? 'OPEN PREVIEW' : 'SEAL FATE'}
+            {localGameMode === 'authentic' ? 'Start Local Authentic Match' : 'SEAL FATE'}
             <ChevronRight size={20} className="animate-pulse" />
           </button>
         </div>

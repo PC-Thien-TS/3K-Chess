@@ -1525,7 +1525,7 @@ export default function PracticeBoard() {
     return (
       <AuthenticBoard
         roomCode={(location.state as any)?.roomCode}
-        roomMode={(location.state as any)?.mode || 'local'}
+        roomMode={(location.state as any)?.roomMode || (location.state as any)?.mode || 'local'}
         context="practice"
       />
     );
