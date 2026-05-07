@@ -123,6 +123,7 @@ export default function PracticeBoard() {
   const playerFaction = (location.state as any)?.playerFaction;
   const isHost = (location.state as any)?.isHost;
   const lastProcessedMoveId = React.useRef<string | null>(null);
+  const botTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestMove = history[0] || null;
   const isRemoteWaiting =
     roomMode === 'online' &&
@@ -130,6 +131,11 @@ export default function PracticeBoard() {
     turn !== playerFaction &&
     controlModes[turn] !== 'Bot' &&
     !winner;
+  const devLog = (...args: unknown[]) => {
+    if ((import.meta as any).env.DEV) {
+      console.log(...args);
+    }
+  };
 
   const getNextFaction = (currentTurn: Faction, currentPieces: Piece[], currentEliminated: Faction[]): Faction | null => {
     const activeFactions = FACTIONS.filter(f => !currentEliminated.includes(f));
@@ -148,7 +154,7 @@ export default function PracticeBoard() {
     
     if (!validation.legal) {
       if (!isBot) setStatus(validation.reason || "Illegal Move");
-      return;
+      return null;
     }
 
     const moveId = remoteMoveId || (isBot ? 'bot-' : '') + Math.random().toString(36).substr(2, 9);
@@ -297,6 +303,8 @@ export default function PracticeBoard() {
     if (!integrity.valid) {
       console.error("Board Integrity Breach detected:", integrity.errors);
     }
+
+    return moveId;
   };
 
   const handlePointClick = (x: number, y: number) => {
@@ -368,6 +376,36 @@ export default function PracticeBoard() {
     piecesRef.current = pieces;
   }, [pieces]);
 
+  const turnRef = React.useRef<Faction>(turn);
+  React.useEffect(() => {
+    turnRef.current = turn;
+  }, [turn]);
+
+  const controlModesRef = React.useRef(controlModes);
+  React.useEffect(() => {
+    controlModesRef.current = controlModes;
+  }, [controlModes]);
+
+  const winnerRef = React.useRef<Faction | null>(winner);
+  React.useEffect(() => {
+    winnerRef.current = winner;
+  }, [winner]);
+
+  const eliminatedRef = React.useRef<Faction[]>(eliminated);
+  React.useEffect(() => {
+    eliminatedRef.current = eliminated;
+  }, [eliminated]);
+
+  const configRef = React.useRef(config);
+  React.useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
+  const appliedMoveIdsRef = React.useRef(appliedMoveIds);
+  React.useEffect(() => {
+    appliedMoveIdsRef.current = appliedMoveIds;
+  }, [appliedMoveIds]);
+
   React.useEffect(() => {
     runRuleEngineDevTests();
 
@@ -380,7 +418,7 @@ export default function PracticeBoard() {
       onlineRoomClient.connect();
       const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
         setLastSyncEvent('MOVE_RECEIVED');
-        if (payload.move.id === lastProcessedMoveId.current || appliedMoveIds.has(payload.move.id)) {
+        if (payload.move.id === lastProcessedMoveId.current || appliedMoveIdsRef.current.has(payload.move.id)) {
            if ((import.meta as any).env.DEV) {
               console.log(`[Strategic Sync] Skipping already applied move: ${payload.move.id}`);
            }
@@ -404,37 +442,116 @@ export default function PracticeBoard() {
 
   // Bot Turn Trigger
   React.useEffect(() => {
-    if (winner || isBotThinking) return;
-    
-    // In online mode, only the host drives the bots to avoid double moves
-    if (roomMode === 'online' && !isHost) return;
-    
-    if (controlModes[turn] === 'Bot') {
-      setIsBotThinking(true);
-      const delay = 600 + Math.random() * 400;
-      
-      const timer = setTimeout(() => {
-        const difficulty = config.factions[turn].difficulty;
-        const decision = chooseBotMove(turn, pieces, difficulty);
-        if (decision) {
-          setLastBotDecision({ ...decision, difficulty });
-          const piece = pieces.find(p => p.x === decision.move.from.x && p.y === decision.move.from.y)!;
-          // Enhancing status with bot reason
-          const botPrefix = `BOT ${turn} (${difficulty})`;
-          const actionText = decision.move.captured ? `captured enemy ${getPieceName(decision.move.captured)}` : `repositioned ${getPieceName(piece.type)}`;
-          setStatus(`${botPrefix}: ${decision.reason}.`);
-          performMove(piece, decision.move.to.x, decision.move.to.y, true);
-        } else {
-          setStatus(`${turn} has no legal maneuvers. Skipping turn.`);
-          const nextFct = getNextFaction(turn, pieces, eliminated);
-          if (nextFct) setTurn(nextFct);
-        }
-        setIsBotThinking(false);
-      }, delay);
-
-      return () => clearTimeout(timer);
+    if (botTimerRef.current) {
+      clearTimeout(botTimerRef.current);
+      botTimerRef.current = null;
     }
-  }, [turn, controlModes, winner, pieces, isBotThinking, roomMode, isHost, config, eliminated]);
+
+    const currentControl = controlModes[turn];
+    devLog('[Bot Turn] detected', {
+      roomMode,
+      turn,
+      controlMode: currentControl,
+      isHost,
+      playerFaction,
+      botThinking: isBotThinking,
+      pieceCount: pieces.length
+    });
+
+    if (winner || isBotThinking || currentControl !== 'Bot') {
+      return;
+    }
+
+    if (roomMode === 'online' && !isHost) {
+      devLog('[Bot Turn] skipped non-host online bot', {
+        roomMode,
+        turn,
+        controlMode: currentControl,
+        isHost,
+        playerFaction,
+        botThinking: isBotThinking,
+        pieceCount: pieces.length
+      });
+      return;
+    }
+
+    setIsBotThinking(true);
+    const delay = 600 + Math.random() * 400;
+
+    botTimerRef.current = setTimeout(() => {
+      const activeTurn = turnRef.current;
+      const activeWinner = winnerRef.current;
+      const activeControl = controlModesRef.current[activeTurn];
+
+      if (activeWinner || activeControl !== 'Bot') {
+        setIsBotThinking(false);
+        return;
+      }
+
+      try {
+        const difficulty = configRef.current.factions[activeTurn].difficulty;
+        const currentPieces = piecesRef.current;
+        const decision = chooseBotMove(activeTurn, currentPieces, difficulty);
+
+        if (!decision) {
+          devLog('[Bot Turn] no legal moves', {
+            roomMode,
+            turn: activeTurn,
+            controlMode: activeControl,
+            isHost,
+            playerFaction,
+            botThinking: true,
+            pieceCount: currentPieces.length
+          });
+          setStatus(`${activeTurn} has no legal maneuvers. Skipping turn.`);
+          const nextFct = getNextFaction(activeTurn, currentPieces, eliminatedRef.current);
+          if (nextFct) {
+            setTurn(nextFct);
+          }
+          return;
+        }
+
+        setLastBotDecision({ ...decision, difficulty });
+        const piece = currentPieces.find(p => p.x === decision.move.from.x && p.y === decision.move.from.y);
+        if (!piece) {
+          setStatus(`Bot execution failed: unable to locate ${activeTurn} unit at (${decision.move.from.x}, ${decision.move.from.y}).`);
+          return;
+        }
+
+        const botPrefix = `BOT ${activeTurn} (${difficulty})`;
+        setStatus(`${botPrefix}: ${decision.reason}.`);
+        devLog('[Bot Turn] selected move', {
+          turn: activeTurn,
+          from: decision.move.from,
+          to: decision.move.to,
+          captured: decision.move.captured,
+          score: decision.score,
+          reason: decision.reason
+        });
+
+        const executionLabel = roomMode === 'online'
+          ? '[Bot Turn] host submitting online move'
+          : '[Bot Turn] running locally';
+        const moveId = performMoveRef.current(piece, decision.move.to.x, decision.move.to.y, true);
+        devLog(executionLabel, {
+          moveId,
+          turn: activeTurn,
+          from: decision.move.from,
+          to: decision.move.to
+        });
+      } finally {
+        botTimerRef.current = null;
+        setIsBotThinking(false);
+      }
+    }, delay);
+
+    return () => {
+      if (botTimerRef.current) {
+        clearTimeout(botTimerRef.current);
+        botTimerRef.current = null;
+      }
+    };
+  }, [turn, controlModes, winner, roomMode, isHost, playerFaction, pieces.length]);
 
   const resetGame = () => {
     if (history.length > 0 && !winner && !showResetConfirm) {
