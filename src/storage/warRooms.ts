@@ -34,7 +34,21 @@ export function generateRoomCode(): string {
 }
 
 export function normalizeRoomCode(roomCode: string): string {
-  return roomCode.trim().toUpperCase();
+  if (!roomCode) return '';
+  // Remove spaces and convert to uppercase
+  return roomCode.trim().replace(/\s+/g, '').toUpperCase();
+}
+
+export function isValidRoomCode(roomCode: string): boolean {
+  if (!roomCode) return false;
+  const normalized = normalizeRoomCode(roomCode);
+  
+  // Hyphenated format (e.g. WU-ABCD, WEI-PZR9)
+  const hyphenatedRegex = /^[A-Z0-9]{2,5}-[A-Z0-9]{3,6}$/;
+  // Compact online format (e.g. FJTF18, VDPOU4)
+  const compactRegex = /^[A-Z0-9]{4,8}$/;
+  
+  return hyphenatedRegex.test(normalized) || compactRegex.test(normalized);
 }
 
 export function saveWarRoom(room: WarRoom) {

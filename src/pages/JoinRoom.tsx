@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Key, User, ShieldAlert } from 'lucide-react';
-import { getWarRoom, normalizeRoomCode } from '@/src/storage/warRooms';
+import { getWarRoom, normalizeRoomCode, isValidRoomCode } from '@/src/storage/warRooms';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 
 export default function JoinRoom() {
@@ -18,8 +18,8 @@ export default function JoinRoom() {
 
     const code = normalizeRoomCode(roomCode);
 
-    if (!code.includes('-')) {
-        setError("Invalid Room Code format. Expected (e.g. WU-ABCD)");
+    if (!isValidRoomCode(code)) {
+        setError("Invalid room code. Enter the code exactly as shown, for example FJTF18 or WEI-PZR9.");
         return;
     }
 
@@ -28,32 +28,28 @@ export default function JoinRoom() {
     // Persist name
     localStorage.setItem('last_commander_name', playerName);
     
-    // 1. Try local first as it's instant
+    // 1. Prioritize local first as it's instant and requested by requirements
     const localRoom = getWarRoom(code);
+    if (localRoom) {
+        navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
+        return;
+    }
     
     // 2. Try online if configured
     const wsUrl = (import.meta as any).env.VITE_WS_URL;
     if (!wsUrl) {
-        if (localRoom) {
-            navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
-        } else {
-            setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
-            setIsJoining(false);
-        }
+        setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+        setIsJoining(false);
         return;
     }
 
     onlineRoomClient.connect();
     
     const timeout = setTimeout(() => {
-        if (localRoom) {
-            navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
-        } else {
-            setError("The targeted chamber does not exist in the local archives or cloud repository.");
-            setIsJoining(false);
-        }
+        setError("The targeted chamber does not exist in the local archives or cloud repository.");
+        setIsJoining(false);
         cleanup();
-    }, 3000);
+    }, 5000);
 
     const cleanup = () => {
         clearTimeout(timeout);
@@ -62,15 +58,9 @@ export default function JoinRoom() {
     };
 
     const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
-        // If online fails, maybe it's local
-        if (localRoom) {
-            navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
-            cleanup();
-        } else {
-            setError(`Cloud Breach: ${err}`);
-            setIsJoining(false);
-            cleanup();
-        }
+        setError(`Cloud Breach: ${err}`);
+        setIsJoining(false);
+        cleanup();
     });
 
     const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
@@ -123,9 +113,9 @@ export default function JoinRoom() {
             <input 
               type="text" 
               required
-              placeholder="e.g. SHU-X8Q2"
+              placeholder="e.g. FJTF18 or SHU-X8Q2"
               value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              onChange={(e) => setRoomCode(e.target.value)}
               className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-5 px-6 text-white placeholder:text-zinc-700 font-mono focus:outline-none focus:border-gold/30 transition-all text-2xl tracking-widest"
             />
           </div>
