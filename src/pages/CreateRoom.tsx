@@ -7,7 +7,8 @@ import { Faction, BotDifficulty } from '@/src/rules/classicThreeKingdomRules';
 import { cn } from '@/src/lib/utils';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
-const AUTHENTIC_DISABLED_MESSAGE = 'Authentic Three Kingdoms mode is under construction.';
+const AUTHENTIC_DISABLED_MESSAGE =
+  'Modern Three Kingdoms Xiangqi is local-only for now. Use /setup?mode=authentic to play it locally.';
 
 export default function CreateRoom() {
   const navigate = useNavigate();
@@ -386,7 +387,7 @@ export default function CreateRoom() {
               disabled={isCreating || gameMode === 'authentic' || (roomMode === 'online' && !wsUrlAvailable)}
               className="w-full bg-gold hover:bg-white text-black py-6 rounded-[2rem] font-bold uppercase tracking-[0.4em] text-xs transition-all shadow-[0_0_30px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              <Sword size={20} /> {gameMode === 'authentic' ? "Under Construction" : isCreating ? "Initializing..." : "Initialize Room"}
+              <Sword size={20} /> {gameMode === 'authentic' ? "Local Only" : isCreating ? "Initializing..." : "Initialize Room"}
             </button>
 
             {roomMode === 'online' && !wsUrlAvailable && (

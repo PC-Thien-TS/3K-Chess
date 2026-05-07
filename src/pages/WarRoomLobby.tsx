@@ -22,7 +22,8 @@ import { useMatchContext } from '@/src/context/MatchContext';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { OnlineWarRoom } from '@/server/protocol';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
-const AUTHENTIC_DISABLED_MESSAGE = 'Authentic Three Kingdoms mode is under construction.';
+const AUTHENTIC_DISABLED_MESSAGE =
+  'Modern Three Kingdoms Xiangqi is local-only for now. Use /setup?mode=authentic to play it locally.';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {
@@ -590,7 +591,7 @@ export default function WarRoomLobby() {
                     </>
                 ) : (
                     <>
-                        <Sword size={24} /> {activeGameMode === 'authentic' ? "Under Construction" : canStart ? "Start Incursion" : "Awaiting Readiness"}
+                        <Sword size={24} /> {activeGameMode === 'authentic' ? "Local Only" : canStart ? "Start Incursion" : "Awaiting Readiness"}
                     </>
                 )}
                 {canStart && !isStarting && activeGameMode !== 'authentic' && (
