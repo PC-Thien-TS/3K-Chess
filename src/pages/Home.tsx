@@ -12,67 +12,100 @@ export default function Home() {
   return (
     <div className="pt-20">
       {/* Hero Section */}
-      <section id="hero" className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden scroll-mt-20">
+      <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden scroll-mt-20 py-20">
+        {/* Cinematic Background Elements */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-black to-zinc-900 pointer-events-none" />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-20 pointer-events-none" />
+        
         {/* Animated Background Logo Overlay (Subtle) */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.05, scale: 1.2 }}
-          transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
-          className="absolute pointer-events-none"
+          animate={{ opacity: 0.03, scale: 1.1 }}
+          transition={{ duration: 4, repeat: Infinity, repeatType: "reverse" }}
+          className="absolute pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
         >
-          <Sword size={800} strokeWidth={0.5} className="text-gold" />
+          <Sword size={1200} strokeWidth={0.2} className="text-gold" />
         </motion.div>
 
-        <div className="relative z-10 max-w-5xl mx-auto">
+        <div className="relative z-10 max-w-6xl mx-auto space-y-12">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+            className="space-y-6"
           >
-            <span className="text-gold font-mono text-[10px] uppercase tracking-[0.4em] mb-4 block animate-pulse">
-              10,242 LEADERS ONLINE NOW
-            </span>
-            <h1 className="text-6xl md:text-9xl font-serif font-bold text-white leading-tight mb-8 drop-shadow-2xl">
-              GRAND <span className="text-gold italic block md:inline font-normal">STRATEGY</span> REBORN
+            <div className="flex items-center justify-center gap-4 mb-4">
+               <div className="h-px w-12 bg-gold/30" />
+               <span className="text-gold font-black text-[10px] uppercase tracking-[0.6em] animate-pulse">
+                 THE DEFINITIVE 3-PLAYER CONFLICT
+               </span>
+               <div className="h-px w-12 bg-gold/30" />
+            </div>
+            
+            <h1 className="text-7xl md:text-[10rem] font-serif font-black text-white leading-[0.85] mb-8 drop-shadow-2xl tracking-tighter uppercase italic">
+              GRAND <span className="text-gold block -mt-4 md:-mt-10 not-italic font-black tracking-widest">STRATEGY</span>
             </h1>
-            <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-12 font-light leading-relaxed">
-              The only chess variant where strategy, alliances, and betrayal collide. 
-              Command legends of the Three Kingdoms in a brutal real-time 3-player battlefield.
+            
+            <div className="w-24 h-2 bg-gold/40 mx-auto rounded-full mb-10" />
+
+            <p className="text-xl md:text-3xl text-zinc-400 max-w-3xl mx-auto font-serif italic font-light leading-relaxed opacity-90">
+              "When three dragons fight, the heaven trembles. Command the legends. Claim the throne."
             </p>
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="flex flex-col md:flex-row items-center justify-center gap-6"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
+            className="flex flex-col md:flex-row items-center justify-center gap-8 pt-8"
           >
-            <Link to="/setup" className="group relative bg-gold text-ink font-bold px-10 py-5 rounded-full text-lg uppercase tracking-widest hover:scale-105 transition-all overflow-hidden">
-              <span className="relative z-10 flex items-center gap-2">
-                Play Free Now <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </span>
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity" />
+            <Link to="/setup" className="group relative bg-gold text-black font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_60px_rgba(212,175,55,0.4)] hover:bg-white overflow-hidden">
+               <span className="relative z-10 flex items-center gap-3">
+                 Begin Conquest <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
+               </span>
+               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
             </Link>
             
-            <button className="flex items-center gap-3 text-white font-bold uppercase tracking-widest text-sm hover:text-gold transition-colors">
-              <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center hover:border-gold transition-colors">
-                <Play size={20} fill="currentColor" />
-              </div>
-              Watch Gameplay
-            </button>
+            <Link to="/create" className="group relative glass-dark border border-white/10 text-white font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 hover:bg-white/10 overflow-hidden">
+               <span className="relative z-10 flex items-center gap-3">
+                 Forge War Room <Play size={20} className="text-gold group-hover:scale-125 transition-transform" fill="currentColor" />
+               </span>
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 2 }}
+            className="pt-16 flex flex-wrap justify-center gap-10 md:gap-20"
+          >
+             <div className="flex flex-col items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">Active Commanders</span>
+                <span className="text-2xl font-mono font-black text-white">12,402</span>
+             </div>
+             <div className="flex flex-col items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">Battles Recorded</span>
+                <span className="text-2xl font-mono font-black text-white">458,921</span>
+             </div>
+             <div className="flex flex-col items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">Unified Success</span>
+                <span className="text-2xl font-mono font-black text-white">99.8%</span>
+             </div>
           </motion.div>
         </div>
 
-        {/* Feature Strips (Scroll hint) */}
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center opacity-40">
-           <div className="flex flex-col items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.3em]">Scroll to Explore</span>
-              <motion.div 
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-0.5 h-12 bg-gradient-to-b from-gold to-transparent" 
-              />
-           </div>
+        {/* Cinematic Scroll Indicator */}
+        <div className="absolute bottom-12 left-0 right-0 flex justify-center py-4">
+           <Link to="#features" className="flex flex-col items-center gap-4 group cursor-pointer transition-all">
+              <span className="text-[9px] font-black uppercase tracking-[0.6em] text-zinc-600 group-hover:text-gold transition-colors">Descend</span>
+              <div className="w-px h-16 bg-white/10 relative overflow-hidden">
+                 <motion.div 
+                    animate={{ y: [0, 64] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-transparent via-gold to-transparent" 
+                 />
+              </div>
+           </Link>
         </div>
       </section>
 

@@ -114,72 +114,14 @@ export default function PracticeBoard() {
   const [recordedMoves, setRecordedMoves] = useState<RecordedMove[]>([]);
   const [initialPieces] = useState<Piece[]>(getInitialPieces());
   const [isSaved, setIsSaved] = useState(false);
+  const [appliedMoveIds, setAppliedMoveIds] = useState<Set<string>>(new Set());
+  const [lastSyncEvent, setLastSyncEvent] = useState<string | null>(null);
+
   const roomCode = (location.state as any)?.roomCode;
   const roomMode = (location.state as any)?.mode || 'local';
   const playerFaction = (location.state as any)?.playerFaction;
   const isHost = (location.state as any)?.isHost;
   const lastProcessedMoveId = React.useRef<string | null>(null);
-
-  React.useEffect(() => {
-    runRuleEngineDevTests();
-
-    if (roomMode === 'online') {
-      const wsUrl = (import.meta as any).env.VITE_WS_URL;
-      if (!wsUrl) {
-         setStatus("Tactical Breach: WebSocket server not configured. Online synchrony unavailable.");
-         return;
-      }
-      onlineRoomClient.connect();
-      const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
-        if (payload.move.id === lastProcessedMoveId.current) return;
-        
-        // Find piece to move
-        const piece = pieces.find(p => p.x === payload.move.from.x && p.y === payload.move.from.y);
-        if (piece) {
-          lastProcessedMoveId.current = payload.move.id;
-          performMove(piece, payload.move.to.x, payload.move.to.y, payload.move.id.startsWith('bot-'), payload.move.id);
-        }
-      });
-
-      return () => {
-        unsubMove();
-      };
-    }
-  }, [pieces, roomMode]);
-
-  // Bot Turn Trigger
-  React.useEffect(() => {
-    if (winner || isBotThinking) return;
-    
-    // In online mode, only the host drives the bots to avoid double moves
-    if (roomMode === 'online' && !isHost) return;
-    
-    if (controlModes[turn] === 'Bot') {
-      setIsBotThinking(true);
-      const delay = 600 + Math.random() * 400;
-      
-      const timer = setTimeout(() => {
-        const difficulty = config.factions[turn].difficulty;
-        const decision = chooseBotMove(turn, pieces, difficulty);
-        if (decision) {
-          setLastBotDecision({ ...decision, difficulty });
-          const piece = pieces.find(p => p.x === decision.move.from.x && p.y === decision.move.from.y)!;
-          // Enhancing status with bot reason
-          const botPrefix = `BOT ${turn} (${difficulty})`;
-          const actionText = decision.move.captured ? `captured enemy ${getPieceName(decision.move.captured)}` : `repositioned ${getPieceName(piece.type)}`;
-          setStatus(`${botPrefix}: ${decision.reason}.`);
-          performMove(piece, decision.move.to.x, decision.move.to.y, true);
-        } else {
-          setStatus(`${turn} has no legal maneuvers. Skipping turn.`);
-          const nextFct = getNextFaction(turn, pieces, eliminated);
-          if (nextFct) setTurn(nextFct);
-        }
-        setIsBotThinking(false);
-      }, delay);
-
-      return () => clearTimeout(timer);
-    }
-  }, [turn, controlModes, winner]);
 
   const getNextFaction = (currentTurn: Faction, currentPieces: Piece[], currentEliminated: Faction[]): Faction | null => {
     const activeFactions = FACTIONS.filter(f => !currentEliminated.includes(f));
@@ -190,66 +132,6 @@ export default function PracticeBoard() {
       nextIdx = (nextIdx + 1) % FACTIONS.length;
     }
     return FACTIONS[nextIdx] as Faction;
-  };
-
-  const selectedPiece = pieces.find(p => p.id === selectedId) || null;
-
-  const handlePointClick = (x: number, y: number) => {
-    if (winner || isBotThinking || controlModes[turn] === 'Bot') return;
-    
-    // In online mode, only allow moves for the local player's faction
-    if (roomMode === 'online' && playerFaction && turn !== playerFaction) {
-        setStatus(`Tactical Breach: You only command the ${playerFaction} kingdom.`);
-        return;
-    }
-
-    const pieceAtPoint = pieces.find(p => p.x === x && p.y === y);
-
-    if (selectedId) {
-      if (selectedPiece && selectedPiece.x === x && selectedPiece.y === y) {
-        setSelectedId(null);
-        setLegalMoves([]);
-        return;
-      }
-
-      if (pieceAtPoint && pieceAtPoint.faction === turn) {
-        setSelectedId(pieceAtPoint.id);
-        const legalDest = getLegalDestinationsForPiece(pieceAtPoint, pieces, turn);
-        const pseudoMoves: Move[] = legalDest.all.map(d => ({
-          id: 'hint-' + Math.random(),
-          pieceType: pieceAtPoint.type,
-          faction: turn,
-          from: { x: pieceAtPoint.x, y: pieceAtPoint.y },
-          to: d,
-          timestamp: new Date()
-        }));
-        setLegalMoves(pseudoMoves);
-        return;
-      }
-
-      if (selectedPiece) {
-        performMove(selectedPiece, x, y);
-      }
-    } else {
-      if (pieceAtPoint) {
-        if (pieceAtPoint.faction === turn) {
-          setSelectedId(pieceAtPoint.id);
-          const legalDest = getLegalDestinationsForPiece(pieceAtPoint, pieces, turn);
-          const pseudoMoves: Move[] = legalDest.all.map(d => ({
-            id: 'hint-' + Math.random(),
-            pieceType: pieceAtPoint.type,
-            faction: turn,
-            from: { x: pieceAtPoint.x, y: pieceAtPoint.y },
-            to: d,
-            timestamp: new Date()
-          }));
-          setLegalMoves(pseudoMoves);
-          setStatus(`${getPieceName(pieceAtPoint.type)} ready. ${legalDest.all.length} maneuvers available.`);
-        } else {
-          setStatus(MOVE_ERRORS.NOT_YOUR_TURN);
-        }
-      }
-    }
   };
 
   const performMove = (piece: Piece, x: number, y: number, isBot = false, remoteMoveId?: string) => {
@@ -263,6 +145,7 @@ export default function PracticeBoard() {
 
     const moveId = remoteMoveId || (isBot ? 'bot-' : '') + Math.random().toString(36).substr(2, 9);
     lastProcessedMoveId.current = moveId;
+    setAppliedMoveIds(prev => new Set(prev).add(moveId));
     
     const newPieces = pieces.filter(p => p.id !== piece.id);
     let capturedType: PieceType | undefined;
@@ -408,6 +291,143 @@ export default function PracticeBoard() {
     }
   };
 
+  const handlePointClick = (x: number, y: number) => {
+    if (winner || isBotThinking || controlModes[turn] === 'Bot') return;
+    
+    // In online mode, only allow moves for the local player's faction
+    if (roomMode === 'online' && playerFaction && turn !== playerFaction) {
+        setStatus(`Tactical Breach: You only command the ${playerFaction} kingdom.`);
+        return;
+    }
+
+    const pieceAtPoint = pieces.find(p => p.x === x && p.y === y);
+
+    if (selectedId) {
+      const selectedPieceCurrent = pieces.find(p => p.id === selectedId) || null;
+      if (selectedPieceCurrent && selectedPieceCurrent.x === x && selectedPieceCurrent.y === y) {
+        setSelectedId(null);
+        setLegalMoves([]);
+        return;
+      }
+
+      if (pieceAtPoint && pieceAtPoint.faction === turn) {
+        setSelectedId(pieceAtPoint.id);
+        const legalDest = getLegalDestinationsForPiece(pieceAtPoint, pieces, turn);
+        const pseudoMoves: Move[] = legalDest.all.map(d => ({
+          id: 'hint-' + Math.random(),
+          pieceType: pieceAtPoint.type,
+          faction: turn,
+          from: { x: pieceAtPoint.x, y: pieceAtPoint.y },
+          to: d,
+          timestamp: new Date()
+        }));
+        setLegalMoves(pseudoMoves);
+        return;
+      }
+
+      if (selectedPieceCurrent) {
+        performMove(selectedPieceCurrent, x, y);
+      }
+    } else {
+      if (pieceAtPoint) {
+        if (pieceAtPoint.faction === turn) {
+          setSelectedId(pieceAtPoint.id);
+          const legalDest = getLegalDestinationsForPiece(pieceAtPoint, pieces, turn);
+          const pseudoMoves: Move[] = legalDest.all.map(d => ({
+            id: 'hint-' + Math.random(),
+            pieceType: pieceAtPoint.type,
+            faction: turn,
+            from: { x: pieceAtPoint.x, y: pieceAtPoint.y },
+            to: d,
+            timestamp: new Date()
+          }));
+          setLegalMoves(pseudoMoves);
+          setStatus(`${getPieceName(pieceAtPoint.type)} ready. ${legalDest.all.length} maneuvers available.`);
+        } else {
+          setStatus(MOVE_ERRORS.NOT_YOUR_TURN);
+        }
+      }
+    }
+  };
+
+  const performMoveRef = React.useRef(performMove);
+  React.useEffect(() => {
+    performMoveRef.current = performMove;
+  }, [performMove]);
+
+  const piecesRef = React.useRef<Piece[]>(pieces);
+  React.useEffect(() => {
+    piecesRef.current = pieces;
+  }, [pieces]);
+
+  React.useEffect(() => {
+    runRuleEngineDevTests();
+
+    if (roomMode === 'online') {
+      const wsUrl = (import.meta as any).env.VITE_WS_URL;
+      if (!wsUrl) {
+         setStatus("Tactical Breach: WebSocket server not configured. Online synchrony unavailable.");
+         return;
+      }
+      onlineRoomClient.connect();
+      const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
+        setLastSyncEvent('MOVE_RECEIVED');
+        if (payload.move.id === lastProcessedMoveId.current || appliedMoveIds.has(payload.move.id)) {
+           if ((import.meta as any).env.DEV) {
+              console.log(`[Strategic Sync] Skipping already applied move: ${payload.move.id}`);
+           }
+           return;
+        }
+        
+        // Find piece to move using ref to avoid stale state in subscription
+        const piece = piecesRef.current.find(p => p.x === payload.move.from.x && p.y === payload.move.from.y);
+        if (piece) {
+          lastProcessedMoveId.current = payload.move.id;
+          setAppliedMoveIds(prev => new Set(prev).add(payload.move.id));
+          performMoveRef.current(piece, payload.move.to.x, payload.move.to.y, payload.move.id.startsWith('bot-'), payload.move.id);
+        }
+      });
+
+      return () => {
+        unsubMove();
+      };
+    }
+  }, [roomMode]); // Only re-run if roomMode changes
+
+  // Bot Turn Trigger
+  React.useEffect(() => {
+    if (winner || isBotThinking) return;
+    
+    // In online mode, only the host drives the bots to avoid double moves
+    if (roomMode === 'online' && !isHost) return;
+    
+    if (controlModes[turn] === 'Bot') {
+      setIsBotThinking(true);
+      const delay = 600 + Math.random() * 400;
+      
+      const timer = setTimeout(() => {
+        const difficulty = config.factions[turn].difficulty;
+        const decision = chooseBotMove(turn, pieces, difficulty);
+        if (decision) {
+          setLastBotDecision({ ...decision, difficulty });
+          const piece = pieces.find(p => p.x === decision.move.from.x && p.y === decision.move.from.y)!;
+          // Enhancing status with bot reason
+          const botPrefix = `BOT ${turn} (${difficulty})`;
+          const actionText = decision.move.captured ? `captured enemy ${getPieceName(decision.move.captured)}` : `repositioned ${getPieceName(piece.type)}`;
+          setStatus(`${botPrefix}: ${decision.reason}.`);
+          performMove(piece, decision.move.to.x, decision.move.to.y, true);
+        } else {
+          setStatus(`${turn} has no legal maneuvers. Skipping turn.`);
+          const nextFct = getNextFaction(turn, pieces, eliminated);
+          if (nextFct) setTurn(nextFct);
+        }
+        setIsBotThinking(false);
+      }, delay);
+
+      return () => clearTimeout(timer);
+    }
+  }, [turn, controlModes, winner, pieces, isBotThinking, roomMode, isHost, config, eliminated]);
+
   const resetGame = () => {
     if (history.length > 0 && !winner && !showResetConfirm) {
       setShowResetConfirm(true);
@@ -489,6 +509,8 @@ export default function PracticeBoard() {
     setStatus("Match records exported for external archives.");
   };
 
+  const selectedPiece = pieces.find(p => p.id === selectedId) || null;
+
   return (
     <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-8 relative">
       {/* Match Summary Modal */}
@@ -498,157 +520,163 @@ export default function PracticeBoard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4 overflow-y-auto"
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/98 backdrop-blur-3xl p-4 overflow-y-auto"
           >
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 40 }}
+              initial={{ scale: 0.8, opacity: 0, y: 100 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 40 }}
-              className="w-full max-w-4xl glass-dark border border-gold/20 rounded-[3rem] p-8 md:p-12 shadow-[0_0_100px_rgba(212,175,55,0.15)] relative"
+              exit={{ scale: 0.8, opacity: 0, y: 100 }}
+              className="w-full max-w-5xl glass-dark border border-gold/30 rounded-[4rem] p-10 md:p-16 shadow-[0_0_150px_rgba(212,175,55,0.2)] relative"
             >
-              <div className="absolute top-12 right-12 opacity-5 pointer-events-none">
-                <Trophy size={300} className="text-gold" />
+              {/* Background Crest (Extreme Subtle) */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[30rem] font-serif font-black opacity-[0.015] pointer-events-none select-none">
+                {winner[0]}
               </div>
 
-              <div className="text-center mb-12 relative z-10">
+              <div className="text-center mb-16 relative z-10">
                 <motion.div
-                  initial={{ scale: 0, rotate: -20 }}
+                  initial={{ scale: 0, rotate: -45 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", damping: 12, delay: 0.2 }}
-                  className="w-20 h-20 bg-gold/10 rounded-full border border-gold/30 flex items-center justify-center mx-auto mb-6"
+                  transition={{ type: "spring", damping: 12, delay: 0.3 }}
+                  className="w-24 h-24 bg-gold/10 rounded-3xl border-2 border-gold/30 flex items-center justify-center mx-auto mb-8 shadow-2xl"
                 >
-                  <Award size={40} className="text-gold" />
+                  <Trophy size={48} className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.8)]" />
                 </motion.div>
-                <h3 className="text-4xl md:text-6xl font-serif font-black text-white mb-2 uppercase tracking-[0.2em] drop-shadow-lg">
-                  Battlefield <span className="text-gold">Summary</span>
+                <h3 className="text-5xl md:text-8xl font-serif font-black text-white mb-4 uppercase tracking-[0.25em] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+                   REALM <span className="text-gold italic">UNITED</span>
                 </h3>
-                <p className="text-zinc-500 font-serif italic text-lg opacity-80">
-                  "The final banner rises over the Three Kingdoms."
-                </p>
+                <div className="flex items-center justify-center gap-4 opacity-50">
+                   <div className="w-12 h-px bg-white" />
+                   <p className="text-zinc-400 font-serif italic text-xl tracking-widest leading-none">
+                      The {winner} Dynasty reigns supreme
+                   </p>
+                   <div className="w-12 h-px bg-white" />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 relative z-10">
-                {/* Winner Card */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-16 relative z-10">
+                {/* Winner Card (Hero) */}
                 <div className={cn(
-                  "p-8 rounded-3xl border flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden",
+                  "lg:col-span-4 p-10 rounded-[3rem] border-2 flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden group",
                   FACTION_COLORS[winner]
                 )}>
-                  <div className="absolute inset-0 bg-current opacity-[0.03]" />
-                  <Trophy size={48} className="mb-4 text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-60 mb-2">Dominant King</span>
-                  <h4 className="text-2xl font-serif font-black uppercase mb-1">{winner}</h4>
-                  <span className="text-[10px] font-bold opacity-60">Control: {controlModes[winner]}</span>
-                </div>
-
-                {/* Core Stats */}
-                <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-                  <div className="p-6 glass-dark border border-white/5 rounded-3xl flex flex-col gap-1 items-center justify-center">
-                    <Activity size={24} className="text-gold opacity-50 mb-2" />
-                    <span className="text-2xl font-mono text-white font-bold">{matchStats.totalMoves}</span>
-                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">Total Maneuvers</span>
-                  </div>
-                  <div className="p-6 glass-dark border border-white/5 rounded-3xl flex flex-col gap-1 items-center justify-center">
-                    <Target size={24} className="text-gold opacity-50 mb-2" />
-                    <span className="text-2xl font-mono text-white font-bold">{matchStats.totalCaptures}</span>
-                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">Armies Destroyed</span>
-                  </div>
-                  <div className="p-6 glass-dark border border-white/5 rounded-3xl flex flex-col gap-1 items-center justify-center">
-                    <ShieldAlert size={24} className="text-rose-500 opacity-50 mb-2" />
-                    <span className="text-2xl font-mono text-white font-bold">{matchStats.totalChecks}</span>
-                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">General Threats</span>
-                  </div>
-                  <div className="p-6 glass-dark border border-white/5 rounded-3xl flex flex-col gap-1 items-center justify-center">
-                    <Skull size={24} className="text-zinc-600 mb-2" />
-                    <span className="text-2xl font-mono text-white font-bold">{matchStats.totalCheckmates}</span>
-                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">Dynasties Ended</span>
+                  <div className="absolute inset-0 bg-current opacity-[0.05] group-hover:scale-110 transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent pointer-events-none" />
+                  
+                  <div className="relative z-10">
+                    <span className="text-[12px] font-black uppercase tracking-[0.5em] opacity-60 mb-6 block">Lord Commander</span>
+                    <div className="w-32 h-32 rounded-full border-4 border-current/30 flex items-center justify-center mb-6 shadow-2xl bg-black/40">
+                       <span className="text-6xl font-serif font-black">{winner[0]}</span>
+                    </div>
+                    <h4 className="text-4xl font-serif font-black uppercase mb-2 tracking-tighter italic">{winner}</h4>
+                    <div className="w-8 h-1 bg-current mx-auto mb-4 opacity-30" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 bg-current/10 px-4 py-1.5 rounded-full border border-current/20">
+                      Control: {controlModes[winner]}
+                    </span>
                   </div>
                 </div>
 
-                {/* Aggression Card */}
-                <div className="glass-dark border border-white/5 p-8 rounded-3xl flex flex-col items-center justify-center text-center">
-                  <Sword size={24} className="text-gold mb-4" />
-                  <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold mb-2">Most Aggressive</span>
-                  <h4 className={cn(
-                    "text-xl font-serif font-bold uppercase",
-                    aggressiveFaction !== "Contested" ? FACTION_COLORS[aggressiveFaction] : "text-white"
-                  )}>
-                    {aggressiveFaction}
-                  </h4>
-                  {aggressiveFaction !== "Contested" && (
-                    <span className="text-[10px] text-zinc-500 mt-1">{matchStats.capturesByFaction[aggressiveFaction]} Captures</span>
-                  )}
-                </div>
+                {/* Tactical Analytics Grid */}
+                <div className="lg:col-span-8 space-y-6">
+                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="p-8 glass-dark border border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-2 group hover:bg-white/[0.05] transition-all">
+                        <Activity size={24} className="text-gold opacity-50 mb-1 group-hover:scale-125 transition-transform" />
+                        <span className="text-3xl font-mono text-white font-black">{matchStats.totalMoves}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Maneuvers</span>
+                      </div>
+                      <div className="p-8 glass-dark border border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-2 group hover:bg-white/[0.05] transition-all">
+                        <Target size={24} className="text-gold opacity-50 mb-1 group-hover:scale-125 transition-transform" />
+                        <span className="text-3xl font-mono text-white font-black">{matchStats.totalCaptures}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Captures</span>
+                      </div>
+                      <div className="p-8 glass-dark border border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-2 group hover:bg-white/[0.05] transition-all">
+                        <ShieldAlert size={24} className="text-rose-500 opacity-50 mb-1 group-hover:scale-125 transition-transform" />
+                        <span className="text-3xl font-mono text-white font-black">{matchStats.totalChecks}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Threats</span>
+                      </div>
+                      <div className="p-8 glass-dark border border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-2 group hover:bg-white/[0.05] transition-all">
+                        <Skull size={24} className="text-zinc-600 mb-1 group-hover:scale-125 transition-transform" />
+                        <span className="text-3xl font-mono text-white font-black">{matchStats.totalCheckmates}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Checkmates</span>
+                      </div>
+                   </div>
 
-                {/* Final Move */}
-                <div className="glass-dark border border-gold/20 p-8 rounded-3xl flex flex-col gap-2 lg:col-span-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-                    <span className="text-[9px] uppercase tracking-[0.3em] text-gold font-bold">Tactical Finale</span>
-                  </div>
-                  <p className="text-white text-lg font-serif italic">"{matchStats.finalMoveText}"</p>
-                  <p className="text-zinc-500 text-[10px] uppercase tracking-widest border-t border-white/5 pt-4 mt-2">The fatal strike that unified the realm.</p>
-                </div>
-
-                {/* Elimination Track */}
-                <div className="w-full lg:col-span-3 glass-dark border border-white/5 p-8 rounded-3xl">
-                  <span className="text-[9px] uppercase tracking-[0.3em] text-zinc-500 font-bold mb-6 block">Order of Elimination</span>
-                  <div className="flex items-center gap-8 px-4">
-                    {matchStats.eliminationOrder.length > 0 ? (
-                      matchStats.eliminationOrder.map((f, i) => (
-                        <div key={f} className="flex items-center gap-8 flex-1 last:flex-none">
-                          <div className="flex flex-col items-center gap-2">
-                             <div className={cn("w-10 h-10 rounded-full border flex items-center justify-center font-bold text-xs shadow-xl", FACTION_COLORS[f])}>
-                               {i + 1}
-                             </div>
-                             <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">{f}</span>
-                          </div>
-                          {i < matchStats.eliminationOrder.length - 1 && (
-                            <div className="h-px flex-1 bg-white/5 relative">
-                              <Sword size={12} className="absolute left-1/2 -top-1.5 -translate-x-1/2 text-zinc-800" />
-                            </div>
-                          )}
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Elimination Flow */}
+                      <div className="p-8 glass-dark border border-white/5 rounded-[2rem] flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 mb-6 font-sans">Elimination Sequence</span>
+                        <div className="flex-1 flex items-center justify-around gap-2 px-2">
+                           {matchStats.eliminationOrder.length > 0 ? (
+                             matchStats.eliminationOrder.map((f, i) => (
+                               <React.Fragment key={f}>
+                                  <div className="flex flex-col items-center gap-2">
+                                     <div className={cn("w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black text-xs shadow-xl", FACTION_COLORS[f])}>
+                                       {i + 1}
+                                     </div>
+                                     <span className="text-[9px] font-black uppercase tracking-widest opacity-40">{f[0]}</span>
+                                  </div>
+                                  {i < matchStats.eliminationOrder.length - 1 && (
+                                    <div className="w-8 h-px bg-white/10" />
+                                  )}
+                               </React.Fragment>
+                             ))
+                           ) : (
+                             <span className="text-zinc-700 italic text-[10px] uppercase font-black font-serif tracking-widest">No major collapses</span>
+                           )}
                         </div>
-                      ))
-                    ) : (
-                      <span className="text-xs text-zinc-600 font-serif italic">No major dynasties fell before the resolution.</span>
-                    )}
-                  </div>
+                      </div>
+
+                      {/* Final Blow Lore */}
+                      <div className="p-8 glass-dark border border-gold/20 rounded-[2rem] flex flex-col gap-3 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
+                        <div className="flex items-center gap-3 mb-1">
+                           <div className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+                           <span className="text-[9px] font-black uppercase tracking-[0.3em] text-gold">Final Chronicle</span>
+                        </div>
+                        <p className="text-white text-lg font-serif italic leading-relaxed tracking-tight group-hover:scale-[1.02] transition-transform duration-700">
+                           "{matchStats.finalMoveText}"
+                        </p>
+                        <p className="text-zinc-600 text-[8px] font-black uppercase tracking-[0.4em] border-t border-white/5 pt-4 mt-1">
+                           Archived in the Imperial Library
+                        </p>
+                      </div>
+                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row gap-4 relative z-10 mb-6">
-                <button 
+              <div className="flex flex-col xl:flex-row gap-4 relative z-10 mb-8">
+                 <button 
                   onClick={() => navigate(`/replay/local`, { state: { match: createMatchRecord() } })}
-                  className="flex-1 bg-gold/10 hover:bg-gold/20 border border-gold/30 text-gold py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2"
+                  className="flex-[1.5] bg-gold text-black py-4 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] transition-all flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:bg-white hover:scale-[1.02] active:scale-95"
                 >
-                  <PlayCircle size={16} /> Replay Match
-                </button>
-                <button 
-                  onClick={handleExportMatch}
-                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2"
-                >
-                  <Download size={16} /> Export JSON
+                  <PlayCircle size={18} /> Replay Battle
                 </button>
                 <button 
                   onClick={handleSaveLocally}
                   disabled={isSaved}
                   className={cn(
-                    "flex-1 py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2 border",
+                    "flex-1 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-3 border shadow-xl hover:scale-[1.02] active:scale-95",
                     isSaved 
                       ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500 opacity-60 cursor-default" 
                       : "bg-white/5 hover:bg-white/10 border-white/10 text-white"
                   )}
                 >
-                  <Save size={16} /> {isSaved ? "Saved" : "Save Locally"}
+                  <Save size={18} /> {isSaved ? "Chronicle Saved" : "Archive Domination"}
+                </button>
+                <button 
+                  onClick={handleExportMatch}
+                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95"
+                >
+                  <Download size={18} className="text-gold" /> Export JSON
                 </button>
               </div>
 
               <div className="flex flex-col md:flex-row gap-4 relative z-10">
                 <button 
                   onClick={resetGame}
-                  className="flex-1 bg-gold hover:bg-white text-black py-5 rounded-2xl font-bold uppercase tracking-[0.3em] text-xs shadow-[0_0_30px_rgba(212,175,55,0.3)] transition-all flex items-center justify-center gap-3"
+                  className="flex-1 bg-white/10 hover:bg-white/20 border border-white/10 text-white py-5 rounded-2xl font-black uppercase tracking-[0.4em] text-xs transition-all flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95"
                 >
-                  <RotateCcw size={16} /> Play Again
+                  <RotateCcw size={20} className="text-gold" /> Begin New Cycle
                 </button>
                 <button 
                   onClick={() => {
@@ -658,15 +686,15 @@ export default function PracticeBoard() {
                       navigate('/setup');
                     }
                   }}
-                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-5 rounded-2xl font-bold uppercase tracking-[0.3em] text-xs transition-all flex items-center justify-center gap-3"
+                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-5 rounded-2xl font-black uppercase tracking-[0.4em] text-xs transition-all flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95"
                 >
-                  <Settings size={16} /> {roomCode ? "To Lobby" : "Change Setup"}
+                  <Settings size={20} className="text-gold" /> {roomCode ? "Modify Council" : "Adjust Strategy"}
                 </button>
                 <button 
                   onClick={() => navigate(roomCode ? `/rooms/${roomCode}` : '/')}
-                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white py-5 rounded-2xl font-bold uppercase tracking-[0.3em] text-[10px] transition-all"
+                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-500 hover:text-white py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] transition-all hover:scale-[1.02] active:scale-95"
                 >
-                  {roomCode ? "Back to Lobby" : "Return to Stronghold"}
+                  {roomCode ? "Retreat to Lobby" : "Return to Stronghold"}
                 </button>
               </div>
             </motion.div>
@@ -834,33 +862,40 @@ export default function PracticeBoard() {
       </AnimatePresence>
 
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+        <div className="flex-1">
           <Link 
             to={roomCode ? `/rooms/${roomCode}` : "/"} 
-            className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-4"
+            className="group flex items-center gap-2 text-zinc-500 hover:text-gold transition-all text-[10px] font-black uppercase tracking-[0.3em] mb-4"
           >
-            <ChevronLeft size={16} /> {roomCode ? "Retreat to Council" : "Retreat to Stronghold"}
+            <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
+            {roomCode ? "Retreat to Council" : "Retreat to Stronghold"}
           </Link>
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl md:text-5xl font-serif font-bold text-white tracking-widest uppercase">
-              3-PLAYER <span className="text-gold italic">TACTICAL BOARD</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
+            <h1 className="text-4xl md:text-6xl font-serif font-black text-white tracking-widest uppercase leading-none">
+              3-PLAYER <span className="text-gold italic block md:inline">TACTICAL BOARD</span>
             </h1>
             {roomCode && (
-               <div className="bg-gold/10 border border-gold/30 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-[0_0_15px_rgba(212,175,55,0.1)]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
-                  <span className="text-[10px] font-black text-gold uppercase tracking-[0.2em]">War Room: {roomCode}</span>
+               <div className="bg-gold/5 border border-gold/20 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-[0_0_40px_rgba(212,175,55,0.05)] backdrop-blur-sm self-start md:self-auto">
+                  <div className="relative">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gold animate-ping absolute inset-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-gold relative z-10" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">War Room Chamber</span>
+                    <span className="text-sm font-mono font-black text-gold uppercase tracking-[0.2em]">{roomCode}</span>
+                  </div>
                </div>
             )}
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           <button 
             onClick={() => navigate('/archive')}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
+            className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-400 hover:text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
           >
-            <History size={14} className="text-gold" /> Archive
+            <History size={16} className="text-gold" /> Archive
           </button>
           
           <button 
@@ -871,28 +906,31 @@ export default function PracticeBoard() {
                 navigate('/setup');
               }
             }}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
+            className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/5 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
           >
-            <Settings size={14} className="text-gold" /> {roomCode ? "To Lobby" : "Change Setup"}
+            <Settings size={16} className="text-gold" /> {roomCode ? "To Lobby" : "Change Setup"}
           </button>
 
           <button 
             onClick={resetGame}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
+            className="flex items-center gap-3 bg-gold/10 hover:bg-gold text-gold hover:text-black border border-gold/10 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(212,175,55,0.1)]"
           >
-            <RotateCcw size={14} className="text-gold" /> Restore Armies
+            <RotateCcw size={16} /> Restore Armies
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         {/* Left Panel: Faction Status */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="glass-dark border border-white/5 p-6 rounded-[2rem]">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Sword size={14} className="text-gold" /> Initiative Order
+        <div className="lg:col-span-3 space-y-8">
+          <div className="glass-dark border border-white/5 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
+            {/* Subtle Texture Overlay */}
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none" />
+            
+            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10">
+              <Sword size={16} className="text-gold" /> Initiative Order
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-6 relative z-10">
               {FACTIONS.map((f) => {
                 const isEliminated = eliminated.includes(f);
                 const inCheck = !isEliminated && isFactionInCheck(f, pieces).inCheck;
@@ -902,61 +940,93 @@ export default function PracticeBoard() {
                   <div 
                     key={f}
                     className={cn(
-                      "flex flex-col gap-2 p-4 rounded-2xl border transition-all relative overflow-hidden",
-                      isActive ? FACTION_COLORS[f] : "border-white/5 opacity-40",
-                      isEliminated && "grayscale opacity-20 border-dashed"
+                      "flex flex-col gap-3 p-5 rounded-[2rem] border transition-all duration-700 relative group overflow-hidden",
+                      isActive 
+                        ? cn("shadow-2xl translate-x-2", FACTION_COLORS[f]) 
+                        : "border-white/5 bg-white/[0.02] opacity-40 hover:opacity-70",
+                      isEliminated && "grayscale opacity-10 border-dashed border-zinc-800 scale-95"
                     )}
                   >
+                    {/* Active Background Glow */}
+                    {isActive && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.1 }}
+                        className="absolute inset-0 bg-white"
+                      />
+                    )}
+
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={cn("w-2 h-2 rounded-full", isEliminated ? "bg-zinc-800" : "bg-current")} />
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          "w-3 h-3 rounded-full transition-all duration-500",
+                          isEliminated ? "bg-zinc-800" : "bg-current",
+                          isActive && "animate-pulse shadow-[0_0_12px_currentColor]"
+                        )} />
                         <div className="flex flex-col">
                           <span className={cn(
-                            "font-bold tracking-widest uppercase text-[10px]",
-                            isEliminated && "line-through text-zinc-600"
+                            "font-black tracking-[0.15em] uppercase text-sm font-serif",
+                            isEliminated && "text-zinc-700"
                           )}>
                             {f} {isEliminated && "(Fallen)"}
                           </span>
                           {inCheck && (
-                            <span className="text-[6.5px] font-bold text-rose-500 uppercase tracking-tighter animate-pulse flex items-center gap-1">
-                              <ShieldAlert size={8} /> Under Attack
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-1">
+                               <ShieldAlert size={10} className="text-rose-500" />
+                               <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest animate-pulse">
+                                 Under Attack
+                               </span>
+                            </div>
                           )}
                         </div>
                       </div>
-                      {isActive && (
-                        <motion.div 
-                          animate={{ scale: [1, 1.3, 1], rotate: [0, 5, -5, 0] }} 
-                          transition={{ repeat: Infinity, duration: 1.5 }}
-                        >
-                          {isBotThinking && controlModes[f] === 'Bot' ? (
-                            <div className="flex gap-1">
-                              <div className="w-1 h-1 bg-gold rounded-full animate-bounce [animation-delay:-0.3s]" />
-                              <div className="w-1 h-1 bg-gold rounded-full animate-bounce [animation-delay:-0.15s]" />
-                              <div className="w-1 h-1 bg-gold rounded-full animate-bounce" />
-                            </div>
-                          ) : (
-                            <Zap size={16} className="text-gold fill-gold drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]" fill="currentColor" />
-                          )}
-                        </motion.div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {isActive && (
+                          <motion.div 
+                            initial={{ scale: 0, rotate: -20 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            className="bg-black/20 p-2 rounded-xl"
+                          >
+                            {isBotThinking && controlModes[f] === 'Bot' ? (
+                              <div className="flex gap-1 py-1">
+                                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-1 h-1 bg-gold rounded-full" />
+                                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-1 h-1 bg-gold rounded-full" />
+                                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-1 h-1 bg-gold rounded-full" />
+                              </div>
+                            ) : (
+                              <Zap size={18} className="text-gold drop-shadow-[0_0_12px_rgba(212,175,55,0.8)]" fill="currentColor" />
+                            )}
+                          </motion.div>
+                        )}
+                        <span className="w-8 h-8 rounded-full border border-current/10 flex items-center justify-center font-serif font-black text-[10px] opacity-20">
+                          {f[0]}
+                        </span>
+                      </div>
                     </div>
 
                     {!isEliminated && (
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-current/10">
-                        <span className="text-[8px] uppercase tracking-widest opacity-60">Control</span>
-                        <button 
-                          onClick={() => setControlModes(prev => ({
-                            ...prev,
-                            [f]: prev[f] === 'Human' ? 'Bot' : 'Human'
-                          }))}
-                          className={cn(
-                            "px-2 py-0.5 rounded text-[8px] font-bold transition-all",
-                            controlModes[f] === 'Bot' ? "bg-gold text-black shadow-lg" : "bg-white/5 text-current hover:bg-white/10"
-                          )}
-                        >
-                          {controlModes[f].toUpperCase()}
-                        </button>
+                      <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-current/10">
+                          <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] opacity-40">
+                             <span>Commander Unit</span>
+                             <span>{controlModes[f]}</span>
+                          </div>
+                          <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setControlModes(prev => ({
+                                  ...prev,
+                                  [f]: prev[f] === 'Human' ? 'Bot' : 'Human'
+                                }));
+                            }}
+                            className={cn(
+                              "w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.25em] transition-all border",
+                              controlModes[f] === 'Bot' 
+                                ? "bg-gold text-black border-gold shadow-lg" 
+                                : "bg-white/5 text-current hover:bg-white/10 border-current/10"
+                            )}
+                          >
+                            Recruit {controlModes[f] === 'Bot' ? 'Warrior' : 'Bot'}
+                          </button>
                       </div>
                     )}
                   </div>
@@ -965,70 +1035,84 @@ export default function PracticeBoard() {
             </div>
           </div>
 
-          <div className="glass-dark border border-white/5 p-6 rounded-[2rem]">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <ShieldAlert size={14} className="text-gold" /> Fallen Warriors
+          <div className="glass-dark border border-white/5 p-8 rounded-[3rem] shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-rose-500/[0.02] pointer-events-none" />
+            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10">
+              <Skull size={16} className="text-zinc-700" /> Fallen Warriors
             </h3>
-            <div className="flex flex-wrap gap-2 min-h-[60px]">
+            <div className="flex flex-wrap gap-3 min-h-[120px] relative z-10">
               <AnimatePresence>
                 {captured.map((p, idx) => (
                   <motion.div
                     key={`${p.id}-${idx}`}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    initial={{ scale: 0, opacity: 0, rotate: -20 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
                     className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-[8px] font-bold border",
+                      "w-10 h-10 rounded-2xl flex items-center justify-center text-[10px] font-black border transition-all hover:scale-110 hover:z-20 shadow-lg",
                       FACTION_COLORS[p.faction]
                     )}
                   >
-                    {p.type}
+                     <div className="absolute inset-0 bg-black/40 rounded-2xl -z-10" />
+                     {p.type}
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {captured.length === 0 && <span className="text-[10px] text-zinc-700 uppercase tracking-widest font-serif italic">The field is clean</span>}
+              {captured.length === 0 && (
+                <div className="w-full flex flex-col items-center justify-center gap-4 py-6 opacity-20 filter grayscale">
+                   <Target size={32} strokeWidth={1} />
+                   <span className="text-[10px] font-black uppercase tracking-[0.4em]">The field is clean</span>
+                </div>
+              )}
+            </div>
+            <div className={cn(
+              "mt-8 pt-6 border-t border-white/5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest transition-opacity duration-700",
+              captured.length > 0 ? "opacity-40" : "opacity-10"
+            )}>
+              <span>Casualty Count</span>
+              <span className="text-white font-mono">{captured.length} Units</span>
             </div>
           </div>
         </div>
 
         {/* Main Board Area */}
         <div className="lg:col-span-6 flex flex-col items-center">
-          <div className="relative w-full max-w-[750px] aspect-square p-2 md:p-6 bg-[#0a0a0a] border-4 border-[#1a1a1a] rounded-sm shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden">
+          <div className="relative w-full max-w-[800px] aspect-square p-3 md:p-8 bg-[#0a0a0a] border-[12px] border-[#1a1a1a] rounded-lg shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden">
             {/* Wooden/Parchment Texture Overlay */}
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" />
-            <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.9)] pointer-events-none" />
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]" />
+            <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.95)] pointer-events-none" />
 
             {/* Traditional Grid Overlay */}
-            <div className="absolute inset-0 pointer-events-none p-2 md:p-6">
-              <svg viewBox="0 0 170 170" className="w-full h-full stroke-zinc-700/60 fill-none" strokeWidth="0.5">
+            <div className="absolute inset-0 pointer-events-none p-3 md:p-8">
+              <svg viewBox="0 0 170 170" className="w-full h-full stroke-zinc-800/80 fill-none" strokeWidth="0.4">
                 {/* Vertical Lines */}
                 {[...Array(17)].map((_, i) => (
-                  <line key={`v-${i}`} x1={i * 10 + 5} y1={5} x2={i * 10 + 5} y2={165} opacity={i < 4 || i > 12 ? 0.3 : 1} />
+                  <line key={`v-${i}`} x1={i * 10 + 5} y1={5} x2={i * 10 + 5} y2={165} opacity={i < 4 || i > 12 ? 0.2 : 1} />
                 ))}
                 {/* Horizontal Lines */}
                 {[...Array(17)].map((_, i) => (
-                  <line key={`h-${i}`} x1={5} y1={i * 10 + 5} x2={165} y2={i * 10 + 5} opacity={i < 4 || i > 12 ? 0.3 : 1} />
+                  <line key={`h-${i}`} x1={5} y1={i * 10 + 5} x2={165} y2={i * 10 + 5} opacity={i < 4 || i > 12 ? 0.2 : 1} />
                 ))}
                 
                 {/* Palace Diagonals - Shu (Top) */}
-                <g className="stroke-rose-900/40">
+                <g className="stroke-rose-900/60 stroke-[0.8]">
                   <line x1={75} y1={5} x2={95} y2={25} />
                   <line x1={95} y1={5} x2={75} y2={25} />
                 </g>
                 
                 {/* Palace Diagonals - Wu (Left) */}
-                <g className="stroke-emerald-900/40">
+                <g className="stroke-emerald-900/60 stroke-[0.8]">
                   <line x1={5} y1={75} x2={25} y2={95} />
                   <line x1={25} y1={75} x2={5} y2={95} />
                 </g>
                 
                 {/* Palace Diagonals - Wei (Bottom) */}
-                <g className="stroke-blue-900/40">
+                <g className="stroke-blue-900/60 stroke-[0.8]">
                   <line x1={75} y1={145} x2={95} y2={165} />
                   <line x1={95} y1={145} x2={75} y2={165} />
                 </g>
 
                 {/* River Boundary Decorations */}
-                <g className="stroke-gold/20 stroke-[0.4] stroke-dash-2">
+                <g className="stroke-gold/20 stroke-[0.6] stroke-dash-2">
                   {/* Vertical River */}
                   <line x1={65} y1={45} x2={65} y2={125} />
                   {/* Horizontal River Top */}
@@ -1040,19 +1124,19 @@ export default function PracticeBoard() {
             </div>
 
             {/* Faction Large Aesthetic Character Labels */}
-            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-16 select-none">
-              <div className="text-[120px] font-serif text-rose-900/10 -mt-8">蜀</div>
+            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-20 select-none overflow-hidden">
+              <div className="text-[180px] font-serif text-rose-900/10 -mt-16 blur-[1px]">蜀</div>
               <div className="flex justify-between w-full">
-                <div className="text-[120px] font-serif text-emerald-900/10 -ml-8">吴</div>
-                <div className="text-[120px] font-serif text-blue-900/10 -mr-8 invisible">魏</div>
+                <div className="text-[180px] font-serif text-emerald-900/10 -ml-20 blur-[1px]">吴</div>
+                <div className="text-[180px] font-serif text-blue-900/10 -mr-20 blur-[1px] invisible">魏</div>
               </div>
-              <div className="text-[120px] font-serif text-blue-900/10 -mb-8">魏</div>
+              <div className="text-[180px] font-serif text-blue-900/10 -mb-16 blur-[1px]">魏</div>
             </div>
 
             {/* Central Battlefield Legend */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <span className="text-[8px] uppercase tracking-[1em] text-zinc-800 font-serif translate-y-[-40px]">Inter-Kingdom River</span>
-              <span className="text-[8px] uppercase tracking-[1em] text-zinc-800 font-serif translate-y-[40px]">Chasm of Three Fates</span>
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-40">
+              <span className="text-[10px] font-black uppercase tracking-[1.5em] text-zinc-900 font-serif translate-y-[-50px]">Inter-Kingdom River</span>
+              <span className="text-[10px] font-black uppercase tracking-[1.5em] text-zinc-900 font-serif translate-y-[50px]">Chasm of Three Fates</span>
             </div>
 
             {/* Interactive Grid Points */}
@@ -1084,17 +1168,21 @@ export default function PracticeBoard() {
                       className="relative flex items-center justify-center cursor-pointer group"
                     >
                       {/* Grid Intersection Crosshair */}
-                      <div className="absolute w-2 h-0.5 bg-zinc-800/20 group-hover:bg-gold/20" />
-                      <div className="absolute h-2 w-0.5 bg-zinc-800/20 group-hover:bg-gold/20" />
+                      <div className="absolute w-2.5 h-0.5 bg-zinc-800/10 group-hover:bg-gold/40 transition-colors" />
+                      <div className="absolute h-2.5 w-0.5 bg-zinc-800/10 group-hover:bg-gold/40 transition-colors" />
                       
                       {/* Legal Move Indicators */}
                       {legalMoves.some(m => m.to.x === x && m.to.y === y) && (
-                        <div className={cn(
-                          "absolute w-3 h-3 rounded-full z-40",
-                          pieces.some(p => p.x === x && p.y === y) 
-                            ? "border-2 border-rose-500 animate-pulse bg-rose-500/20 scale-150 shadow-[0_0_10px_rgba(244,63,94,0.5)]" 
-                            : "bg-gold/40 border border-gold/60"
-                        )} />
+                        <motion.div 
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className={cn(
+                            "absolute w-4 h-4 rounded-full z-40 transition-all",
+                            pieces.some(p => p.x === x && p.y === y) 
+                              ? "border-[3px] border-rose-500 animate-pulse bg-rose-500/30 scale-150 shadow-[0_0_20px_rgba(244,63,94,0.6)]" 
+                              : "bg-gold border-2 border-white shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                          )} 
+                        />
                       )}
 
                       {piece && (
@@ -1103,25 +1191,25 @@ export default function PracticeBoard() {
                           onMouseEnter={() => setHoveredPoint({ x, y })}
                           onMouseLeave={() => setHoveredPoint(null)}
                           className={cn(
-                            "absolute w-[80%] h-[80%] rounded-full flex flex-col items-center justify-center font-serif font-bold text-[9px] md:text-sm shadow-[0_5px_15px_rgba(0,0,0,0.5)] border-2 transition-all cursor-grab active:cursor-grabbing",
+                            "absolute w-[88%] h-[88%] rounded-full flex flex-col items-center justify-center shadow-2xl border-2 transition-all cursor-grab active:cursor-grabbing",
                             FACTION_COLORS[piece.faction],
-                            isSelected ? "scale-125 border-gold shadow-gold/30 z-30 ring-4 ring-gold/10" : "hover:scale-110 z-20",
-                            "ring-1 ring-white/10",
-                            (piece.type === 'G' && isFactionInCheck(piece.faction, pieces).inCheck) && "animate-pulse ring-4 ring-rose-500/40 border-rose-500 shadow-rose-500/50",
-                            isAttacker && "ring-2 ring-gold/50 shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                            isSelected ? "scale-125 border-white shadow-gold/60 z-30 ring-[6px] ring-gold/20" : "hover:scale-110 z-20",
+                            "ring-1 ring-white/20",
+                            (piece.type === 'G' && isFactionInCheck(piece.faction, pieces).inCheck) && "animate-pulse ring-8 ring-rose-500/40 border-white shadow-[0_0_40px_rgba(244,63,94,0.6)]",
+                            isAttacker && "ring-4 ring-gold/50 shadow-[0_0_25px_rgba(212,175,55,0.6)]"
                           )}
                         >
-                          <span className="relative z-10 leading-none">{piece.type}</span>
-                          <span className="text-[6px] opacity-40 mt-0.5 uppercase tracking-tighter">{piece.faction[0]}</span>
+                          <span className="relative z-10 leading-none text-xs md:text-lg font-black font-serif italic">{piece.type}</span>
+                          <span className="text-[7px] font-black uppercase tracking-widest opacity-40 mt-0.5 line-clamp-1">{piece.faction[0]}</span>
                           
                           {/* Polished token depth effect */}
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
-                          <div className="absolute inset-1 rounded-full border border-white/5 opacity-30 shadow-inner" />
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-black/40 via-transparent to-white/20" />
+                          <div className="absolute inset-1.5 rounded-full border border-white/10 opacity-20 shadow-inner" />
                           
                           {isSelected && (
                             <motion.div 
                               layoutId="selection-glow"
-                              className="absolute inset-[-4px] rounded-full border border-gold/40 animate-pulse" 
+                              className="absolute inset-[-6px] rounded-full border-2 border-gold/60 animate-pulse" 
                             />
                           )}
                         </motion.div>
@@ -1133,61 +1221,128 @@ export default function PracticeBoard() {
             </div>
           </div>
           
-          <div className="mt-8 flex items-center gap-4 py-4 px-8 glass-dark border border-white/5 rounded-2xl text-zinc-400 text-[10px] font-bold uppercase tracking-widest shadow-xl max-w-lg text-center">
-            <Info size={14} className="text-gold flex-shrink-0" />
-            <span>{status}</span>
+          <div className="mt-10 flex items-center gap-6 py-6 px-10 glass-dark border border-white/5 rounded-3xl shadow-2xl max-w-2xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gold/[0.02] pointer-events-none" />
+            <div className="bg-gold/10 p-3 rounded-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
+               <Info size={20} className="text-gold" />
+            </div>
+            <p className="text-white text-sm font-serif italic leading-relaxed tracking-wide">
+              {status}
+            </p>
           </div>
-        </div>
-
-        {/* Right Panel: History */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="glass-dark border border-white/5 p-6 rounded-[2rem] h-[500px] overflow-hidden flex flex-col">
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <History size={14} className="text-gold" /> Battlefield Chronology
+              {/* Right Panel: History */}
+        <div className="lg:col-span-3 space-y-8">
+          <div className="glass-dark border border-white/5 p-8 rounded-[3rem] h-[650px] overflow-hidden flex flex-col shadow-2xl relative">
+            <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
+            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10 font-sans">
+              <History size={16} className="text-gold" /> Chronicle of Fates
             </h3>
-            <div className="space-y-3 overflow-y-auto flex-grow pr-2 scrollbar-none">
-              {history.map((m) => (
-                <div key={m.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col gap-2 group hover:bg-white/[0.04] transition-colors relative transition-all first:bg-white/[0.05] first:border-gold/20">
-                  <div className="flex items-center justify-between">
+            <div className="space-y-4 overflow-y-auto flex-grow pr-4 scrollbar-thin scrollbar-thumb-white/5 relative z-10 pb-8">
+              {history.map((m, idx) => (
+                <motion.div 
+                  key={m.id} 
+                  initial={idx === 0 ? { opacity: 0, x: 20 } : false}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={cn(
+                    "p-5 rounded-2xl border transition-all duration-300 relative group",
+                    idx === 0 
+                      ? "bg-white/[0.05] border-gold/40 shadow-2xl shadow-gold/5" 
+                      : "bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <span className={cn("px-2 py-0.5 rounded text-[8px] font-bold uppercase", FACTION_COLORS[m.faction])}>
+                      <div className={cn("w-1.5 h-1.5 rounded-full", FACTION_COLORS[m.faction])} />
+                      <span className={cn("text-[8px] font-black uppercase tracking-[0.2em]", FACTION_COLORS[m.faction])}>
                         {m.id.startsWith('bot-') ? 'BOT ' : ''}{m.faction}
                       </span>
-                      <div className="text-xs font-bold text-zinc-200">{getPieceName(m.pieceType)}</div>
                     </div>
-                    <div className="text-[9px] text-zinc-600 font-mono">
-                      ({m.from.x},{m.from.y}) → ({m.to.x},{m.to.y})
-                    </div>
+                    <span className="text-[9px] font-mono text-zinc-700 tracking-tighter">
+                      TURN {history.length - idx}
+                    </span>
                   </div>
                   
-                  <div className="text-[10px] text-zinc-500 font-serif italic">
-                    {m.captured ? (
-                      <span>Destroyed {m.captured} at ({m.to.x}, {m.to.y}).</span>
-                    ) : (
-                      <span>Advanced position.</span>
-                    )}
-                    {m.check && <span className="text-gold font-bold ml-1 flex items-center gap-1"><ShieldAlert size={8} /> KING IN PERIL!</span>}
-                    {m.checkmate && <span className="text-rose-500 font-bold ml-1 block mt-1 uppercase tracking-widest text-[8px]">Checkmate: Dominion Fallen</span>}
-                    {m.gameWinner && <span className="text-gold font-bold block mt-1 uppercase tracking-[0.2em] animate-pulse">Unity Achieved: {m.gameWinner} Wins</span>}
+                  <div className="flex items-center gap-4 mb-3">
+                     <div className={cn(
+                       "w-10 h-10 rounded-xl border flex items-center justify-center font-serif font-black text-xs shadow-inner",
+                       FACTION_COLORS[m.faction]
+                     )}>
+                        {m.pieceType}
+                     </div>
+                     <div className="flex flex-col">
+                        <span className="text-xs font-black text-white uppercase tracking-widest">{getPieceName(m.pieceType)}</span>
+                        <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 font-mono">
+                           <span>({m.from.x},{m.from.y})</span>
+                           <ChevronLeft size={8} className="rotate-180 opacity-40" />
+                           <span className="text-zinc-300">({m.to.x},{m.to.y})</span>
+                        </div>
+                     </div>
                   </div>
-                </div>
+                  
+                  <div className="text-[10px] text-zinc-500 font-serif italic leading-relaxed border-t border-white/5 pt-3">
+                    {m.captured ? (
+                      <span className="text-rose-400/80">Destroyed enemy {getPieceName(m.captured)} at ({m.to.x}, {m.to.y}).</span>
+                    ) : (
+                      <span>Repositioned for tactical advantage.</span>
+                    )}
+                    {m.check && <span className="text-gold font-black ml-1 block mt-1 animate-pulse uppercase tracking-[0.1em] text-[8px]">⚔️ KING IN PERIL!</span>}
+                    {m.checkmate && <span className="text-rose-600 font-black ml-1 block mt-2 uppercase tracking-[0.2em] text-[10px] bg-rose-500/10 p-2 rounded-lg text-center border border-rose-500/20">Kingdom Fallen</span>}
+                    {m.gameWinner && <span className="text-gold font-black block mt-3 uppercase tracking-[0.3em] animate-pulse bg-gold/10 p-3 rounded-lg text-center border border-gold/30">Realm United</span>}
+                  </div>
+                </motion.div>
               ))}
               {history.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center opacity-20">
-                  <History size={32} className="mb-4" />
-                  <p className="text-[10px] uppercase tracking-widest italic font-serif">Silence before the storm</p>
+                <div className="h-full flex flex-col items-center justify-center opacity-10 py-20 grayscale">
+                   <History size={64} strokeWidth={1} className="mb-6" />
+                   <p className="text-[10px] uppercase tracking-[0.5em] italic font-serif text-center">Silence Before the Storm</p>
                 </div>
               )}
             </div>
+            
+            {/* Scroll Indicator Gradient */}
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black to-transparent pointer-events-none z-20" />
           </div>
 
-          <div className="p-8 glass-dark border border-gold/10 rounded-[2rem] text-center shadow-lg">
-            <h4 className="text-[10px] font-bold text-gold uppercase tracking-[0.4em] mb-4">Tactical Insight</h4>
-            <p className="text-zinc-500 text-[11px] leading-relaxed italic font-serif">
-              "The Three Kingdoms are locked. Advancing into the center river boundary exposes your flanks to the third dominion."
+          {roomMode === 'online' && (
+            <div className="glass-dark border border-gold/10 p-6 rounded-[2rem] flex flex-col gap-4 shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
+                <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 relative z-10">
+                    <span>Synchrony Protocol</span>
+                    <div className="flex items-center gap-2">
+                       <div className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
+                       <span className="text-gold">Active</span>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 relative z-10 mt-2">
+                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl transition-all hover:bg-white/[0.05]">
+                        <span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest block mb-2">Tactical Intelligence</span>
+                        <span className="text-[10px] text-zinc-300 font-mono tracking-tighter uppercase">{lastSyncEvent || 'Listening for Intel...'}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-center items-center">
+                          <span className="text-[7px] text-zinc-600 uppercase font-black tracking-widest block mb-1">Assigned Front</span>
+                          <span className={cn("text-[10px] font-black font-mono tracking-widest uppercase", playerFaction && FACTION_COLORS[playerFaction])}>
+                            {playerFaction || 'Neutral'}
+                          </span>
+                      </div>
+                      <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-center items-center">
+                          <span className="text-[7px] text-zinc-600 uppercase font-black tracking-widest block mb-1">Archive Size</span>
+                          <span className="text-[10px] text-white font-black font-mono tracking-widest">{appliedMoveIds.size}</span>
+                      </div>
+                    </div>
+                </div>
+            </div>
+          )}
+
+          <div className="p-10 glass-dark border border-gold/10 rounded-[3rem] text-center shadow-2xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gold/[0.02] group-hover:scale-110 transition-transform duration-1000" />
+            <h4 className="text-[10px] font-black text-gold uppercase tracking-[0.5em] mb-6 relative z-10">Tactical Insight</h4>
+            <div className="w-8 h-px bg-gold/30 mx-auto mb-6 relative z-10" />
+            <p className="text-zinc-500 text-xs leading-relaxed italic font-serif relative z-10 px-2">
+              "When the three kingdoms clash at the river's edge, the wise commander keeps their reserve pieces in the palace shadows."
             </p>
           </div>
-        </div>
+        </div>      </div>
       </div>
     </div>
   );

@@ -57,8 +57,13 @@ class RoomManager {
     return room;
   }
 
+  getRoom(roomCode: string): OnlineWarRoom | null {
+    const normalized = roomCode.toUpperCase();
+    return this.rooms.get(normalized) || null;
+  }
+
   joinRoom(payload: JoinRoomPayload, clientId: string): OnlineWarRoom {
-    const room = this.rooms.get(payload.roomCode);
+    const room = this.getRoom(payload.roomCode);
     if (!room) throw new Error("Chamber not found in active archives.");
     
     // Check if clientId is already in a slot
@@ -83,7 +88,7 @@ class RoomManager {
   }
 
   joinSlot(payload: JoinSlotPayload, clientId: string): OnlineWarRoom {
-    const room = this.rooms.get(payload.roomCode);
+    const room = this.getRoom(payload.roomCode);
     if (!room) throw new Error("Strategic Chamber not found");
     
     const slot = room.slots[payload.faction as Exclude<Faction, 'None'>];
@@ -101,7 +106,7 @@ class RoomManager {
   }
 
   leaveSlot(payload: SlotActionPayload, clientId: string): OnlineWarRoom {
-    const room = this.rooms.get(payload.roomCode);
+    const room = this.getRoom(payload.roomCode);
     if (!room) throw new Error("Room not found");
     
     const slot = room.slots[payload.faction as Exclude<Faction, 'None'>];
@@ -117,7 +122,7 @@ class RoomManager {
   }
 
   addBot(payload: AddBotPayload, clientId: string): OnlineWarRoom {
-    const room = this.rooms.get(payload.roomCode);
+    const room = this.getRoom(payload.roomCode);
     if (!room) throw new Error("Room not found");
     if (room.hostClientId !== clientId) throw new Error("Only host can deploy Strategic Automata");
     if (!room.roomRules.allowBots) throw new Error("Automata prohibited in this chamber");
@@ -133,7 +138,7 @@ class RoomManager {
   }
 
   removeBot(payload: SlotActionPayload, clientId: string): OnlineWarRoom {
-    const room = this.rooms.get(payload.roomCode);
+    const room = this.getRoom(payload.roomCode);
     if (!room) throw new Error("Room not found");
     if (room.hostClientId !== clientId) throw new Error("Only host can rescind Automata");
 
@@ -147,7 +152,7 @@ class RoomManager {
   }
 
   setReady(payload: SetReadyPayload, clientId: string): OnlineWarRoom {
-    const room = this.rooms.get(payload.roomCode);
+    const room = this.getRoom(payload.roomCode);
     if (!room) throw new Error("Room not found");
     
     const slot = room.slots[payload.faction as Exclude<Faction, 'None'>];
@@ -158,7 +163,7 @@ class RoomManager {
   }
 
   startMatch(roomCode: string, clientId: string): OnlineWarRoom {
-    const room = this.rooms.get(roomCode);
+    const room = this.getRoom(roomCode);
     if (!room) throw new Error("Room not found");
     if (room.hostClientId !== clientId) throw new Error("Only host can initiate the incursion");
 
@@ -171,10 +176,6 @@ class RoomManager {
 
     room.status = 'playing';
     return room;
-  }
-
-  getRoom(roomCode: string): OnlineWarRoom | null {
-    return this.rooms.get(roomCode) || null;
   }
 
   leaveRoom(clientId: string): { roomCode: string; room: OnlineWarRoom | null } | null {

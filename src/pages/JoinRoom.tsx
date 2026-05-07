@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Key, User, ShieldAlert } from 'lucide-react';
 import { getWarRoom, normalizeRoomCode, isValidRoomCode } from '@/src/storage/warRooms';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
+import { cn } from '@/src/lib/utils';
 
 export default function JoinRoom() {
   const navigate = useNavigate();
@@ -89,12 +91,12 @@ export default function JoinRoom() {
           "Enter the tactical chamber of your allies."
         </p>
 
-        <form onSubmit={handleJoin} className="space-y-8 glass-dark p-10 rounded-[2.5rem] border border-white/5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
+        <form onSubmit={handleJoin} className="space-y-8 glass-dark p-12 rounded-[3.5rem] border border-white/5 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-gold/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
           
           <div className="space-y-4">
-            <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
-              <User size={14} className="text-gold" /> Warrior Designation
+            <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.4em] flex items-center gap-2">
+              <User size={14} className="text-gold" /> Commander Designation
             </label>
             <input 
               type="text" 
@@ -102,41 +104,62 @@ export default function JoinRoom() {
               placeholder="Your name..."
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-5 px-6 text-white placeholder:text-zinc-700 focus:outline-none focus:border-gold/30 transition-all font-serif"
+              className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-6 px-8 text-white placeholder:text-zinc-700 focus:outline-none focus:border-gold/30 transition-all font-serif text-xl tracking-wide"
             />
           </div>
 
           <div className="space-y-4">
-            <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
-              <Key size={14} className="text-gold" /> Chamber Access Code
+            <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.4em] flex items-center gap-2">
+              <Key size={14} className="text-gold" /> Chamber Cipher
             </label>
-            <input 
-              type="text" 
-              required
-              placeholder="e.g. FJTF18 or SHU-X8Q2"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-5 px-6 text-white placeholder:text-zinc-700 font-mono focus:outline-none focus:border-gold/30 transition-all text-2xl tracking-widest"
-            />
+            <div className="relative">
+              <input 
+                type="text" 
+                required
+                placeholder="e.g. FJTF18"
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value)}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-8 px-10 text-white placeholder:text-zinc-700 font-mono focus:outline-none focus:border-gold/30 transition-all text-4xl tracking-[0.3em] uppercase"
+              />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-gold/20 rounded-full" />
+            </div>
           </div>
 
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-3">
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-6 rounded-2xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-3">
               <ShieldAlert size={16} /> {error}
             </div>
           )}
 
           <button 
             type="submit"
-            className="w-full bg-gold hover:bg-white text-black py-5 rounded-[1.5rem] font-bold uppercase tracking-[0.4em] text-[10px] transition-all shadow-[0_0_20px_rgba(212,175,55,0.2)]"
+            disabled={isJoining}
+            className={cn(
+              "w-full py-6 rounded-[2rem] font-bold uppercase tracking-[0.5em] text-xs transition-all shadow-[0_0_40px_rgba(212,175,55,0.15)] flex items-center justify-center gap-4",
+              isJoining 
+                ? "bg-white/5 text-zinc-500" 
+                : "bg-gold hover:bg-white text-ink hover:scale-[1.02]"
+            )}
           >
-            Access Chamber
+            {isJoining ? (
+              <>
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-400 rounded-full"
+                />
+                Decrypting...
+              </>
+            ) : "Access Chamber"}
           </button>
           
-          <p className="text-[9px] text-zinc-600 font-serif italic text-center mt-4 uppercase tracking-widest leading-relaxed">
-            Local Simulation rooms only exist in this browser. <br/>
-            To join from another device, deploy the WebSocket backend.
-          </p>
+          <div className="flex flex-col gap-2 items-center opacity-60">
+            <div className="w-12 h-[1px] bg-white/10" />
+            <p className="text-[9px] text-zinc-500 font-serif italic text-center uppercase tracking-widest leading-relaxed">
+              Local simulation chambers remain client-side. <br/>
+              Access is restricted to the device of origin unless cloud synced.
+            </p>
+          </div>
         </form>
       </div>
     </div>

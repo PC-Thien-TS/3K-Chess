@@ -14,7 +14,9 @@ import {
   Target,
   Activity,
   Settings,
-  Download
+  Download,
+  PlayCircle,
+  ShieldAlert
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { 
@@ -126,56 +128,75 @@ export default function ReplayBoard() {
   const boardPieces = currentPieces();
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-8">
+    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <Link to="/archive" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-4">
-            <ChevronLeft size={16} /> Return to Library
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 px-4">
+        <div className="space-y-4">
+          <Link to="/archive" className="inline-flex items-center gap-3 text-gold hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.4em] mb-4 bg-gold/10 px-6 py-2.5 rounded-full border border-gold/20 mr-4">
+            <ChevronLeft size={16} /> Return to Archives
           </Link>
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-white tracking-widest uppercase">
-            REPLAY: <span className="text-gold italic">THE BATTLE OF {new Date(match.createdAt).getFullYear()}</span>
+          <h1 className="text-4xl md:text-7xl font-serif font-black text-white tracking-[0.05em] uppercase leading-none">
+            HISTORICAL <span className="text-gold italic block md:inline">RECONSTRUCTION</span>
           </h1>
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex flex-wrap items-center gap-6 mt-4">
              {match.source?.mode === 'war-room-sim' && (
-                <span className="text-[10px] font-bold text-gold uppercase tracking-widest bg-gold/10 border border-gold/20 px-3 py-1 rounded-full">
-                  War Room {match.source.roomCode}
+                <span className="text-[10px] font-black text-gold uppercase tracking-[0.3em] bg-gold/10 border border-gold/20 px-4 py-1.5 rounded-full flex items-center gap-2">
+                   <Settings size={12} /> Unit {match.source.roomCode}
                 </span>
              )}
-             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                <Trophy size={14} className="text-gold" /> Winner: <span className={match.winner ? FACTION_COLORS[match.winner] : "text-white"}>{match.winner || "None"}</span>
-             </span>
-             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2 border-l border-white/10 pl-4">
-                <Sword size={14} className="text-rose-500" /> Maneuvers: <span className="text-white">{match.moves.length}</span>
-             </span>
+             <div className="flex items-center gap-3 border-l border-white/10 pl-6 h-8">
+                <Trophy size={16} className="text-gold" /> 
+                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Dominion:</span>
+                <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg", match.winner ? FACTION_COLORS[match.winner] : "text-white bg-white/5")}>
+                   {match.winner || "Stalemate"}
+                </span>
+             </div>
+             <div className="flex items-center gap-3 border-l border-white/10 pl-6 h-8">
+                <Sword size={16} className="text-rose-500/60" /> 
+                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Scale:</span>
+                <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] font-mono">{match.moves.length} Nodes</span>
+             </div>
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 w-full lg:w-auto">
             <button 
                 onClick={() => exportMatchRecord(match)}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all"
+                className="flex-1 lg:flex-none glass-dark border border-white/10 text-white px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95"
             >
-                <Download size={14} className="text-gold" /> Export Log
+                <Download size={18} className="text-gold" /> Export Log
             </button>
             <button 
                 onClick={() => navigate('/setup')}
-                className="bg-gold text-black px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+                className="flex-1 lg:flex-none bg-gold text-black px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_15px_40px_rgba(212,175,55,0.3)] hover:bg-white hover:scale-[1.02] active:scale-95"
             >
-                <Settings size={14} /> New Battle
+                <PlayCircle size={18} /> New Campaign
             </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start px-4">
         {/* Board Area */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          <div className="relative aspect-square w-full max-w-[800px] mx-auto glass-dark border border-white/10 rounded-[2rem] p-4 p-md-8 shadow-2xl overflow-hidden shadow-gold/5">
-             {/* Grid Background */}
-             <div className="absolute inset-0 opacity-10 pointer-events-none" 
-                  style={{ backgroundImage: 'radial-gradient(circle, #D4AF37 1px, transparent 1px)', backgroundSize: '2.5rem 2.5rem' }} />
+        <div className="xl:col-span-8 space-y-8">
+          <div className="relative aspect-square w-full max-w-[850px] mx-auto glass-dark border-4 border-white/5 rounded-[4rem] p-10 md:p-14 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden">
+             {/* Dynamic Faction Background (Very Subtle) */}
+             <AnimatePresence mode="wait">
+                <motion.div
+                  key={lastMove?.faction}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 pointer-events-none opacity-[0.03]"
+                >
+                   <div className={cn("absolute inset-0 bg-gradient-to-br from-current to-transparent", lastMove ? FACTION_COLORS[lastMove.faction] : "text-zinc-500")} />
+                </motion.div>
+             </AnimatePresence>
+
+             {/* Grid Texture */}
+             <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay pointer-events-none" 
+                  style={{ backgroundImage: 'radial-gradient(circle, #D4AF37 1.5px, transparent 1.5px)', backgroundSize: '3rem 3rem' }} />
              
-             <div className="relative w-full h-full grid grid-cols-17 grid-rows-17">
+             <div className="relative w-full h-full grid grid-cols-17 grid-rows-17 border border-gold/10">
                 {Array.from({ length: ROWS * COLS }).map((_, i) => {
                   const x = i % COLS;
                   const y = Math.floor(i / COLS);
@@ -189,17 +210,19 @@ export default function ReplayBoard() {
                     <div 
                       key={i} 
                       className={cn(
-                        "relative border-[0.5px] border-white/5 flex items-center justify-center transition-all",
-                        isHighlighted && "bg-gold/5",
-                        isCapture && "bg-rose-500/10"
+                        "relative border-[0.5px] border-white/[0.03] transition-all",
+                        isHighlighted && "bg-gold/[0.08]"
                       )}
                     >
                       {isHighlighted && (
                           <div className={cn(
-                              "absolute inset-0 border-2",
-                              isCapture ? "border-rose-500/30" : "border-gold/20"
+                              "absolute inset-0 border-2 transition-all duration-700",
+                              isCapture ? "border-rose-500/40 bg-rose-500/10" : "border-gold/30 bg-gold/5"
                           )} />
                       )}
+                      
+                      {/* Grid Ornament */}
+                      {(x === 8 || y === 8) && <div className="absolute inset-0 bg-white/[0.02]" />}
                     </div>
                   );
                 })}
@@ -209,189 +232,221 @@ export default function ReplayBoard() {
                     <motion.div
                       key={piece.id}
                       layoutId={piece.id}
-                      transition={{ type: "spring", damping: 25, stiffness: 120 }}
-                      className={cn(
-                        "absolute w-[5.88%] h-[5.88%] flex items-center justify-center z-10",
-                        FACTION_COLORS[piece.faction]
-                      )}
+                      transition={{ type: "spring", damping: 30, stiffness: 150 }}
+                      className="absolute w-[5.88%] h-[5.88%] flex items-center justify-center z-10 p-[1.5%]"
                       style={{ 
                         left: `${(piece.x / COLS) * 100}%`, 
                         top: `${(piece.y / ROWS) * 100}%` 
                       }}
                     >
                        <div className={cn(
-                         "w-4 h-4 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center font-serif font-black text-[8px] md:text-sm shadow-xl bg-black relative transition-all",
-                         piece.faction === 'Shu' && "border-rose-500/50 shadow-rose-900/40",
-                         piece.faction === 'Wei' && "border-blue-500/50 shadow-blue-900/40",
-                         piece.faction === 'Wu' && "border-emerald-500/50 shadow-emerald-900/40"
+                         "w-full h-full rounded-2xl border-2 flex items-center justify-center font-serif font-black text-[8px] md:text-xs shadow-2xl relative transition-all group",
+                         FACTION_COLORS[piece.faction]
                        )}>
-                         <div className="absolute inset-0 rounded-full border border-white/10" />
-                         {piece.type}
+                         <div className="absolute inset-0 rounded-2xl border border-white/20" />
+                         <div className="absolute -inset-1 bg-current opacity-20 blur-sm rounded-2xl scale-0 group-hover:scale-100 transition-transform" />
+                         <span className="relative z-10 filter drop-shadow-md">{piece.type}</span>
                        </div>
                     </motion.div>
                 ))}
              </div>
           </div>
 
-          {/* Replay Controls */}
-          <div className="glass-dark border border-white/5 p-6 rounded-[2rem] flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                       <span className="text-xl font-mono text-gold font-bold">{currentStep}</span>
-                       <span className="text-zinc-600 text-xs font-bold uppercase tracking-widest">/ {match.moves.length} Maneuvers</span>
+          {/* Replay Controls & Progress */}
+          <div className="glass-dark border border-white/5 p-8 rounded-[3.5rem] flex flex-col gap-10 shadow-3xl">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="flex items-center gap-4 bg-white/[0.02] border border-white/10 px-8 py-4 rounded-3xl">
+                       <span className="text-4xl font-mono text-gold font-black tracking-tighter leading-none">{currentStep}</span>
+                       <div className="w-px h-8 bg-zinc-800" />
+                       <span className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] leading-none mb-1">
+                          OF {match.moves.length}
+                       </span>
                   </div>
-                  <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/10">
-                      <button 
-                        onClick={() => setCurrentStep(0)}
-                        className="p-3 text-zinc-400 hover:text-white transition-all rounded-xl hover:bg-white/5"
-                      >
-                        <RotateCcw size={20} />
-                      </button>
-                      <button 
-                        onClick={prevStep}
-                        disabled={currentStep === 0}
-                        className="p-3 text-zinc-400 hover:text-white disabled:opacity-20 transition-all rounded-xl hover:bg-white/5"
-                      >
-                        <ChevronLeft size={24} />
-                      </button>
+                  
+                  <div className="flex items-center gap-6 p-2 rounded-full relative">
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => setCurrentStep(0)}
+                          className="p-5 text-zinc-500 hover:text-white transition-all rounded-[1.5rem] hover:bg-white/5 shadow-inner"
+                          title="Rewind to Deployment"
+                        >
+                          <RotateCcw size={24} />
+                        </button>
+                        <button 
+                          onClick={prevStep}
+                          disabled={currentStep === 0}
+                          className="p-5 text-zinc-500 hover:text-white disabled:opacity-10 transition-all rounded-[1.5rem] hover:bg-white/5 shadow-inner"
+                        >
+                          <ChevronLeft size={32} />
+                        </button>
+                      </div>
+
                       <button 
                         onClick={() => setIsPlaying(!isPlaying)}
-                        className="w-14 h-14 bg-gold text-black rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl"
+                        className="w-20 h-20 bg-gold text-black rounded-[2rem] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_15px_40px_rgba(212,175,55,0.3)] hover:bg-white"
                       >
-                        {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} className="translate-x-0.5" fill="currentColor" />}
+                        {isPlaying ? <Pause size={36} fill="currentColor" /> : <Play size={36} className="translate-x-1" fill="currentColor" />}
                       </button>
-                      <button 
-                        onClick={nextStep}
-                        disabled={currentStep === match.moves.length}
-                        className="p-3 text-zinc-400 hover:text-white disabled:opacity-20 transition-all rounded-xl hover:bg-white/5"
-                      >
-                        <ChevronRight size={24} />
-                      </button>
-                      <button 
-                        onClick={() => setCurrentStep(match.moves.length)}
-                        className="p-3 text-gold/40 hover:text-gold transition-all rounded-xl hover:bg-gold/5 px-4 font-mono font-bold text-xs"
-                      >
-                        FINALE
-                      </button>
+
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={nextStep}
+                          disabled={currentStep === match.moves.length}
+                          className="p-5 text-zinc-500 hover:text-white disabled:opacity-10 transition-all rounded-[1.5rem] hover:bg-white/5 shadow-inner"
+                        >
+                          <ChevronRight size={32} />
+                        </button>
+                        <button 
+                          onClick={() => setCurrentStep(match.moves.length)}
+                          className="p-5 text-gold/60 hover:text-gold transition-all rounded-[1.5rem] hover:bg-gold/5 px-6 font-mono font-black text-xs uppercase tracking-widest"
+                        >
+                          FIN
+                        </button>
+                      </div>
                   </div>
               </div>
               
-              {/* Progress Bar */}
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/5">
-                  <motion.div 
-                    initial={false}
-                    animate={{ width: `${(currentStep / match.moves.length) * 100}%` }}
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-gold/50 to-gold shadow-[0_0_10px_rgba(212,175,55,0.5)]"
-                  />
+              {/* Cinematic Progress Bar */}
+              <div className="px-4">
+                  <div className="h-2 w-full bg-white/[0.02] rounded-full overflow-hidden relative border border-white/5 p-[1px]">
+                      <motion.div 
+                        initial={false}
+                        animate={{ width: `${(currentStep / match.moves.length) * 100}%` }}
+                        className="absolute inset-0 bg-gradient-to-r from-gold/40 to-gold rounded-full shadow-[0_0_20px_rgba(212,175,55,0.6)]"
+                      />
+                  </div>
               </div>
           </div>
         </div>
 
-        {/* Right Panel: Logistics */}
-        <div className="lg:col-span-4 space-y-6">
-            {/* Last Move Detail */}
+        {/* Right Panel: Analysis */}
+        <div className="xl:col-span-4 space-y-8">
+            {/* Tactical Intel */}
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentStep}
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: 40 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="glass-dark border border-gold/20 p-8 rounded-[2rem] shadow-xl relative overflow-hidden"
+                    exit={{ opacity: 0, x: -40 }}
+                    className="glass-dark border border-white/10 p-10 rounded-[3rem] shadow-[0_20px_80px_rgba(0,0,0,0.4)] relative overflow-hidden flex flex-col h-full min-h-[500px]"
                 >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[10px] font-bold text-gold uppercase tracking-[0.3em] flex items-center gap-2">
-                            <History size={14} /> Tactical Chronograph
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-gold/[0.02] blur-[80px] rounded-full" />
+                    <div className="flex items-center justify-between mb-10 relative z-10">
+                        <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] flex items-center gap-3">
+                            <History size={18} className="text-gold" /> Tactical Log
                         </h3>
                         {(() => {
                             const integrity = validateBoardIntegrity(boardPieces);
                             return (
                                 <div className={cn(
-                                    "flex items-center gap-1.5 px-2 py-0.5 rounded border text-[8px] font-bold uppercase tracking-widest",
-                                    integrity.valid ? "text-emerald-500 border-emerald-500/20 bg-emerald-500/5" : "text-rose-500 border-rose-500/20 bg-rose-500/5"
+                                    "flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.1em]",
+                                    integrity.valid ? "text-emerald-500 border-emerald-500/20 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.1)]" : "text-rose-500 border-rose-500/20 bg-rose-500/5 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
                                 )}>
-                                    <div className={cn("w-1 h-1 rounded-full", integrity.valid ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
-                                    {integrity.valid ? "Sync OK" : "Sync Error"}
+                                    <div className={cn("w-1.5 h-1.5 rounded-full", integrity.valid ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
+                                    {integrity.valid ? "CONSISTENT" : "ANOMALY"}
                                 </div>
                             );
                         })()}
                     </div>
                     
                     {lastMove ? (
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-4">
-                               <div className={cn("w-12 h-12 rounded-full border-2 flex items-center justify-center font-black text-lg shadow-xl bg-black transition-all", FACTION_COLORS[lastMove.faction])}>
-                                 {lastMove.pieceType}
+                        <div className="space-y-8 relative z-10 flex-grow flex flex-col">
+                            <div className="flex items-center gap-6">
+                               <div className={cn("w-16 h-16 rounded-2xl border-2 flex items-center justify-center font-black text-2xl shadow-2xl relative", FACTION_COLORS[lastMove.faction])}>
+                                 <div className="absolute inset-0 bg-black/40 rounded-2xl" />
+                                 <span className="relative z-10">{lastMove.pieceType}</span>
                                </div>
                                <div>
-                                  <h4 className={cn("text-xl font-serif font-black uppercase", FACTION_COLORS[lastMove.faction])}>{lastMove.faction}</h4>
-                                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Initiated maneuver</p>
+                                  <h4 className={cn("text-3xl font-serif font-black uppercase italic tracking-tighter", FACTION_COLORS[lastMove.faction])}>
+                                    {lastMove.faction}
+                                  </h4>
+                                  <div className="w-8 h-1 bg-current mb-1 opacity-30" />
+                                  <p className="text-[10px] text-zinc-600 uppercase tracking-[0.2em] font-black">Strategic Advancement</p>
                                </div>
                             </div>
                             
-                            <div className="bg-white/5 border border-white/5 p-4 rounded-2xl">
-                                <p className="text-white text-lg font-serif italic leading-relaxed">"{lastMove.notationText}"</p>
+                            <div className="bg-white/[0.03] border-l-4 border-gold/40 p-8 rounded-2xl relative shadow-inner">
+                                <p className="text-white text-xl font-serif italic leading-relaxed tracking-tight group-hover:scale-[1.02] transition-transform duration-700">
+                                   "{lastMove.notationText}"
+                                </p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 mt-auto pt-10">
                                 {lastMove.capturedPiece && (
-                                    <div className="p-4 bg-rose-500/5 border border-rose-500/20 rounded-2xl flex flex-col gap-1">
-                                        <span className="text-[8px] uppercase tracking-widest text-rose-500 font-bold">Captivity</span>
-                                        <span className="text-white font-serif font-bold text-xs">{getPieceName(lastMove.capturedPiece.type)}</span>
+                                    <div className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-3xl flex items-center justify-between">
+                                        <div className="flex flex-col gap-1">
+                                          <span className="text-[9px] uppercase font-black tracking-[0.3em] text-rose-500/60 leading-none mb-1">Decimated</span>
+                                          <span className="text-white font-serif font-black text-lg uppercase tracking-tight italic">{getPieceName(lastMove.capturedPiece.type)}</span>
+                                        </div>
+                                        <Target size={24} className="text-rose-500/20" />
                                     </div>
                                 )}
                                 {lastMove.givesCheck && (
-                                    <div className="p-4 bg-gold/5 border border-gold/20 rounded-2xl flex flex-col gap-1">
-                                        <span className="text-[8px] uppercase tracking-widest text-gold font-bold">Pressure</span>
-                                        <span className="text-white font-serif font-bold text-xs">CHECK on {lastMove.checkedFactions?.join(', ')}</span>
+                                    <div className="p-6 bg-gold/5 border border-gold/20 rounded-3xl flex items-center justify-between">
+                                        <div className="flex flex-col gap-1">
+                                          <span className="text-[9px] uppercase font-black tracking-[0.3em] text-gold/60 leading-none mb-1">King Endangered</span>
+                                          <span className="text-white font-serif font-black text-lg uppercase tracking-tight italic">{lastMove.checkedFactions?.join(', ')} Realm</span>
+                                        </div>
+                                        <ShieldAlert size={24} className="text-gold/20" />
                                     </div>
                                 )}
                                 {lastMove.checkmateHappened && (
-                                    <div className="col-span-2 p-4 bg-zinc-800 border border-zinc-700 rounded-2xl flex flex-col gap-1">
-                                        <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold">History Made</span>
-                                        <span className="text-rose-500 font-serif font-black text-xs uppercase tracking-widest">
-                                            CHECKMATE! {lastMove.eliminatedAfterMove?.join(' & ')} Exterminated
+                                    <div className="p-8 bg-zinc-900 border border-zinc-700 rounded-[2.5rem] flex flex-col gap-2 shadow-2xl relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-rose-600/5 group-hover:bg-rose-600/10 transition-colors" />
+                                        <span className="text-[10px] uppercase font-black tracking-[0.5em] text-zinc-600 relative z-10 mb-2">Dynasty Collapse</span>
+                                        <span className="text-rose-600 font-serif font-black text-2xl uppercase tracking-tighter leading-none relative z-10 italic">
+                                            DYNASTY FALLEN
                                         </span>
+                                        <p className="text-[11px] text-zinc-500 font-serif italic mt-2 relative z-10">
+                                            The {lastMove.eliminatedAfterMove?.join(' and ')} empires have been erased from the archives.
+                                        </p>
                                     </div>
                                 )}
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-12">
-                            <RotateCcw size={40} className="text-zinc-800 mx-auto mb-4" />
-                            <p className="text-zinc-600 font-serif italic text-sm">"The armies are deployed. Awaiting the first command of the Unifier."</p>
+                        <div className="flex-grow flex flex-col items-center justify-center py-20 opacity-20 grayscale scale-90">
+                            <RotateCcw size={80} strokeWidth={1} className="text-zinc-800 mb-8" />
+                            <p className="text-zinc-400 font-serif italic text-lg uppercase tracking-[0.3em] text-center max-w-xs">
+                              Awaiting the first signal from the archives.
+                            </p>
                         </div>
                     )}
                 </motion.div>
             </AnimatePresence>
 
-            {/* Match Stats Snapshot */}
-            <div className="glass-dark border border-white/5 p-8 rounded-[2rem]">
-                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6">Battle Stats Snapshot</h3>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5">
-                        <div className="flex items-center gap-3">
-                            <Activity size={16} className="text-gold" />
-                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Tempo</span>
+            {/* Performance Metrics */}
+            <div className="glass-dark border border-white/5 p-10 rounded-[3rem] shadow-2xl">
+                <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10">Historical Context</h3>
+                <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center justify-between p-6 bg-white/[0.02] rounded-[2rem] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-gold/10 flex items-center justify-center">
+                               <Activity size={18} className="text-gold group-hover:scale-125 transition-transform" />
+                            </div>
+                            <span className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em]">Tempo</span>
                         </div>
-                        <span className="text-white font-mono font-bold text-sm">{match.matchStats.totalMoves} Total</span>
+                        <span className="text-white font-mono font-black text-xl tracking-tighter">{match.matchStats.totalMoves} Nodes</span>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5">
-                        <div className="flex items-center gap-3">
-                            <Target size={16} className="text-emerald-500" />
-                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Casualties</span>
+                    <div className="flex items-center justify-between p-6 bg-white/[0.02] rounded-[2rem] border border-white/5 hover:bg-white/[0.04] transition-all group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                               <Target size={18} className="text-rose-500 group-hover:scale-125 transition-transform" />
+                            </div>
+                            <span className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em]">Shattered</span>
                         </div>
-                        <span className="text-white font-mono font-bold text-sm">{match.matchStats.totalCaptures} Total</span>
+                        <span className="text-white font-mono font-black text-xl tracking-tighter">{match.matchStats.totalCaptures} Units</span>
                     </div>
                 </div>
             </div>
 
-            {/* Return Link */}
+            {/* Retreat Button */}
             <button 
                 onClick={() => navigate('/archive')}
-                className="w-full py-5 rounded-2xl border border-white/5 text-zinc-500 hover:text-white transition-all uppercase text-[10px] font-bold tracking-[0.3em] font-serif italic"
+                className="w-full py-6 rounded-[2rem] border border-white/10 glass-dark text-zinc-500 hover:text-white hover:border-gold/30 transition-all font-black uppercase text-[11px] tracking-[0.5em] flex items-center justify-center gap-4 group"
             >
-               Exit Replay Session
+               <ChevronLeft size={20} className="group-hover:-translate-x-2 transition-transform" />
+               Exit Archive Access
             </button>
         </div>
       </div>

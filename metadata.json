@@ -1,6 +1,6 @@
 {
   "name": "Three Kingdoms Chess",
-  "description": "Tactics, betrayal, and legendary generals clash in this cinematic turn-based 3-player chess variant. Play against bot AI or locally with friends.",
+  "description": "Tactics, betrayal, and legendary generals clash in this cinematic 3-player chess variant. Supports local simulation and online multiplayer synchronization via Socket.io.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Shield, Sword, User, Settings2 } from 'lucide-react';
+import { ChevronLeft, Shield, Sword, User, Settings2, Zap } from 'lucide-react';
 import { generateRoomCode, saveWarRoom, WarRoom, RoomFactionSlot } from '@/src/storage/warRooms';
 import { Faction, BotDifficulty } from '@/src/rules/threeKingdomRules';
 import { cn } from '@/src/lib/utils';
@@ -161,27 +161,70 @@ export default function CreateRoom() {
 
         <form onSubmit={handleCreate} className="space-y-10">
           {/* Room Mode Toggle */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => setRoomMode('local')}
-              className={cn(
-                "py-4 rounded-2xl border text-[10px] font-bold uppercase tracking-widest transition-all",
-                roomMode === 'local' ? "bg-gold/10 border-gold text-gold" : "bg-white/5 border-white/5 text-zinc-500"
-              )}
-            >
-              Local Simulation
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoomMode('online')}
-              className={cn(
-                "py-4 rounded-2xl border text-[10px] font-bold uppercase tracking-widest transition-all",
-                roomMode === 'online' ? "bg-gold/10 border-gold text-gold" : "bg-white/5 border-white/5 text-zinc-500"
-              )}
-            >
-              Online WebSocket
-            </button>
+          <div className="space-y-4">
+            <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
+              <Zap size={14} className="text-gold" /> Engagement Layer
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setRoomMode('local')}
+                className={cn(
+                  "p-6 rounded-3xl border text-left transition-all relative overflow-hidden group",
+                  roomMode === 'local' 
+                    ? "bg-gold/10 border-gold shadow-[0_0_20px_rgba(212,175,55,0.1)]" 
+                    : "bg-white/[0.03] border-white/5 hover:border-white/10"
+                )}
+              >
+                <div className="flex items-center gap-4 mb-2">
+                  <div className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    roomMode === 'local' ? "bg-gold text-ink" : "bg-white/5 text-zinc-500 group-hover:text-gold"
+                  )}>
+                    <User size={16} />
+                  </div>
+                  <h4 className={cn(
+                    "text-[10px] font-bold uppercase tracking-widest",
+                    roomMode === 'local' ? "text-white" : "text-zinc-500"
+                  )}>Local Simulation</h4>
+                </div>
+                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">Stored only on this device. Best for solo training or same-room tactics.</p>
+                {roomMode === 'local' && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />}
+              </button>
+
+              <button
+                type="button"
+                disabled={!wsUrlAvailable}
+                onClick={() => setRoomMode('online')}
+                className={cn(
+                  "p-6 rounded-3xl border text-left transition-all relative overflow-hidden group",
+                  !wsUrlAvailable && "opacity-50 grayscale cursor-not-allowed",
+                  roomMode === 'online' 
+                    ? "bg-gold/10 border-gold shadow-[0_0_20px_rgba(212,175,55,0.1)]" 
+                    : "bg-white/[0.03] border-white/5 hover:border-white/10"
+                )}
+              >
+                <div className="flex items-center gap-4 mb-2">
+                  <div className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    roomMode === 'online' ? "bg-gold text-ink" : "bg-white/5 text-zinc-500 group-hover:text-gold"
+                  )}>
+                    <Zap size={16} />
+                  </div>
+                  <h4 className={cn(
+                    "text-[10px] font-bold uppercase tracking-widest",
+                    roomMode === 'online' ? "text-white" : "text-zinc-500"
+                  )}>Online WebSocket</h4>
+                </div>
+                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">Cross-device synchronization via battlefield cloud. Play with friends anywhere.</p>
+                {roomMode === 'online' && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />}
+              </button>
+            </div>
+            {!wsUrlAvailable && roomMode === 'online' && (
+              <p className="text-[9px] text-rose-500/80 font-serif italic text-center">
+                Battlefield Cloud is currently offline. Please use Local Simulation.
+              </p>
+            )}
           </div>
 
           {/* Host Name */}
@@ -189,42 +232,60 @@ export default function CreateRoom() {
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
               <User size={14} className="text-gold" /> Commander's Title
             </label>
-            <input 
-              type="text" 
-              required
-              placeholder="Enter your name or title..."
-              value={hostName}
-              onChange={(e) => setHostName(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-6 px-8 text-white placeholder:text-zinc-700 focus:outline-none focus:border-gold/30 transition-all font-serif text-xl"
-            />
+            <div className="relative">
+              <input 
+                type="text" 
+                required
+                placeholder="Enter your name or title..."
+                value={hostName}
+                onChange={(e) => setHostName(e.target.value)}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-3xl py-8 px-10 text-white placeholder:text-zinc-700 focus:outline-none focus:border-gold/30 transition-all font-serif text-2xl tracking-wide"
+              />
+              <div className="absolute right-8 top-1/2 -translate-y-1/2 flex gap-1">
+                {[1, 2, 3].map(i => <div key={i} className="w-1 h-3 bg-gold/20 rounded-full" />)}
+              </div>
+            </div>
           </div>
 
           {/* Faction Selection */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
-              <Shield size={14} className="text-gold" /> Allegiance
+              <Shield size={14} className="text-gold" /> Initial Allegiance
             </label>
-            <div className="grid grid-cols-3 gap-4">
-              {FACTIONS.map(f => (
+            <div className="grid grid-cols-3 gap-6">
+              {[
+                { id: 'Shu', name: 'Benevolence', color: 'bg-shu', textColor: 'text-shu' },
+                { id: 'Wei', name: 'Authority', color: 'bg-wei', textColor: 'text-wei' },
+                { id: 'Wu', name: 'Prosperity', color: 'bg-wu', textColor: 'text-wu' }
+              ].map(f => (
                 <button
                   key={f.id}
                   type="button"
-                  onClick={() => setSelectedFaction(f.id)}
+                  onClick={() => setSelectedFaction(f.id as Faction)}
                   className={cn(
-                    "relative py-8 rounded-2xl border transition-all overflow-hidden flex flex-col items-center justify-center gap-3",
+                    "relative py-12 rounded-[2.5rem] border transition-all overflow-hidden flex flex-col items-center justify-center gap-4 group",
                     selectedFaction === f.id 
-                      ? "bg-gold/10 border-gold shadow-[0_0_20px_rgba(212,175,55,0.1)]" 
-                      : "bg-white/5 border-white/5 hover:border-white/20 text-zinc-500 hover:text-zinc-300"
+                      ? "bg-white/[0.05] border-gold shadow-[0_0_40px_rgba(212,175,55,0.1)]" 
+                      : "bg-white/[0.02] border-white/5 hover:border-white/10 text-zinc-500 hover:text-zinc-300"
                   )}
                 >
                   <div className={cn(
-                    "text-3xl font-black font-serif",
-                    selectedFaction === f.id ? "text-gold" : "text-zinc-700"
+                    "w-20 h-20 rounded-[2rem] flex items-center justify-center text-5xl font-black font-serif transition-transform duration-500 group-hover:scale-110",
+                    selectedFaction === f.id ? f.color + " text-white shadow-2xl" : "bg-white/5 text-zinc-800"
                   )}>{f.id[0]}</div>
-                  <span className={cn(
-                    "text-[8px] font-bold uppercase tracking-widest text-center",
-                    selectedFaction === f.id ? "text-white" : "text-zinc-600"
-                  )}>{f.id}</span>
+                  <div className="text-center">
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-[0.3em] block mb-1",
+                      selectedFaction === f.id ? "text-gold" : "text-zinc-600"
+                    )}>{f.id}</span>
+                    <span className="text-[7px] font-serif italic text-zinc-700 uppercase tracking-widest">{f.name}</span>
+                  </div>
+                  {selectedFaction === f.id && (
+                    <motion.div 
+                      layoutId="faction-glow"
+                      className={cn("absolute inset-x-0 bottom-0 h-1 blur-xl opacity-50", f.color)} 
+                    />
+                  )}
                 </button>
               ))}
             </div>
