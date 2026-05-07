@@ -55,25 +55,25 @@ const PIECE_THEME: Record<AuthenticFactionOrNeutral, { rim: string; ink: string;
     rim: 'border-rose-700/80',
     ink: 'text-rose-800',
     chip: 'bg-rose-100/70',
-    shadow: 'shadow-[0_10px_20px_rgba(127,29,29,0.14)]',
+    shadow: 'shadow-[0_3px_7px_rgba(127,29,29,0.10)]',
   },
   Wei: {
     rim: 'border-slate-700/80',
     ink: 'text-slate-800',
     chip: 'bg-slate-100/70',
-    shadow: 'shadow-[0_10px_20px_rgba(30,41,59,0.16)]',
+    shadow: 'shadow-[0_3px_7px_rgba(30,41,59,0.12)]',
   },
   Wu: {
     rim: 'border-emerald-700/80',
     ink: 'text-emerald-800',
     chip: 'bg-emerald-100/70',
-    shadow: 'shadow-[0_10px_20px_rgba(5,150,105,0.14)]',
+    shadow: 'shadow-[0_3px_7px_rgba(5,150,105,0.10)]',
   },
   Han: {
     rim: 'border-amber-700/80',
     ink: 'text-amber-900',
     chip: 'bg-amber-100/80',
-    shadow: 'shadow-[0_10px_20px_rgba(180,120,20,0.18)]',
+    shadow: 'shadow-[0_3px_7px_rgba(180,120,20,0.12)]',
   },
 };
 
@@ -133,15 +133,15 @@ function PieceToken({
   return (
     <div
       className={cn(
-        'relative flex h-full w-full items-center justify-center rounded-full border-[2.5px] bg-[radial-gradient(circle_at_32%_26%,rgba(255,255,255,0.95),rgba(255,247,230,0.96)_28%,rgba(231,214,184,0.97)_62%,rgba(185,157,121,0.99)_100%)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.75),inset_0_-8px_14px_rgba(120,90,52,0.16)] transition-all',
+        'relative flex h-full w-full items-center justify-center rounded-full border-[2px] bg-[radial-gradient(circle_at_35%_32%,rgba(255,255,255,0.95),rgba(248,239,220,0.98)_58%,rgba(219,196,161,0.98)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-2px_5px_rgba(120,90,52,0.10)] transition-all',
         theme.rim,
         theme.shadow,
-        selected && 'scale-[1.08] shadow-[0_0_0_3px_rgba(250,204,21,0.26),0_14px_20px_rgba(120,90,52,0.16)]',
-        ownedByCurrentTurn && !selected && 'shadow-[0_0_0_2px_rgba(255,255,255,0.3),0_10px_20px_rgba(120,90,52,0.16)]'
+        selected && 'scale-[1.04] shadow-[0_0_0_2px_rgba(250,204,21,0.24),0_4px_10px_rgba(120,90,52,0.14)]',
+        ownedByCurrentTurn && !selected && 'shadow-[0_0_0_1px_rgba(255,255,255,0.28),0_4px_10px_rgba(120,90,52,0.14)]'
       )}
     >
       <div className="absolute inset-[8%] rounded-full border border-black/10" />
-      <div className="absolute inset-x-[18%] top-[10%] h-[16%] rounded-full bg-white/70 blur-[1px]" />
+      <div className="absolute inset-x-[20%] top-[11%] h-[10%] rounded-full bg-white/45" />
       {showOwnerBadge && (
         <div
           className={cn(
@@ -179,7 +179,7 @@ function CapturedBadge({ piece }: { piece: AuthenticCapturedPieceRecord }) {
       )}
     >
       {piece.visualFaction} {AUTHENTIC_LABELS[piece.type]}
-      {piece.owner !== piece.visualFaction ? ` · ${piece.owner}` : ''}
+      {piece.owner !== piece.visualFaction ? ` / ${piece.owner}` : ''}
     </span>
   );
 }
@@ -265,6 +265,11 @@ export default function AuthenticBoard({
 
     if (!selectedPiece) {
       if (pieceAtPoint?.owner === gameState.currentTurn) {
+        devLog('[Authentic Click] select', {
+          pieceId: pieceAtPoint.id,
+          type: pieceAtPoint.type,
+          owner: pieceAtPoint.owner,
+        });
         setSelectedId(pieceAtPoint.id);
         setStatus(`${getAuthenticFactionLabel(gameState.currentTurn)} ${AUTHENTIC_LABELS[pieceAtPoint.type]} selected.`);
         return;
@@ -308,9 +313,18 @@ export default function AuthenticBoard({
 
     const resolution = applyAuthenticMove(gameState, selectedPiece, point);
     if (!resolution) {
+      devLog('[Authentic Click] move result', {
+        success: false,
+      });
       setStatus(AUTHENTIC_MOVE_BLOCKED_MESSAGE);
       return;
     }
+
+    devLog('[Authentic Click] move result', {
+      success: true,
+      move: resolution.moveRecord,
+      nextTurn: resolution.nextTurn,
+    });
 
     setGameState((prev) => ({
       pieces: resolution.pieces,
@@ -340,16 +354,12 @@ export default function AuthenticBoard({
             <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Local Only</span>
           </div>
 
-          <div className="rounded-[3rem] border border-[#8c6331]/25 bg-[linear-gradient(180deg,#f4ead1_0%,#ead7af_48%,#ddc18d_100%)] p-4 shadow-[0_28px_90px_rgba(66,45,20,0.22)] sm:p-6 md:p-8">
-            <div className="relative aspect-square w-full overflow-hidden rounded-[2.5rem] border border-[#74502e]/30 bg-[radial-gradient(circle_at_28%_16%,rgba(255,255,255,0.48),transparent_20%),radial-gradient(circle_at_80%_82%,rgba(120,82,38,0.18),transparent_28%),linear-gradient(180deg,#f7edd8_0%,#ecd9b2_52%,#dfc18f_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-18px_28px_rgba(102,74,36,0.08)]">
-              <div className="absolute inset-0 bg-[repeating-linear-gradient(112deg,rgba(112,76,40,0.16)_0,rgba(112,76,40,0.16)_2px,transparent_2px,transparent_12px),repeating-linear-gradient(24deg,rgba(255,255,255,0.12)_0,rgba(255,255,255,0.12)_1px,transparent_1px,transparent_8px)] opacity-[0.18] mix-blend-multiply" />
-              <div className="absolute left-[16%] top-[5%] h-[28%] w-[68%] rounded-[45%] bg-rose-300/18 blur-3xl" />
-              <div className="absolute left-[5%] top-[21%] h-[58%] w-[22%] rounded-[45%] bg-emerald-300/18 blur-3xl" />
-              <div className="absolute bottom-[5%] left-[16%] h-[28%] w-[68%] rounded-[45%] bg-slate-300/18 blur-3xl" />
-              <div className="absolute left-[34%] top-[34%] h-[32%] w-[32%] rounded-[45%] bg-amber-300/12 blur-3xl" />
-              <div className="absolute inset-[4.5%] rounded-[2.2rem] border border-[#704c28]/18" />
+          <div className="rounded-[3rem] border border-[#8c6331]/22 bg-[#ead7b0] p-4 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:p-6 md:p-8">
+            <div className="relative aspect-square w-full overflow-hidden rounded-[2.2rem] border border-[#7a5730]/28 bg-[#f4e7c9] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]">
+              <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(120,86,46,0.025)_0,rgba(120,86,46,0.025)_2px,transparent_2px,transparent_18px),repeating-linear-gradient(0deg,rgba(120,86,46,0.018)_0,rgba(120,86,46,0.018)_1px,transparent_1px,transparent_12px)] opacity-70" />
+              <div className="absolute inset-[4.8%] rounded-[2rem] border border-[#7a5730]/18" />
               <div
-                className="absolute rounded-[1.6rem] bg-rose-100/22"
+                className="absolute rounded-[1.2rem] bg-rose-200/10"
                 style={{
                   left: `${SHU_X.start}%`,
                   top: `${SHU_Y.start}%`,
@@ -358,7 +368,7 @@ export default function AuthenticBoard({
                 }}
               />
               <div
-                className="absolute rounded-[1.6rem] bg-emerald-100/18"
+                className="absolute rounded-[1.2rem] bg-emerald-200/10"
                 style={{
                   left: `${WU_X.start}%`,
                   top: `${WU_Y.start}%`,
@@ -367,7 +377,7 @@ export default function AuthenticBoard({
                 }}
               />
               <div
-                className="absolute rounded-[1.6rem] bg-slate-100/18"
+                className="absolute rounded-[1.2rem] bg-slate-200/10"
                 style={{
                   left: `${WEI_X.start}%`,
                   top: `${WEI_Y.start}%`,
@@ -376,7 +386,7 @@ export default function AuthenticBoard({
                 }}
               />
               <div
-                className="absolute rounded-[1.4rem] bg-amber-100/24"
+                className="absolute rounded-[1rem] bg-amber-200/12"
                 style={{
                   left: `${HAN_X.start}%`,
                   top: `${HAN_Y.start}%`,
@@ -395,8 +405,8 @@ export default function AuthenticBoard({
                       y1={BOARD_MIN}
                       x2={pos}
                       y2={BOARD_MAX}
-                      stroke="rgba(71,45,22,0.28)"
-                      strokeWidth="0.28"
+                      stroke="rgba(71,45,22,0.48)"
+                      strokeWidth="0.34"
                     />
                   );
                 })}
@@ -409,21 +419,21 @@ export default function AuthenticBoard({
                       y1={pos}
                       x2={BOARD_MAX}
                       y2={pos}
-                      stroke="rgba(71,45,22,0.28)"
-                      strokeWidth="0.28"
+                      stroke="rgba(71,45,22,0.48)"
+                      strokeWidth="0.34"
                     />
                   );
                 })}
 
-                <line x1={svgPoint(7)} y1={svgPoint(0)} x2={svgPoint(9)} y2={svgPoint(2)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
-                <line x1={svgPoint(9)} y1={svgPoint(0)} x2={svgPoint(7)} y2={svgPoint(2)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
-                <line x1={svgPoint(0)} y1={svgPoint(7)} x2={svgPoint(2)} y2={svgPoint(9)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
-                <line x1={svgPoint(2)} y1={svgPoint(7)} x2={svgPoint(0)} y2={svgPoint(9)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
-                <line x1={svgPoint(7)} y1={svgPoint(14)} x2={svgPoint(9)} y2={svgPoint(16)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
-                <line x1={svgPoint(9)} y1={svgPoint(14)} x2={svgPoint(7)} y2={svgPoint(16)} stroke="rgba(89,57,24,0.55)" strokeWidth="0.34" />
+                <line x1={svgPoint(7)} y1={svgPoint(0)} x2={svgPoint(9)} y2={svgPoint(2)} stroke="rgba(89,57,24,0.62)" strokeWidth="0.28" />
+                <line x1={svgPoint(9)} y1={svgPoint(0)} x2={svgPoint(7)} y2={svgPoint(2)} stroke="rgba(89,57,24,0.62)" strokeWidth="0.28" />
+                <line x1={svgPoint(0)} y1={svgPoint(7)} x2={svgPoint(2)} y2={svgPoint(9)} stroke="rgba(89,57,24,0.62)" strokeWidth="0.28" />
+                <line x1={svgPoint(2)} y1={svgPoint(7)} x2={svgPoint(0)} y2={svgPoint(9)} stroke="rgba(89,57,24,0.62)" strokeWidth="0.28" />
+                <line x1={svgPoint(7)} y1={svgPoint(14)} x2={svgPoint(9)} y2={svgPoint(16)} stroke="rgba(89,57,24,0.62)" strokeWidth="0.28" />
+                <line x1={svgPoint(9)} y1={svgPoint(14)} x2={svgPoint(7)} y2={svgPoint(16)} stroke="rgba(89,57,24,0.62)" strokeWidth="0.28" />
 
-                <circle cx={svgPoint(8)} cy={svgPoint(8)} r="10.8" fill="none" stroke="rgba(107,73,38,0.16)" strokeWidth="0.24" />
-                <circle cx={svgPoint(8)} cy={svgPoint(8)} r="13.6" fill="none" stroke="rgba(107,73,38,0.08)" strokeWidth="0.22" />
+                <circle cx={svgPoint(8)} cy={svgPoint(8)} r="10.8" fill="none" stroke="rgba(107,73,38,0.18)" strokeWidth="0.22" />
+                <circle cx={svgPoint(8)} cy={svgPoint(8)} r="13.6" fill="none" stroke="rgba(107,73,38,0.12)" strokeWidth="0.18" />
               </svg>
 
               <div className="absolute inset-0">
@@ -450,8 +460,8 @@ export default function AuthenticBoard({
                         )}
                         style={{
                           ...coordinateToStyle(x, y),
-                          width: '6.25%',
-                          height: '6.25%',
+                          width: '4.6%',
+                          height: '4.6%',
                           transform: 'translate(-50%, -50%)',
                         }}
                         aria-label={`Point ${x}, ${y}`}
@@ -466,34 +476,34 @@ export default function AuthenticBoard({
                           }}
                         >
                           {isLastMoveFrom && (
-                            <div className="absolute left-1/2 top-1/2 h-[2.1rem] w-[2.1rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-300/45 bg-sky-100/10" />
+                            <div className="absolute left-1/2 top-1/2 h-[1.65rem] w-[1.65rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-400/35 bg-sky-100/8" />
                           )}
                           {isLastMoveTo && (
-                            <div className="absolute left-1/2 top-1/2 h-[2.5rem] w-[2.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-500/55 bg-amber-200/12 shadow-[0_0_18px_rgba(180,120,20,0.2)]" />
+                            <div className="absolute left-1/2 top-1/2 h-[1.9rem] w-[1.9rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-600/48 bg-amber-200/10" />
                           )}
                           {allianceFaction && (
-                            <div className="absolute left-1/2 top-1/2 flex h-[1.2rem] w-[1.2rem] -translate-x-1/2 -translate-y-1/2 rotate-45 items-center justify-center rounded-[0.18rem] border border-[#7a521f]/45 bg-amber-200/35">
+                            <div className="absolute left-1/2 top-1/2 flex h-[1rem] w-[1rem] -translate-x-1/2 -translate-y-1/2 rotate-45 items-center justify-center rounded-[0.14rem] border border-[#7a521f]/45 bg-amber-200/28">
                               <span className="-rotate-45 text-[0.42rem] font-black uppercase tracking-[0.1em] text-[#6a4517]">
                                 {allianceFaction[0]}
                               </span>
                             </div>
                           )}
                           {x === 8 && y === 8 && (
-                            <div className="absolute left-1/2 top-1/2 h-[1.9rem] w-[1.9rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45" />
+                            <div className="absolute left-1/2 top-1/2 h-[1.35rem] w-[1.35rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/42" />
                           )}
                           {isAccent && (
                             <div
                               className={cn(
                                 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#5f4225]/60',
-                                isAccent ? 'h-[0.42rem] w-[0.42rem]' : 'h-[0.28rem] w-[0.28rem]'
+                                isAccent ? 'h-[0.28rem] w-[0.28rem]' : 'h-[0.22rem] w-[0.22rem]'
                               )}
                             />
                           )}
                           {isLegalMove && !markerOnPiece && (
-                            <div className="absolute left-1/2 top-1/2 h-[1.05rem] w-[1.05rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45 bg-amber-100/30 shadow-[0_0_12px_rgba(180,120,20,0.22)]" />
+                            <div className="absolute left-1/2 top-1/2 h-[0.78rem] w-[0.78rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45 bg-amber-100/20" />
                           )}
                           {markerOnPiece && (
-                            <div className="absolute left-1/2 top-1/2 h-[3.1rem] w-[3.1rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-rose-400/80 bg-rose-100/8 shadow-[0_0_18px_rgba(244,63,94,0.24)]" />
+                            <div className="absolute left-1/2 top-1/2 h-[2.25rem] w-[2.25rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-rose-500/70 bg-rose-100/6" />
                           )}
                         </div>
                       )}
@@ -506,7 +516,7 @@ export default function AuthenticBoard({
                   return (
                     <div
                       key={piece.id}
-                      className="pointer-events-none absolute z-30 h-[9.2%] w-[9.2%] sm:h-[8.4%] sm:w-[8.4%]"
+                      className="pointer-events-none absolute z-30 h-[6.1%] w-[6.1%] sm:h-[5.8%] sm:w-[5.8%]"
                       style={{
                         ...coordinateToStyle(piece.x, piece.y),
                         transform: 'translate(-50%, -50%)',
@@ -627,7 +637,7 @@ export default function AuthenticBoard({
                 gameState.history.map((entry) => (
                   <div key={entry.id} className="rounded-[1.5rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#90714a]">
-                      Turn {entry.turnNumber} · {entry.faction}
+                      Turn {entry.turnNumber} / {entry.faction}
                     </p>
                     <p className="mt-1 text-sm font-serif text-[#35210f]">{entry.note}</p>
                   </div>
