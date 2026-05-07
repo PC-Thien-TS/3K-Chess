@@ -29,7 +29,16 @@ export default function JoinRoom() {
     const localRoom = getWarRoom(code);
     
     // 2. Try online
-    onlineRoomClient.connect();
+    const connection = onlineRoomClient.connect();
+    if (!connection.ok) {
+      if (localRoom) {
+        navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
+      } else {
+        setError(connection.error);
+        setIsJoining(false);
+      }
+      return;
+    }
     
     const timeout = setTimeout(() => {
         if (localRoom) {
@@ -53,7 +62,7 @@ export default function JoinRoom() {
             navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local' } });
             cleanup();
         } else {
-            setError(`Cloud Breach: ${err}`);
+            setError(err);
             setIsJoining(false);
             cleanup();
         }

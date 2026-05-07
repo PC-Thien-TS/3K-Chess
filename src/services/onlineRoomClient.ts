@@ -16,6 +16,14 @@ type RoomStateCallback = (room: OnlineWarRoom) => void;
 type ErrorCallback = (error: string) => void;
 type MoveCallback = (payload: SubmitMovePayload) => void;
 
+const WS_NOT_CONFIGURED_MESSAGE = "WebSocket server not configured. Set VITE_WS_URL to enable online rooms.";
+
+const getConfiguredWebSocketUrl = () => {
+  const env = (import.meta as any).env as Record<string, string | undefined> | undefined;
+  const url = env?.VITE_WS_URL?.trim();
+  return url ? url : null;
+};
+
 class OnlineRoomClient {
   private socket: Socket | null = null;
   private roomStateListeners: Set<RoomStateCallback> = new Set();
@@ -24,10 +32,15 @@ class OnlineRoomClient {
   private matchStartListeners: Set<RoomStateCallback> = new Set();
 
   connect() {
-    if (this.socket?.connected) return;
+    if (this.socket) {
+      return { ok: true as const };
+    }
 
-    // In AI Studio Build, the app runs on port 3000, which is also the socket port
-    const url = window.location.origin;
+    const url = getConfiguredWebSocketUrl();
+    if (!url) {
+      return { ok: false as const, error: WS_NOT_CONFIGURED_MESSAGE };
+    }
+
     this.socket = io(url);
 
     this.socket.on("connect", () => {
@@ -58,9 +71,17 @@ class OnlineRoomClient {
       this.errorListeners.forEach(cb => cb(error));
     });
 
+    this.socket.on("connect_error", () => {
+      this.errorListeners.forEach(cb =>
+        cb(`Unable to reach WebSocket server at ${url}. Check VITE_WS_URL and confirm the backend is running.`),
+      );
+    });
+
     this.socket.on("disconnect", () => {
       console.warn("Strategic Command: Disconnected from War Room Cloud");
     });
+
+    return { ok: true as const };
   }
 
   disconnect() {
@@ -126,6 +147,10 @@ class OnlineRoomClient {
   subscribeToErrors(cb: ErrorCallback) {
     this.errorListeners.add(cb);
     return () => this.errorListeners.delete(cb);
+  }
+
+  get configurationError() {
+    return getConfiguredWebSocketUrl() ? null : WS_NOT_CONFIGURED_MESSAGE;
   }
 
   get isConnected() {

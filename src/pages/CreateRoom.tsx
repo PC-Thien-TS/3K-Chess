@@ -22,17 +22,25 @@ export default function CreateRoom() {
   const [defaultDifficulty, setDefaultDifficulty] = useState<BotDifficulty>('normal');
   const [roomMode, setRoomMode] = useState<'local' | 'online'>('local');
   const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const onlineModeError = onlineRoomClient.configurationError;
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hostName.trim() || isCreating) return;
+    setError(null);
 
     if (roomMode === 'online') {
+      const connection = onlineRoomClient.connect();
+      if (!connection.ok) {
+        setError(connection.error);
+        return;
+      }
+
       setIsCreating(true);
-      onlineRoomClient.connect();
       
       const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
-        alert(`Strategic Failure: ${err}`);
+        setError(err);
         setIsCreating(false);
         unsubscribeError();
       });
@@ -139,6 +147,12 @@ export default function CreateRoom() {
             </button>
           </div>
 
+          {roomMode === 'online' && onlineModeError && (
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-2xl text-xs font-bold uppercase tracking-widest">
+              {onlineModeError}
+            </div>
+          )}
+
           {/* Host Name */}
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
@@ -234,6 +248,12 @@ export default function CreateRoom() {
               </div>
             )}
           </div>
+
+          {error && (
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-2xl text-xs font-bold uppercase tracking-widest">
+              {error}
+            </div>
+          )}
 
           <button 
             type="submit"

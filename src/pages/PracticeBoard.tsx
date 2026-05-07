@@ -124,7 +124,12 @@ export default function PracticeBoard() {
     runRuleEngineDevTests();
 
     if (roomMode === 'online') {
-      onlineRoomClient.connect();
+      const connection = onlineRoomClient.connect();
+      if (!connection.ok) {
+        setStatus(connection.error);
+        return;
+      }
+
       const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
         if (payload.move.id === lastProcessedMoveId.current) return;
         
