@@ -14,6 +14,10 @@
 }
 
 @layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
     @apply bg-ink text-zinc-100 font-sans antialiased;
   }

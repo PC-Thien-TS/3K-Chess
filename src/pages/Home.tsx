@@ -1,13 +1,18 @@
 import { motion } from 'motion/react';
-import { Sword, Users, ShieldCheck, Play, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Sword, ShieldCheck, Play, ArrowRight, Trophy, MessageSquare, Star, ArrowUpRight, Check, ShoppingBag, Crown, Sparkles, ShieldAlert } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import HowToPlaySection from '@/src/components/HowToPlaySection';
+import RulesSection from '@/src/components/RulesSection';
+import PieceGuideSection from '@/src/components/PieceGuideSection';
+import PlayNowSection from '@/src/components/PlayNowSection';
+import BattlefieldPreview from '@/src/components/BattlefieldPreview';
 
 export default function Home() {
   return (
     <div className="pt-20">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+      <section id="hero" className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden scroll-mt-20">
         {/* Animated Background Logo Overlay (Subtle) */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
@@ -42,12 +47,12 @@ export default function Home() {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="flex flex-col md:flex-row items-center justify-center gap-6"
           >
-            <button className="group relative bg-gold text-ink font-bold px-10 py-5 rounded-full text-lg uppercase tracking-widest hover:scale-105 transition-all overflow-hidden">
+            <Link to="/setup" className="group relative bg-gold text-ink font-bold px-10 py-5 rounded-full text-lg uppercase tracking-widest hover:scale-105 transition-all overflow-hidden">
               <span className="relative z-10 flex items-center gap-2">
                 Play Free Now <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity" />
-            </button>
+            </Link>
             
             <button className="flex items-center gap-3 text-white font-bold uppercase tracking-widest text-sm hover:text-gold transition-colors">
               <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center hover:border-gold transition-colors">
@@ -86,10 +91,15 @@ export default function Home() {
         ))}
       </section>
 
-      {/* The Three Powers Section */}
-      <section className="py-32 px-6 max-w-7xl mx-auto">
+      {/* New Informational Sections */}
+      <HowToPlaySection />
+      
+      <BattlefieldPreview />
+
+      {/* The Three Powers Section / Lore */}
+      <section id="lore" className="py-32 px-6 max-w-7xl mx-auto scroll-mt-20">
         <div className="text-center mb-24">
-          <h2 className="text-5xl font-serif font-bold text-white mb-6">CHOOSE YOUR <span className="text-gold italic">DESTINY</span></h2>
+          <h2 className="text-5xl font-serif font-bold text-white mb-6 uppercase tracking-wider">CHOOSE YOUR <span className="text-gold italic">DESTINY</span></h2>
           <p className="text-zinc-400 max-w-xl mx-auto">Master the unique playstyles and legendary tactics of the three dominant forces.</p>
         </div>
 
@@ -139,26 +149,169 @@ export default function Home() {
                 <span className="text-xs uppercase tracking-widest font-medium text-white">{faction.trait}</span>
               </div>
 
-              <Link to={`/lore/${faction.name.toLowerCase()}`} className="text-xs font-bold uppercase tracking-widest text-gold flex items-center gap-2 group-hover:gap-4 transition-all">
-                LEARN MORE <ArrowRight size={14} />
-              </Link>
+              <a href="#how-to-play" className="text-xs font-bold uppercase tracking-widest text-gold flex items-center gap-2 group-hover:gap-4 transition-all">
+                LEARN TACTICS <ArrowRight size={14} />
+              </a>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* CTA Section */}
+      <RulesSection />
+
+      <PieceGuideSection />
+
+      <PlayNowSection />
+
+      {/* Shop Section */}
+      <section id="shop" className="py-32 px-6 max-w-7xl mx-auto scroll-mt-20">
+        <div className="text-center mb-24">
+          <h2 className="text-6xl font-serif font-bold text-white mb-6 uppercase tracking-widest italic">ARMORY <span className="text-gold font-normal">& EMPORIUM</span></h2>
+          <p className="text-zinc-500">Equip yourself with the finest regalia. No winning advantages, just absolute style.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { 
+              name: "PEASANT", 
+              price: "Free", 
+              icon: ShoppingBag, 
+              perks: ["Basic Matchmaking", "1 Faction Skin", "Public Forums"],
+              cta: "Current Plan",
+              active: true
+            },
+            { 
+              name: "GENERAL", 
+              price: "$7.99/mo", 
+              icon: Crown, 
+              perks: ["Ranked Matchmaking", "Replay History", "All Factions Tokens", "Custom Profile Icons"],
+              cta: "Enlist Now",
+              accent: "border-gold/50 bg-gold/5"
+            },
+            { 
+              name: "EMPEROR", 
+              price: "$19.99/mo", 
+              icon: Sparkles, 
+              perks: ["Priority Matchmaking", "Custom Boards", "Beta Access", "Private Tournaments", "Animated Piece Skins"],
+              cta: "Ascend Now",
+              accent: "border-white/20 bg-white/5"
+            }
+          ].map((tier, i) => (
+            <div key={i} className={cn(
+              "p-10 rounded-[40px] border flex flex-col items-center text-center",
+              tier.accent || "border-white/5 bg-white/2"
+            )}>
+              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8">
+                <tier.icon size={32} className="text-gold" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-[0.2em]">{tier.name}</h3>
+              <div className="text-4xl font-serif font-bold text-white mb-10">{tier.price}</div>
+              
+              <ul className="space-y-4 mb-12 flex-grow text-left w-full">
+                {tier.perks.map((perk, idx) => (
+                  <li key={idx} className="flex items-center gap-3 text-sm text-zinc-400">
+                    <Check size={14} className="text-gold shrink-0" />
+                    {perk}
+                  </li>
+                ))}
+              </ul>
+
+              <button className={cn(
+                "w-full py-4 rounded-2xl text-sm font-bold uppercase tracking-widest transition-all",
+                tier.active ? "bg-white/5 text-zinc-500 cursor-not-allowed" : "bg-gold text-ink hover:scale-[1.02] shadow-lg shadow-gold/10"
+              )}>
+                {tier.cta}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Community Hub */}
+      <section id="community" className="py-32 px-6 max-w-7xl mx-auto scroll-mt-20">
+        <div className="text-center mb-24">
+          <h2 className="text-6xl font-serif font-bold text-white mb-6 uppercase tracking-widest leading-tight">TACTICIAN'S <span className="marker text-gold">HUB</span></h2>
+          <p className="text-zinc-500 max-w-xl mx-auto">The battle is won on the board, but legends are forged in the community. Join our Discord Command or compete for the Top 10.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Leaderboard Card */}
+          <div className="md:col-span-2 glass-dark p-10 rounded-[40px] border border-white/5">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl font-serif font-bold text-white flex items-center gap-3">
+                <Trophy className="text-gold" /> TOP GENERALS
+              </h2>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">SEASON 12</span>
+            </div>
+
+            <div className="space-y-6">
+              {[
+                { rank: 1, user: "HeavenlyBlade", winRate: "78%", faction: "WEI", elo: 2450 },
+                { rank: 2, user: "JadeDragon", winRate: "74%", faction: "SHU", elo: 2320 },
+                { rank: 3, user: "OceanStorm", winRate: "71%", faction: "WU", elo: 2280 },
+                { rank: 4, user: "IronStrategist", winRate: "69%", faction: "WEI", elo: 2210 },
+                { rank: 5, user: "LunarArcher", winRate: "66%", faction: "SHU", elo: 2150 }
+              ].map((player, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/2 hover:bg-white/5 transition-colors group">
+                  <div className="flex items-center gap-6">
+                    <span className={`text-sm font-bold ${i < 3 ? 'text-gold' : 'text-zinc-600'}`}>0{player.rank}</span>
+                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-xs uppercase">
+                      {player.user[0]}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white group-hover:text-gold transition-colors">{player.user}</div>
+                      <div className={`text-[10px] uppercase font-black tracking-widest ${player.faction === 'WEI' ? 'text-wei' : player.faction === 'SHU' ? 'text-shu' : 'text-wu'}`}>
+                        {player.faction}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-mono font-bold text-white">{player.elo}</div>
+                    <div className="text-[10px] uppercase text-zinc-500 tracking-tighter">WIN RATE: {player.winRate}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Community Links */}
+          <div className="space-y-8 flex flex-col items-stretch">
+            <a href="#" className="flex-grow p-10 bg-indigo-600/10 rounded-[40px] border border-indigo-500/20 group hover:border-indigo-500/50 transition-all flex flex-col">
+              <MessageSquare className="text-indigo-400 mb-6" size={32} />
+              <h3 className="text-xl font-bold text-white mb-2 uppercase flex items-center justify-between">
+                DISCORD <ArrowUpRight size={16} />
+              </h3>
+              <p className="text-xs text-indigo-400 font-bold uppercase tracking-widest mb-4">50k+ Members</p>
+              <p className="border-t border-indigo-500/10 pt-4 text-zinc-400 text-sm leading-relaxed">Join the central command center for live matchmaking, strategy chat, and historical analysis.</p>
+            </a>
+
+            <div className="p-10 bg-gold/5 rounded-[40px] border border-gold/10">
+              <Star className="text-gold mb-6" size={32} />
+              <h3 className="text-xl font-bold text-white mb-4 uppercase tracking-widest">LOYALTY PERKS</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed mb-6">Earn Faction Points by playing and unlock exclusive profiles, unique icons, and early beta access.</p>
+              <button className="text-xs font-bold text-gold uppercase tracking-widest border-b border-gold pb-1 hover:pb-2 transition-all">
+                BROWSE PERKS
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
       <section className="py-40 px-6 relative overflow-hidden text-center">
         <div className="absolute inset-0 bg-gold/5 opacity-40 blur-3xl rounded-full" />
         <div className="relative z-10 max-w-3xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8">ARE YOU READY TO <br className="hidden md:block" /> UNITE THE LAND?</h2>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <button className="bg-gold text-ink font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:scale-105 transition-transform">
-              Join the Battle
-            </button>
-            <button className="bg-white/5 border border-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/10 transition-colors">
-              Join Discord
-            </button>
+            <Link to="/setup" className="bg-gold text-ink font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:scale-105 transition-transform">
+              Play vs AI
+            </Link>
+            <Link to="/rooms/create" className="bg-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/20 transition-colors">
+               Create War Room
+            </Link>
+            <Link to="/archive" className="bg-white/5 border border-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/10 transition-colors">
+              Battle Archive
+            </Link>
           </div>
         </div>
       </section>

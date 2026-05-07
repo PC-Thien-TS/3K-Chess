@@ -2,10 +2,15 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
-import HowToPlay from './pages/HowToPlay';
-import Lore from './pages/Lore';
-import Community from './pages/Community';
-import Shop from './pages/Shop';
+import PracticeBoard from './pages/PracticeBoard';
+import MatchSetup from './pages/MatchSetup';
+import MatchArchive from './pages/MatchArchive';
+import ReplayBoard from './pages/ReplayBoard';
+import WarCouncil from './pages/WarCouncil';
+import CreateRoom from './pages/CreateRoom';
+import JoinRoom from './pages/JoinRoom';
+import WarRoomLobby from './pages/WarRoomLobby';
+import { MatchProvider } from './context/MatchContext';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +29,17 @@ function Layout({ children }: { children: React.ReactNode }) {
       
       <Navbar />
       <main className="flex-grow">
-        {children}
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/setup" element={<MatchSetup />} />
+          <Route path="/practice" element={<PracticeBoard />} />
+          <Route path="/archive" element={<MatchArchive />} />
+          <Route path="/replay/:matchId" element={<ReplayBoard />} />
+          <Route path="/rooms" element={<WarCouncil />} />
+          <Route path="/rooms/create" element={<CreateRoom />} />
+          <Route path="/rooms/join" element={<JoinRoom />} />
+          <Route path="/rooms/:roomCode" element={<WarRoomLobby />} />
+        </Routes>
       </main>
       <Footer />
 
@@ -42,15 +57,9 @@ function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/how-to-play" element={<HowToPlay />} />
-          <Route path="/lore" element={<Lore />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/community" element={<Community />} />
-        </Routes>
-      </Layout>
+      <MatchProvider>
+        <Layout children={null} />
+      </MatchProvider>
     </Router>
   );
 }
