@@ -4,7 +4,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, RotateCcw, Sword, History, Info, ShieldAlert, Settings, Award, Trophy, Activity, Skull, Target } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { 
-  validateMove, 
   BotDifficulty,
   Faction, 
   PieceType, 
@@ -13,11 +12,11 @@ import {
   MOVE_ERRORS, 
   isFactionInCheck,
   isCheckmate,
-  isCheckmateDetailed,
   Move,
   CheckmateResult,
   getPieceName,
   getPieceDescription,
+  getNextClassicFaction,
   getLegalDestinationsForPiece,
   validateBoardIntegrity
 } from '@/src/rules/classicThreeKingdomRules';
@@ -25,6 +24,7 @@ import type { BotDecision } from '@/src/ai/botAI';
 import { runRuleEngineDevTests } from '@/src/rules/threeKingdomRules.devTests';
 import { useMatchContext } from '@/src/context/MatchContext';
 import { Save, Download, PlayCircle } from 'lucide-react';
+import { applyClassicMoveTransition } from '@/src/rules/classicMoveReducer';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import {
   PersistedOnlineMatchSession,
@@ -158,95 +158,50 @@ function ClassicPracticeBoard() {
     setStatus,
   });
 
-  const getNextFaction = (currentTurn: Faction, currentPieces: Piece[], currentEliminated: Faction[]): Faction | null => {
-    const activeFactions = FACTIONS.filter(f => !currentEliminated.includes(f));
-    if (activeFactions.length <= 1) return null;
-
-    let nextIdx = (FACTIONS.indexOf(currentTurn) + 1) % FACTIONS.length;
-    while (currentEliminated.includes(FACTIONS[nextIdx] as Faction)) {
-      nextIdx = (nextIdx + 1) % FACTIONS.length;
-    }
-    return FACTIONS[nextIdx] as Faction;
-  };
-
   const performMove = (piece: Piece, x: number, y: number, isBot = false, remoteMoveId?: string) => {
-    const pieceAtPoint = pieces.find(p => p.x === x && p.y === y);
-    const validation = validateMove(piece, { x, y }, pieces, turn);
-    
-    if (!validation.legal) {
-      if (!isBot) setStatus(validation.reason || "Illegal Move");
+    const transition = applyClassicMoveTransition({
+      piece,
+      destination: { x, y },
+      pieces,
+      turn,
+      eliminatedFactions: eliminated,
+      moveId: remoteMoveId || (isBot ? 'bot-' : '') + Math.random().toString(36).substr(2, 9),
+    });
+
+    if (!transition.legal) {
+      if (!isBot) setStatus(transition.validation.reason || "Illegal Move");
       return null;
     }
 
-    const moveId = remoteMoveId || (isBot ? 'bot-' : '') + Math.random().toString(36).substr(2, 9);
+    const { validation } = transition;
+    const moveId = transition.move.id;
     lastProcessedMoveId.current = moveId;
     setAppliedMoveIds(prev => new Set(prev).add(moveId));
-    
-    const newPieces = pieces.filter(p => p.id !== piece.id);
-    let capturedType: PieceType | undefined;
-    let captureMessage = "";
 
-    if (pieceAtPoint) {
-      setCaptured(prev => [...prev, pieceAtPoint]);
-      capturedType = pieceAtPoint.type;
-      newPieces.splice(newPieces.indexOf(pieceAtPoint), 1);
-      captureMessage = `${isBot ? 'BOT ' : ''}${turn} ${getPieceName(piece.type)} captured ${pieceAtPoint.faction} ${getPieceName(pieceAtPoint.type)}.`;
-      setStatus(captureMessage);
+    if (transition.capturedPiece) {
+      setCaptured(prev => [...prev, transition.capturedPiece]);
+      setStatus(`${isBot ? 'BOT ' : ''}${turn} ${getPieceName(piece.type)} captured ${transition.capturedPiece.faction} ${getPieceName(transition.capturedPiece.type)}.`);
     } else {
       setStatus(`${isBot ? 'BOT ' : ''}${turn} ${getPieceName(piece.type)} moved to (${x}, ${y}).`);
     }
 
-    const movedPiece = { ...piece, x, y };
-    let finalPieces = [...newPieces, movedPiece];
-    
-    const newEliminated = [...eliminated];
-    let checkmateHappened = false;
-    const debugResults: Record<string, CheckmateResult> = {};
-    
-    FACTIONS.forEach(f => {
-      if (f !== turn && !newEliminated.includes(f)) {
-        const detail = isCheckmateDetailed(f, finalPieces);
-        debugResults[f] = detail;
-        if (detail.checkmated) {
-          newEliminated.push(f);
-          finalPieces = finalPieces.filter(p => p.faction !== f);
-          checkmateHappened = true;
-        }
-      }
-    });
-
-    setLastCheckmateDebug(debugResults);
-    setPieces(finalPieces);
-    if (checkmateHappened) {
-      setEliminated(newEliminated);
+    setLastCheckmateDebug(transition.debugResults);
+    setPieces(transition.finalPieces);
+    if (transition.checkmateHappened) {
+      setEliminated(transition.eliminatedFactions);
     }
 
-    const nextWinner = FACTIONS.find(f => !newEliminated.includes(f) && FACTIONS.filter(f2 => !newEliminated.includes(f2)).length === 1) || null;
-    
-    if (nextWinner) {
-      setWinner(nextWinner);
-      setStatus(`THE BATTLE IS OVER. ${nextWinner.toUpperCase()} UNITES THE LAND.`);
-    } else if (checkmateHappened) {
+    if (transition.winner) {
+      setWinner(transition.winner);
+      setStatus(`THE BATTLE IS OVER. ${transition.winner.toUpperCase()} UNITES THE LAND.`);
+    } else if (transition.checkmateHappened) {
       setStatus(`${isBot ? 'BOT: ' : ''}CHECKMATE! ${isBot ? turn + ' delivers a fatal strike.' : 'A faction has fallen.'}`);
     } else if (validation.givesCheck) {
       const checkedNames = validation.checkedFactions?.join(', ');
       setStatus(`${isBot ? 'BOT: ' : ''}CHECK! ${checkedNames} is under attack.`);
     }
 
-    const newMove: Move = {
-      id: moveId,
-      pieceType: piece.type,
-      faction: turn,
-      from: { x: piece.x, y: piece.y },
-      to: { x, y },
-      captured: capturedType,
-      check: validation.givesCheck,
-      checkedFactions: validation.checkedFactions,
-      checkmate: checkmateHappened,
-      gameWinner: nextWinner,
-      timestamp: new Date()
-    };
-    setHistory(prev => [newMove, ...prev]);
+    setHistory(prev => [transition.move, ...prev]);
 
     const newRecordedMove = recordCompletedMove({
       moveId,
@@ -254,12 +209,12 @@ function ClassicPracticeBoard() {
       actingFaction: turn,
       piece,
       destination: { x, y },
-      capturedPiece: pieceAtPoint,
+      capturedPiece: transition.capturedPiece,
       validation,
       isBot,
-      checkmateHappened,
-      debugResults,
-      nextWinner,
+      checkmateHappened: transition.checkmateHappened,
+      debugResults: transition.debugResults,
+      nextWinner: transition.winner,
     });
 
     // Online Broadcast
@@ -269,9 +224,9 @@ function ClassicPracticeBoard() {
         move: newRecordedMove,
         clientGameState: {
           currentTurn: turn,
-          eliminatedFactions: newEliminated,
-          winner: nextWinner,
-          status: nextWinner ? 'FINISHED' : 'PLAYING'
+          eliminatedFactions: transition.eliminatedFactions,
+          winner: transition.winner,
+          status: transition.winner ? 'FINISHED' : 'PLAYING'
         }
       });
     }
@@ -279,14 +234,12 @@ function ClassicPracticeBoard() {
     setSelectedId(null);
     setLegalMoves([]);
     
-    if (!nextWinner) {
-      const nextFct = getNextFaction(turn, finalPieces, newEliminated);
-      if (nextFct) setTurn(nextFct);
+    if (!transition.winner && transition.nextTurn) {
+      setTurn(transition.nextTurn);
     }
 
-    const integrity = validateBoardIntegrity(finalPieces, newEliminated);
-    if (!integrity.valid) {
-      console.error("Board Integrity Breach detected:", integrity.errors);
+    if (!transition.integrity.valid) {
+      console.error("Board Integrity Breach detected:", transition.integrity.errors);
     }
 
     return moveId;
@@ -452,7 +405,11 @@ function ClassicPracticeBoard() {
   });
 
   const advanceAfterNoLegalMove = React.useCallback((faction: Faction, currentPieces: Piece[], currentEliminated: Faction[]) => {
-    const nextFct = getNextFaction(faction, currentPieces, currentEliminated);
+    const nextFct = getNextClassicFaction(
+      faction as Exclude<Faction, 'None'>,
+      currentPieces,
+      currentEliminated as Exclude<Faction, 'None'>[]
+    );
     if (nextFct) {
       setTurn(nextFct);
     }
