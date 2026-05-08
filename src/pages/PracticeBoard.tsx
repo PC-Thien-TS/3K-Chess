@@ -27,17 +27,17 @@ import { chooseBotMove } from '@/src/ai/botAI';
 import { runRuleEngineDevTests } from '@/src/rules/threeKingdomRules.devTests';
 import { useMatchContext } from '@/src/context/MatchContext';
 import { saveMatchRecord, exportMatchRecord } from '@/src/storage/localMatchArchive';
-import { mapWarRoomToMatchSetup } from '@/src/storage/warRooms';
 import { Save, Download, PlayCircle } from 'lucide-react';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import {
-  clearAllOnlineSessions,
+  PersistedOnlineMatchSession,
   readOnlineMatchSession,
   saveOnlineMatchSession,
   saveOnlineRoomSession,
 } from '@/src/services/onlineSessionStorage';
 import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
 import ClassicBoard from '@/src/components/boards/ClassicBoard';
+import { useClassicOnlineSync } from '@/src/hooks/useClassicOnlineSync';
 import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
@@ -123,7 +123,7 @@ function ClassicPracticeBoard() {
   const [isSaved, setIsSaved] = useState(false);
   const [appliedMoveIds, setAppliedMoveIds] = useState<Set<string>>(new Set());
   const [lastSyncEvent, setLastSyncEvent] = useState<string | null>(null);
-  const [onlineSession, setOnlineSession] = useState(() => {
+  const [onlineSession, setOnlineSession] = useState<PersistedOnlineMatchSession | null>(() => {
     const routeState = (location.state as any) || {};
     if (routeState?.mode === 'online' && routeState?.roomCode) {
       return {
@@ -140,6 +140,10 @@ function ClassicPracticeBoard() {
   });
   const [isReconnecting, setIsReconnecting] = useState(onlineSession?.roomMode === 'online');
   const [roomExpired, setRoomExpired] = useState<string | null>(null);
+  const commanderName =
+    onlineSession?.playerName?.trim() ||
+    (localStorage.getItem('last_commander_name') || 'Commander').trim() ||
+    'Commander';
 
   const roomCode = onlineSession?.roomCode || (location.state as any)?.roomCode;
   const roomMode = onlineSession?.roomMode || (location.state as any)?.mode || 'local';
@@ -425,148 +429,63 @@ function ClassicPracticeBoard() {
 
   React.useEffect(() => {
     runRuleEngineDevTests();
+  }, []);
 
-    if (roomMode === 'online') {
-      const wsUrl = (import.meta as any).env.VITE_WS_URL;
-      if (!wsUrl) {
-         setStatus("Tactical Breach: WebSocket server not configured. Online synchrony unavailable.");
-         return;
-      }
+  const clearSelection = React.useCallback(() => {
+    setSelectedId(null);
+    setLegalMoves([]);
+  }, []);
 
-      const commanderName =
-        onlineSession?.playerName?.trim() ||
-        (localStorage.getItem('last_commander_name') || 'Commander').trim() ||
-        'Commander';
+  const hydrateServerState = React.useCallback((serverState?: {
+    currentTurn: Exclude<Faction, 'None'>;
+    moveNumber: number;
+    eliminatedFactions: Exclude<Faction, 'None'>[];
+    winner: Exclude<Faction, 'None'> | null;
+    status: 'PLAYING' | 'FINISHED';
+  }) => {
+    if (!serverState) return;
+    setTurn(serverState.currentTurn as Faction);
+    setEliminated(serverState.eliminatedFactions as Faction[]);
+    setWinner(serverState.winner as Faction | null);
+  }, []);
 
-      const requestRecovery = () => {
-        if (!roomCode) {
-          return;
-        }
-        setIsReconnecting(true);
-        setStatus('Reconnecting... recovering live match state from Strategic Command.');
-        onlineRoomClient.joinRoom({ roomCode, playerName: commanderName });
-        onlineRoomClient.requestMatchSnapshot({ roomCode, playerName: commanderName });
-      };
+  const hydrateSnapshotState = React.useCallback((matchState: {
+    pieces: Piece[];
+    currentTurn: Exclude<Faction, 'None'>;
+    moveNumber: number;
+    eliminatedFactions: Exclude<Faction, 'None'>[];
+    winner: Exclude<Faction, 'None'> | null;
+  }) => {
+    setPieces(matchState.pieces);
+    setTurn(matchState.currentTurn as Faction);
+    setEliminated(matchState.eliminatedFactions as Faction[]);
+    setWinner(matchState.winner as Faction | null);
+  }, []);
 
-      onlineRoomClient.connect();
+  const applyRemoteMove = React.useCallback((piece: Piece, x: number, y: number, isBot: boolean, remoteMoveId: string) => {
+    performMoveRef.current(piece, x, y, isBot, remoteMoveId);
+  }, []);
 
-      const unsubConnection = onlineRoomClient.subscribeToConnectionState((connected) => {
-        if (!connected) {
-          setIsReconnecting(true);
-          setLastSyncEvent('DISCONNECTED');
-          setStatus('Reconnecting... recovering live match state from Strategic Command.');
-          return;
-        }
-
-        setLastSyncEvent('CONNECTED');
-        requestRecovery();
-      });
-
-      const unsubSnapshot = onlineRoomClient.subscribeToMatchSnapshot((snapshot) => {
-        if (snapshot.room.roomCode !== roomCode) {
-          return;
-        }
-
-        const matchData = mapWarRoomToMatchSetup(snapshot.room as any);
-        updateConfig(matchData);
-        setControlModes({
-          Shu: matchData.factions.Shu.control,
-          Wei: matchData.factions.Wei.control,
-          Wu: matchData.factions.Wu.control,
-          None: matchData.factions.None.control,
-        });
-
-        const recoveredSession = {
-          roomCode: snapshot.room.roomCode,
-          playerName: commanderName,
-          roomMode: 'online' as const,
-          gameMode: normalizeGameMode((snapshot.room as any).roomRules?.gameMode, DEFAULT_GAME_MODE),
-          playerFaction: snapshot.assignedFaction,
-          isHost: snapshot.isHost,
-        };
-        setOnlineSession(recoveredSession);
-        saveOnlineRoomSession({
-          roomCode: recoveredSession.roomCode,
-          playerName: recoveredSession.playerName,
-          roomMode: 'online',
-          gameMode: recoveredSession.gameMode,
-        });
-        saveOnlineMatchSession(recoveredSession);
-
-        setSelectedId(null);
-        setLegalMoves([]);
-        setIsReconnecting(false);
-        setRoomExpired(null);
-        setLastSyncEvent('MATCH_SNAPSHOT');
-
-        if (snapshot.matchState) {
-          setPieces(snapshot.matchState.pieces);
-          setTurn(snapshot.matchState.currentTurn as Faction);
-          setEliminated(snapshot.matchState.eliminatedFactions as Faction[]);
-          setWinner(snapshot.matchState.winner as Faction | null);
-          setAppliedMoveIds(new Set());
-          lastProcessedMoveId.current = null;
-          setStatus(
-            snapshot.matchState.winner
-              ? `Recovered completed battle. ${snapshot.matchState.winner.toUpperCase()} holds the field.`
-              : `Recovered live match state. ${snapshot.matchState.currentTurn} to move.`
-          );
-        } else {
-          setStatus('Recovered room state. Awaiting match initialization.');
-        }
-      });
-
-      const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
-        const syncServerState = () => {
-          if (!payload.serverState) return;
-          setTurn(payload.serverState.currentTurn as Faction);
-          setEliminated(payload.serverState.eliminatedFactions as Faction[]);
-          setWinner(payload.serverState.winner as Faction | null);
-        };
-
-        setLastSyncEvent('MOVE_RECEIVED');
-        if (payload.move.id === lastProcessedMoveId.current || appliedMoveIdsRef.current.has(payload.move.id)) {
-           syncServerState();
-           if ((import.meta as any).env.DEV) {
-              console.log(`[Strategic Sync] Skipping already applied move: ${payload.move.id}`);
-           }
-           return;
-        }
-        
-        // Find piece to move using ref to avoid stale state in subscription
-        const piece = piecesRef.current.find(p => p.x === payload.move.from.x && p.y === payload.move.from.y);
-        if (piece) {
-          lastProcessedMoveId.current = payload.move.id;
-          setAppliedMoveIds(prev => new Set(prev).add(payload.move.id));
-          performMoveRef.current(piece, payload.move.to.x, payload.move.to.y, payload.move.id.startsWith('bot-'), payload.move.id);
-          syncServerState();
-        }
-      });
-
-      const unsubError = onlineRoomClient.subscribeToErrors((error) => {
-        if (error === 'ROOM_NOT_FOUND') {
-          clearAllOnlineSessions();
-          setRoomExpired('Room expired.');
-          setIsReconnecting(false);
-          setStatus('Room expired.');
-          return;
-        }
-
-        setStatus(`Strategic Failure: ${error}`);
-      });
-
-      if (onlineRoomClient.isConnected) {
-        requestRecovery();
-      }
-
-      return () => {
-        unsubConnection();
-        unsubSnapshot();
-        unsubMove();
-        unsubError();
-      };
-    }
-  }, [roomMode]); // Only re-run if roomMode changes
+  useClassicOnlineSync({
+    roomMode,
+    roomCode,
+    commanderName,
+    setOnlineSession,
+    updateConfig,
+    setControlModes,
+    clearSelection,
+    setIsReconnecting,
+    setRoomExpired,
+    setLastSyncEvent,
+    setStatus,
+    setAppliedMoveIds,
+    lastProcessedMoveIdRef: lastProcessedMoveId,
+    appliedMoveIdsRef,
+    piecesRef,
+    applyRemoteMove,
+    hydrateServerState,
+    hydrateSnapshotState,
+  });
 
   // Bot Turn Trigger
   React.useEffect(() => {
