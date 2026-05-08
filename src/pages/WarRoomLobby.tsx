@@ -22,6 +22,12 @@ import { useMatchContext } from '@/src/context/MatchContext';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { OnlineWarRoom } from '@/server/protocol';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
+import {
+  clearAllOnlineSessions,
+  readOnlineRoomSession,
+  saveOnlineMatchSession,
+  saveOnlineRoomSession,
+} from '@/src/services/onlineSessionStorage';
 const AUTHENTIC_DISABLED_MESSAGE =
   'Modern Three Kingdoms Xiangqi is local-only for now. Use /setup?mode=authentic to play it locally.';
 
@@ -38,9 +44,13 @@ export default function WarRoomLobby() {
   const navigate = useNavigate();
   const location = useLocation();
   const { updateConfig } = useMatchContext();
+  const persistedRoomSession = roomCode ? readOnlineRoomSession() : null;
   const [commanderName] = useState(() => {
     const stateName = ((location.state as any)?.playerName || "").trim();
     if (stateName) return stateName;
+    if (persistedRoomSession?.roomCode === roomCode && persistedRoomSession.playerName.trim()) {
+      return persistedRoomSession.playerName.trim();
+    }
     return (localStorage.getItem('last_commander_name') || "Commander").trim() || "Commander";
   });
   
@@ -49,10 +59,16 @@ export default function WarRoomLobby() {
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [roomMode, setRoomMode] = useState<'local' | 'online'>((location.state as any)?.mode || 'local');
+  const [roomMode, setRoomMode] = useState<'local' | 'online'>(
+    ((location.state as any)?.mode || (persistedRoomSession?.roomCode === roomCode ? 'online' : 'local')) as 'local' | 'online'
+  );
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(roomMode === 'online');
   const [diagnostics, setDiagnostics] = useState<{ socketId?: string; lastEvent?: string } | null>(null);
-  const requestedGameMode = normalizeGameMode((location.state as any)?.gameMode, DEFAULT_GAME_MODE);
+  const requestedGameMode = normalizeGameMode(
+    (location.state as any)?.gameMode ?? (persistedRoomSession?.roomCode === roomCode ? persistedRoomSession.gameMode : undefined),
+    DEFAULT_GAME_MODE
+  );
 
   useEffect(() => {
     if (!roomCode) return;
@@ -75,18 +91,70 @@ export default function WarRoomLobby() {
 
       onlineRoomClient.connect();
       setIsConnected(onlineRoomClient.isConnected);
+      setIsReconnecting(true);
+
+      const recoverRoom = () => {
+        onlineRoomClient.joinRoom({ roomCode, playerName: commanderName });
+        onlineRoomClient.requestRoomSnapshot({ roomCode, playerName: commanderName });
+      };
 
       const unsubState = onlineRoomClient.subscribeToRoomState((newRoom) => {
         if (newRoom.roomCode === roomCode) {
           setRoom(newRoom);
           setIsConnected(true);
+          setIsReconnecting(false);
+          setError(null);
           setIsLoading(false);
+          saveOnlineRoomSession({
+            roomCode: newRoom.roomCode,
+            playerName: commanderName,
+            roomMode: 'online',
+            gameMode: normalizeGameMode((newRoom as any).roomRules?.gameMode, requestedGameMode),
+          });
           setDiagnostics(prev => ({ ...prev, socketId: onlineRoomClient.socketId, lastEvent: 'ROOM_STATE' }));
         }
       });
 
+      const unsubSnapshot = onlineRoomClient.subscribeToRoomSnapshot((snapshot) => {
+        if (snapshot.room.roomCode !== roomCode) {
+          return;
+        }
+
+        setRoom(snapshot.room);
+        setRoomMode('online');
+        setIsConnected(true);
+        setIsReconnecting(false);
+        setError(null);
+        setIsLoading(false);
+        saveOnlineRoomSession({
+          roomCode: snapshot.room.roomCode,
+          playerName: commanderName,
+          roomMode: 'online',
+          gameMode: normalizeGameMode((snapshot.room as any).roomRules?.gameMode, requestedGameMode),
+        });
+        if (snapshot.assignedFaction) {
+          saveOnlineMatchSession({
+            roomCode: snapshot.room.roomCode,
+            playerName: commanderName,
+            roomMode: 'online',
+            gameMode: normalizeGameMode((snapshot.room as any).roomRules?.gameMode, requestedGameMode),
+            playerFaction: snapshot.assignedFaction,
+            isHost: snapshot.isHost,
+          });
+        }
+        setDiagnostics(prev => ({ ...prev, socketId: onlineRoomClient.socketId, lastEvent: 'ROOM_SNAPSHOT' }));
+      });
+
       const unsubError = onlineRoomClient.subscribeToErrors((err) => {
-        setError(`Strategic Failure: ${err}`);
+        if (err === 'ROOM_NOT_FOUND') {
+          clearAllOnlineSessions();
+          setRoom(null);
+          setError('Room expired.');
+        } else {
+          setError(`Strategic Failure: ${err}`);
+        }
+        setIsConnected(false);
+        setIsReconnecting(false);
         setIsLoading(false);
         setDiagnostics(prev => ({ ...prev, lastEvent: 'ERROR' }));
       });
@@ -100,23 +168,54 @@ export default function WarRoomLobby() {
           const gameMode = normalizeGameMode((newRoom as any).roomRules?.gameMode, requestedGameMode);
           setTimeout(() => {
             updateConfig(matchData);
-            const localFaction = (Object.entries(newRoom.slots) as [Faction, any][]).find(([f, s]) => s.clientId === onlineRoomClient.socketId)?.[0];
+            const localFaction = (Object.entries(newRoom.slots) as [Exclude<Faction, 'None'>, any][])
+              .find(([, s]) => s.clientId === onlineRoomClient.socketId)?.[0] || null;
             const isHost = onlineRoomClient.socketId === newRoom.hostClientId;
+            saveOnlineRoomSession({
+              roomCode: newRoom.roomCode,
+              playerName: commanderName,
+              roomMode: 'online',
+              gameMode,
+            });
+            saveOnlineMatchSession({
+              roomCode: newRoom.roomCode,
+              playerName: commanderName,
+              roomMode: 'online',
+              gameMode,
+              playerFaction: localFaction || null,
+              isHost,
+            });
             navigate('/practice', { state: { roomCode: newRoom.roomCode, mode: 'online', playerFaction: localFaction, isHost, gameMode } });
           }, 1200);
         }
+      });
+
+      const unsubConnection = onlineRoomClient.subscribeToConnectionState((connected) => {
+        setIsConnected(connected);
+        if (!connected) {
+          setIsReconnecting(true);
+          setDiagnostics(prev => ({ ...prev, lastEvent: 'DISCONNECTED' }));
+          return;
+        }
+
+        setDiagnostics(prev => ({ ...prev, socketId: onlineRoomClient.socketId, lastEvent: 'CONNECTED' }));
+        recoverRoom();
       });
 
       if ((import.meta as any).env.DEV) {
         console.log(`[Strategic Command] Synchronizing with Cloud Chamber: ${roomCode} for ${commanderName}`);
       }
 
-      onlineRoomClient.joinRoom({ roomCode, playerName: commanderName });
+      if (onlineRoomClient.isConnected) {
+        recoverRoom();
+      }
 
       return () => {
         unsubState();
+        unsubSnapshot();
         unsubError();
         unsubMatch();
+        unsubConnection();
       };
     } else {
       const found = getWarRoom(roomCode || "");
@@ -125,10 +224,12 @@ export default function WarRoomLobby() {
         if (!validation.valid) {
           setError(`Strategic Breach Detected: ${validation.errors[0]}`);
           setRoom(found);
+          setIsReconnecting(false);
           setIsLoading(false);
           return;
         }
         setRoom(found);
+        setIsReconnecting(false);
         setIsLoading(false);
       } else {
         const wsUrl = (import.meta as any).env.VITE_WS_URL;
@@ -290,7 +391,9 @@ export default function WarRoomLobby() {
         </div>
         <div className="text-center">
             <h2 className="text-2xl font-serif font-black text-white tracking-[0.3em] uppercase mb-2">Synchronizing War Room</h2>
-            <p className="text-zinc-500 font-serif italic uppercase text-[10px] tracking-widest animate-pulse">Contacting Strategic Command...</p>
+            <p className="text-zinc-500 font-serif italic uppercase text-[10px] tracking-widest animate-pulse">
+              {isReconnecting ? 'Reconnecting...' : 'Contacting Strategic Command...'}
+            </p>
         </div>
       </div>
     );
@@ -548,6 +651,16 @@ export default function WarRoomLobby() {
 
           <div className="w-full lg:w-96 flex flex-col justify-center">
               <AnimatePresence mode="wait">
+                  {isReconnecting && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="bg-gold/10 border border-gold/20 text-gold p-4 rounded-2xl mb-4 flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest"
+                    >
+                        <Loader2 size={16} className="animate-spin" /> Reconnecting...
+                    </motion.div>
+                  )}
                   {error && (
                     <motion.div 
                         initial={{ opacity: 0, y: 10 }}

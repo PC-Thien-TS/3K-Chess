@@ -5,17 +5,23 @@ import {
   OnlineWarRoom, 
   CreateRoomPayload, 
   JoinRoomPayload, 
+  SnapshotRequestPayload,
   JoinSlotPayload, 
   SlotActionPayload, 
   AddBotPayload, 
   SetReadyPayload, 
   SubmitMovePayload,
-  ValidatedSubmitMovePayload
+  ValidatedSubmitMovePayload,
+  RoomSnapshotPayload,
+  MatchSnapshotPayload,
 } from "../../server/protocol";
 
 type RoomStateCallback = (room: OnlineWarRoom) => void;
 type ErrorCallback = (error: string) => void;
 type MoveCallback = (payload: ValidatedSubmitMovePayload) => void;
+type RoomSnapshotCallback = (payload: RoomSnapshotPayload) => void;
+type MatchSnapshotCallback = (payload: MatchSnapshotPayload) => void;
+type ConnectionStateCallback = (connected: boolean) => void;
 
 class OnlineRoomClient {
   private socket: Socket | null = null;
@@ -23,9 +29,17 @@ class OnlineRoomClient {
   private errorListeners: Set<ErrorCallback> = new Set();
   private moveListeners: Set<MoveCallback> = new Set();
   private matchStartListeners: Set<RoomStateCallback> = new Set();
+  private roomSnapshotListeners: Set<RoomSnapshotCallback> = new Set();
+  private matchSnapshotListeners: Set<MatchSnapshotCallback> = new Set();
+  private connectionStateListeners: Set<ConnectionStateCallback> = new Set();
 
   connect() {
-    if (this.socket?.connected) return;
+    if (this.socket) {
+      if (!this.socket.connected) {
+        this.socket.connect();
+      }
+      return;
+    }
 
     const wsUrl = (import.meta as any).env.VITE_WS_URL;
     if (!wsUrl) {
@@ -38,6 +52,7 @@ class OnlineRoomClient {
 
     this.socket.on("connect", () => {
       console.log("Strategic Command: Connected to War Room Cloud");
+      this.connectionStateListeners.forEach(cb => cb(true));
     });
 
     this.socket.on(ServerMessage.ROOM_STATE, (room: OnlineWarRoom) => {
@@ -56,6 +71,14 @@ class OnlineRoomClient {
       this.matchStartListeners.forEach(cb => cb(room));
     });
 
+    this.socket.on(ServerMessage.ROOM_SNAPSHOT, (payload: RoomSnapshotPayload) => {
+      this.roomSnapshotListeners.forEach(cb => cb(payload));
+    });
+
+    this.socket.on(ServerMessage.MATCH_SNAPSHOT, (payload: MatchSnapshotPayload) => {
+      this.matchSnapshotListeners.forEach(cb => cb(payload));
+    });
+
     this.socket.on(ServerMessage.MOVE_BROADCAST, (payload: ValidatedSubmitMovePayload) => {
       this.moveListeners.forEach(cb => cb(payload));
     });
@@ -66,6 +89,7 @@ class OnlineRoomClient {
 
     this.socket.on("disconnect", () => {
       console.warn("Strategic Command: Disconnected from War Room Cloud");
+      this.connectionStateListeners.forEach(cb => cb(false));
     });
   }
 
@@ -80,6 +104,14 @@ class OnlineRoomClient {
 
   joinRoom(payload: JoinRoomPayload) {
     this.socket?.emit(ClientMessage.JOIN_ROOM, payload);
+  }
+
+  requestRoomSnapshot(payload: SnapshotRequestPayload) {
+    this.socket?.emit(ClientMessage.REQUEST_ROOM_SNAPSHOT, payload);
+  }
+
+  requestMatchSnapshot(payload: SnapshotRequestPayload) {
+    this.socket?.emit(ClientMessage.REQUEST_MATCH_SNAPSHOT, payload);
   }
 
   joinSlot(payload: JoinSlotPayload) {
@@ -127,6 +159,21 @@ class OnlineRoomClient {
   subscribeToMove(cb: MoveCallback) {
     this.moveListeners.add(cb);
     return () => this.moveListeners.delete(cb);
+  }
+
+  subscribeToRoomSnapshot(cb: RoomSnapshotCallback) {
+    this.roomSnapshotListeners.add(cb);
+    return () => this.roomSnapshotListeners.delete(cb);
+  }
+
+  subscribeToMatchSnapshot(cb: MatchSnapshotCallback) {
+    this.matchSnapshotListeners.add(cb);
+    return () => this.matchSnapshotListeners.delete(cb);
+  }
+
+  subscribeToConnectionState(cb: ConnectionStateCallback) {
+    this.connectionStateListeners.add(cb);
+    return () => this.connectionStateListeners.delete(cb);
   }
 
   subscribeToErrors(cb: ErrorCallback) {

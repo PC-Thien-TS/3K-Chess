@@ -5,6 +5,8 @@ import { GameMode } from '../shared/gameModes';
 export enum ClientMessage {
   CREATE_ROOM = 'CREATE_ROOM',
   JOIN_ROOM = 'JOIN_ROOM',
+  REQUEST_ROOM_SNAPSHOT = 'REQUEST_ROOM_SNAPSHOT',
+  REQUEST_MATCH_SNAPSHOT = 'REQUEST_MATCH_SNAPSHOT',
   JOIN_SLOT = 'JOIN_SLOT',
   LEAVE_SLOT = 'LEAVE_SLOT',
   ADD_BOT = 'ADD_BOT',
@@ -19,7 +21,9 @@ export enum ServerMessage {
   ROOM_CREATED = 'ROOM_CREATED',
   ROOM_JOINED = 'ROOM_JOINED',
   ROOM_STATE = 'ROOM_STATE',
+  ROOM_SNAPSHOT = 'ROOM_SNAPSHOT',
   MATCH_STARTED = 'MATCH_STARTED',
+  MATCH_SNAPSHOT = 'MATCH_SNAPSHOT',
   MOVE_BROADCAST = 'MOVE_BROADCAST',
   PLAYER_LEFT = 'PLAYER_LEFT',
   ERROR = 'ERROR',
@@ -36,6 +40,11 @@ export interface CreateRoomPayload {
 export interface JoinRoomPayload {
   roomCode: string;
   playerName: string;
+}
+
+export interface SnapshotRequestPayload {
+  roomCode: string;
+  playerName?: string;
 }
 
 export interface SlotActionPayload {
@@ -90,4 +99,16 @@ export interface ValidatedSubmitMovePayload extends SubmitMovePayload {
   serverState?: OnlineRoomGameState & {
     status: 'PLAYING' | 'FINISHED';
   };
+}
+
+export interface RoomSnapshotPayload {
+  room: OnlineWarRoom;
+  assignedFaction: Exclude<Faction, 'None'> | null;
+  isHost: boolean;
+}
+
+export interface MatchSnapshotPayload extends RoomSnapshotPayload {
+  matchState: (OnlineRoomGameState & {
+    pieces: import('../src/rules/classicThreeKingdomRules').Piece[];
+  }) | null;
 }

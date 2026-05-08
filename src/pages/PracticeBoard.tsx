@@ -27,8 +27,15 @@ import { chooseBotMove } from '@/src/ai/botAI';
 import { runRuleEngineDevTests } from '@/src/rules/threeKingdomRules.devTests';
 import { useMatchContext } from '@/src/context/MatchContext';
 import { saveMatchRecord, exportMatchRecord } from '@/src/storage/localMatchArchive';
+import { mapWarRoomToMatchSetup } from '@/src/storage/warRooms';
 import { Save, Download, PlayCircle } from 'lucide-react';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
+import {
+  clearAllOnlineSessions,
+  readOnlineMatchSession,
+  saveOnlineMatchSession,
+  saveOnlineRoomSession,
+} from '@/src/services/onlineSessionStorage';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
 import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
 import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
@@ -82,7 +89,8 @@ const getInitialPieces = (): Piece[] => {
 function ClassicPracticeBoard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { config } = useMatchContext();
+  const { config, updateConfig } = useMatchContext();
+  const persistedOnlineMatchSession = readOnlineMatchSession();
 
   const [pieces, setPieces] = useState<Piece[]>(getInitialPieces());
   const [turn, setTurn] = useState<Faction>('Shu');
@@ -119,11 +127,28 @@ function ClassicPracticeBoard() {
   const [isSaved, setIsSaved] = useState(false);
   const [appliedMoveIds, setAppliedMoveIds] = useState<Set<string>>(new Set());
   const [lastSyncEvent, setLastSyncEvent] = useState<string | null>(null);
+  const [onlineSession, setOnlineSession] = useState(() => {
+    const routeState = (location.state as any) || {};
+    if (routeState?.mode === 'online' && routeState?.roomCode) {
+      return {
+        roomCode: routeState.roomCode as string,
+        playerName: (localStorage.getItem('last_commander_name') || 'Commander').trim() || 'Commander',
+        roomMode: 'online' as const,
+        gameMode: normalizeGameMode(routeState?.gameMode, DEFAULT_GAME_MODE),
+        playerFaction: routeState.playerFaction || null,
+        isHost: !!routeState.isHost,
+      };
+    }
 
-  const roomCode = (location.state as any)?.roomCode;
-  const roomMode = (location.state as any)?.mode || 'local';
-  const playerFaction = (location.state as any)?.playerFaction;
-  const isHost = (location.state as any)?.isHost;
+    return persistedOnlineMatchSession;
+  });
+  const [isReconnecting, setIsReconnecting] = useState(onlineSession?.roomMode === 'online');
+  const [roomExpired, setRoomExpired] = useState<string | null>(null);
+
+  const roomCode = onlineSession?.roomCode || (location.state as any)?.roomCode;
+  const roomMode = onlineSession?.roomMode || (location.state as any)?.mode || 'local';
+  const playerFaction = onlineSession?.playerFaction ?? (location.state as any)?.playerFaction;
+  const isHost = onlineSession?.isHost ?? (location.state as any)?.isHost;
   const lastProcessedMoveId = React.useRef<string | null>(null);
   const botTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestMove = history[0] || null;
@@ -417,7 +442,90 @@ function ClassicPracticeBoard() {
          setStatus("Tactical Breach: WebSocket server not configured. Online synchrony unavailable.");
          return;
       }
+
+      const commanderName =
+        onlineSession?.playerName?.trim() ||
+        (localStorage.getItem('last_commander_name') || 'Commander').trim() ||
+        'Commander';
+
+      const requestRecovery = () => {
+        if (!roomCode) {
+          return;
+        }
+        setIsReconnecting(true);
+        setStatus('Reconnecting... recovering live match state from Strategic Command.');
+        onlineRoomClient.joinRoom({ roomCode, playerName: commanderName });
+        onlineRoomClient.requestMatchSnapshot({ roomCode, playerName: commanderName });
+      };
+
       onlineRoomClient.connect();
+
+      const unsubConnection = onlineRoomClient.subscribeToConnectionState((connected) => {
+        if (!connected) {
+          setIsReconnecting(true);
+          setLastSyncEvent('DISCONNECTED');
+          setStatus('Reconnecting... recovering live match state from Strategic Command.');
+          return;
+        }
+
+        setLastSyncEvent('CONNECTED');
+        requestRecovery();
+      });
+
+      const unsubSnapshot = onlineRoomClient.subscribeToMatchSnapshot((snapshot) => {
+        if (snapshot.room.roomCode !== roomCode) {
+          return;
+        }
+
+        const matchData = mapWarRoomToMatchSetup(snapshot.room as any);
+        updateConfig(matchData);
+        setControlModes({
+          Shu: matchData.factions.Shu.control,
+          Wei: matchData.factions.Wei.control,
+          Wu: matchData.factions.Wu.control,
+          None: matchData.factions.None.control,
+        });
+
+        const recoveredSession = {
+          roomCode: snapshot.room.roomCode,
+          playerName: commanderName,
+          roomMode: 'online' as const,
+          gameMode: normalizeGameMode((snapshot.room as any).roomRules?.gameMode, DEFAULT_GAME_MODE),
+          playerFaction: snapshot.assignedFaction,
+          isHost: snapshot.isHost,
+        };
+        setOnlineSession(recoveredSession);
+        saveOnlineRoomSession({
+          roomCode: recoveredSession.roomCode,
+          playerName: recoveredSession.playerName,
+          roomMode: 'online',
+          gameMode: recoveredSession.gameMode,
+        });
+        saveOnlineMatchSession(recoveredSession);
+
+        setSelectedId(null);
+        setLegalMoves([]);
+        setIsReconnecting(false);
+        setRoomExpired(null);
+        setLastSyncEvent('MATCH_SNAPSHOT');
+
+        if (snapshot.matchState) {
+          setPieces(snapshot.matchState.pieces);
+          setTurn(snapshot.matchState.currentTurn as Faction);
+          setEliminated(snapshot.matchState.eliminatedFactions as Faction[]);
+          setWinner(snapshot.matchState.winner as Faction | null);
+          setAppliedMoveIds(new Set());
+          lastProcessedMoveId.current = null;
+          setStatus(
+            snapshot.matchState.winner
+              ? `Recovered completed battle. ${snapshot.matchState.winner.toUpperCase()} holds the field.`
+              : `Recovered live match state. ${snapshot.matchState.currentTurn} to move.`
+          );
+        } else {
+          setStatus('Recovered room state. Awaiting match initialization.');
+        }
+      });
+
       const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
         const syncServerState = () => {
           if (!payload.serverState) return;
@@ -445,8 +553,27 @@ function ClassicPracticeBoard() {
         }
       });
 
+      const unsubError = onlineRoomClient.subscribeToErrors((error) => {
+        if (error === 'ROOM_NOT_FOUND') {
+          clearAllOnlineSessions();
+          setRoomExpired('Room expired.');
+          setIsReconnecting(false);
+          setStatus('Room expired.');
+          return;
+        }
+
+        setStatus(`Strategic Failure: ${error}`);
+      });
+
+      if (onlineRoomClient.isConnected) {
+        requestRecovery();
+      }
+
       return () => {
+        unsubConnection();
+        unsubSnapshot();
         unsubMove();
+        unsubError();
       };
     }
   }, [roomMode]); // Only re-run if roomMode changes
@@ -564,6 +691,36 @@ function ClassicPracticeBoard() {
     };
   }, [turn, controlModes, winner, roomMode, isHost, playerFaction, pieces.length]);
 
+  React.useEffect(() => {
+    if (roomMode !== 'online' || !roomCode) {
+      return;
+    }
+
+    const commanderName =
+      onlineSession?.playerName?.trim() ||
+      (localStorage.getItem('last_commander_name') || 'Commander').trim() ||
+      'Commander';
+    const gameMode = normalizeGameMode(
+      onlineSession?.gameMode ?? (location.state as any)?.gameMode ?? config.gameMode,
+      DEFAULT_GAME_MODE
+    );
+
+    saveOnlineRoomSession({
+      roomCode,
+      playerName: commanderName,
+      roomMode: 'online',
+      gameMode,
+    });
+    saveOnlineMatchSession({
+      roomCode,
+      playerName: commanderName,
+      roomMode: 'online',
+      gameMode,
+      playerFaction: playerFaction || null,
+      isHost: !!isHost,
+    });
+  }, [config.gameMode, isHost, location.state, onlineSession?.gameMode, onlineSession?.playerName, playerFaction, roomCode, roomMode]);
+
   const resetGame = () => {
     if (history.length > 0 && !winner && !showResetConfirm) {
       setShowResetConfirm(true);
@@ -646,6 +803,28 @@ function ClassicPracticeBoard() {
   };
 
   const selectedPiece = pieces.find(p => p.id === selectedId) || null;
+
+  if (roomExpired) {
+    return (
+      <div className="pt-24 min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="glass-dark border border-rose-500/20 p-12 rounded-[3rem] max-w-md w-full text-center space-y-8">
+          <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500 mx-auto border border-rose-500/20">
+            <ShieldAlert size={40} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-white text-2xl font-serif font-black uppercase tracking-widest">Room Expired</h2>
+            <p className="text-zinc-500 text-xs font-serif italic leading-relaxed">{roomExpired}</p>
+          </div>
+          <button
+            onClick={() => navigate('/rooms')}
+            className="block w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
+          >
+            Return to Council
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-8 relative">

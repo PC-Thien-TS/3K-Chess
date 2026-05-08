@@ -1,5 +1,17 @@
 import { OnlineWarRoom, Faction, OnlineRoomSlot, OnlineRoomGameState } from './types';
-import { CreateRoomPayload, JoinRoomPayload, JoinSlotPayload, SlotActionPayload, AddBotPayload, SetReadyPayload, SubmitMovePayload, ValidatedSubmitMovePayload } from './protocol';
+import {
+  AddBotPayload,
+  CreateRoomPayload,
+  JoinRoomPayload,
+  JoinSlotPayload,
+  MatchSnapshotPayload,
+  RoomSnapshotPayload,
+  SetReadyPayload,
+  SlotActionPayload,
+  SnapshotRequestPayload,
+  SubmitMovePayload,
+  ValidatedSubmitMovePayload,
+} from './protocol';
 import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS } from '../shared/gameModes';
 import {
   CLASSIC_ACTIVE_FACTIONS,
@@ -20,10 +32,20 @@ interface AuthoritativeClassicMatchState extends OnlineRoomGameState {
   pieces: Piece[];
 }
 
+type RoomChangeResult = { roomCode: string; room: OnlineWarRoom | null };
+type RoomChangeHandler = (result: RoomChangeResult) => void;
+
 class RoomManager {
   private rooms: Map<string, OnlineWarRoom> = new Map();
   private processedMoveIds: Map<string, Set<string>> = new Map();
   private roomGameStates: Map<string, AuthoritativeClassicMatchState> = new Map();
+  private disconnectGraceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  private roomChangeHandler: RoomChangeHandler | null = null;
+  private readonly disconnectGraceMs = 30_000;
+
+  setRoomChangeHandler(handler: RoomChangeHandler) {
+    this.roomChangeHandler = handler;
+  }
 
   createRoom(payload: CreateRoomPayload, clientId: string): OnlineWarRoom {
     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -84,14 +106,52 @@ class RoomManager {
   joinRoom(payload: JoinRoomPayload, clientId: string): OnlineWarRoom {
     const room = this.getRoom(payload.roomCode);
     if (!room) throw new Error("Chamber not found in active archives.");
-    
-    // Check if clientId is already in a slot
-    const existingSlot = (['Shu', 'Wei', 'Wu'] as const).find(f => room.slots[f].clientId === clientId);
-    if (existingSlot) {
-      return room; // Already in a slot, just return the state
+
+    this.restoreCommanderSession(room, payload.playerName, clientId);
+    return room;
+  }
+
+  getRoomSnapshot(payload: SnapshotRequestPayload, clientId: string): RoomSnapshotPayload {
+    const room = this.getRoom(payload.roomCode);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
     }
 
-    return room;
+    const assignedFaction = this.restoreCommanderSession(room, payload.playerName, clientId);
+    return {
+      room,
+      assignedFaction,
+      isHost: room.hostClientId === clientId,
+    };
+  }
+
+  getMatchSnapshot(payload: SnapshotRequestPayload, clientId: string): MatchSnapshotPayload {
+    const room = this.getRoom(payload.roomCode);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+
+    if (room.roomRules.gameMode !== 'classic') {
+      throw new Error('SERVER_STATE_ERROR');
+    }
+
+    const assignedFaction = this.restoreCommanderSession(room, payload.playerName, clientId);
+    const matchState = this.roomGameStates.get(room.roomCode);
+
+    return {
+      room,
+      assignedFaction,
+      isHost: room.hostClientId === clientId,
+      matchState: matchState
+        ? {
+            currentTurn: matchState.currentTurn,
+            moveNumber: matchState.moveNumber,
+            eliminatedFactions: [...matchState.eliminatedFactions],
+            winner: matchState.winner,
+            pieces: matchState.pieces.map((piece) => ({ ...piece })),
+          }
+        : null,
+    };
   }
 
   joinSlot(payload: JoinSlotPayload, clientId: string): OnlineWarRoom {
@@ -359,27 +419,53 @@ class RoomManager {
   }
 
   leaveRoom(clientId: string): { roomCode: string; room: OnlineWarRoom | null } | null {
+    this.clearDisconnectGrace(clientId);
+    return this.finalizeClientDeparture(clientId, false);
+  }
+
+  handleDisconnect(clientId: string): { roomCode: string; room: OnlineWarRoom | null } | null {
+    for (const [code, room] of this.rooms.entries()) {
+      const factions = Object.keys(room.slots) as Exclude<Faction, 'None'>[];
+      const ownsHumanSlot = factions.some((faction) => {
+        const slot = room.slots[faction];
+        return slot.clientId === clientId && slot.occupantType === 'human';
+      });
+      if (!ownsHumanSlot) {
+        continue;
+      }
+
+      this.scheduleDisconnectGrace(clientId);
+      return { roomCode: code, room };
+    }
+    return null;
+  }
+
+  private finalizeClientDeparture(clientId: string, notify: boolean): RoomChangeResult | null {
     for (const [code, room] of this.rooms.entries()) {
       let changed = false;
       const factions = Object.keys(room.slots) as Exclude<Faction, 'None'>[];
-      
-      factions.forEach(f => {
-        if (room.slots[f].clientId === clientId) {
-          room.slots[f] = {
-            faction: f,
+
+      factions.forEach((faction) => {
+        if (room.slots[faction].clientId === clientId) {
+          room.slots[faction] = {
+            faction,
             occupantType: 'empty',
-            ready: false
+            ready: false,
           };
           changed = true;
         }
       });
-      
-      if (changed) {
+
+      if (!changed) {
+        continue;
+      }
+
+      const result = (() => {
         if (room.hostClientId === clientId) {
-          const nextHuman = Object.values(room.slots).find(s => s.occupantType === 'human');
+          const nextHuman = Object.values(room.slots).find((slot) => slot.occupantType === 'human');
           if (nextHuman && nextHuman.clientId) {
             room.hostClientId = nextHuman.clientId;
-            room.hostName = nextHuman.playerName || "New Strategist";
+            room.hostName = nextHuman.playerName || 'New Strategist';
           } else {
             this.rooms.delete(code);
             this.processedMoveIds.delete(code);
@@ -388,9 +474,80 @@ class RoomManager {
           }
         }
         return { roomCode: code, room };
+      })();
+
+      if (notify && this.roomChangeHandler) {
+        this.roomChangeHandler(result);
       }
+      return result;
     }
     return null;
+  }
+
+  private scheduleDisconnectGrace(clientId: string) {
+    this.clearDisconnectGrace(clientId);
+    const timer = setTimeout(() => {
+      this.disconnectGraceTimers.delete(clientId);
+      this.finalizeClientDeparture(clientId, true);
+    }, this.disconnectGraceMs);
+    this.disconnectGraceTimers.set(clientId, timer);
+  }
+
+  private clearDisconnectGrace(clientId: string) {
+    const timer = this.disconnectGraceTimers.get(clientId);
+    if (!timer) {
+      return;
+    }
+    clearTimeout(timer);
+    this.disconnectGraceTimers.delete(clientId);
+  }
+
+  private restoreCommanderSession(
+    room: OnlineWarRoom,
+    playerName: string | undefined,
+    clientId: string
+  ): Exclude<Faction, 'None'> | null {
+    const currentFaction = (Object.keys(room.slots) as Exclude<Faction, 'None'>[]).find(
+      (faction) => room.slots[faction].clientId === clientId
+    );
+    if (currentFaction) {
+      this.clearDisconnectGrace(clientId);
+      return currentFaction;
+    }
+
+    const normalizedName = playerName?.trim().toLowerCase();
+    if (!normalizedName) {
+      return null;
+    }
+
+    const matchedFaction = (Object.keys(room.slots) as Exclude<Faction, 'None'>[]).find((faction) => {
+      const slot = room.slots[faction];
+      return (
+        slot.occupantType === 'human' &&
+        typeof slot.playerName === 'string' &&
+        slot.playerName.trim().toLowerCase() === normalizedName
+      );
+    });
+
+    if (!matchedFaction) {
+      return null;
+    }
+
+    const previousClientId = room.slots[matchedFaction].clientId;
+    if (previousClientId && previousClientId !== clientId) {
+      this.clearDisconnectGrace(previousClientId);
+    }
+
+    room.slots[matchedFaction] = {
+      ...room.slots[matchedFaction],
+      clientId,
+    };
+
+    if (room.hostClientId === previousClientId || room.hostName.trim().toLowerCase() === normalizedName) {
+      room.hostClientId = clientId;
+    }
+
+    return matchedFaction;
   }
 
   private isValidMoveShape(move: SubmitMovePayload['move'] | undefined): move is SubmitMovePayload['move'] {

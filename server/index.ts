@@ -41,6 +41,15 @@ const io = new Server(httpServer, {
   }
 });
 
+roomManager.setRoomChangeHandler((result) => {
+  if (result.room) {
+    io.to(result.roomCode).emit(ServerMessage.ROOM_STATE, result.room);
+    return;
+  }
+
+  io.to(result.roomCode).emit(ServerMessage.PLAYER_LEFT, "Dynasty Dissolved");
+});
+
 const PORT = process.env.PORT || 8787;
 
 // Health Endpoint
@@ -152,6 +161,28 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on(ClientMessage.REQUEST_ROOM_SNAPSHOT, (payload) => {
+    try {
+      const snapshot = roomManager.getRoomSnapshot(payload, socket.id);
+      socket.join(snapshot.room.roomCode);
+      socket.emit(ServerMessage.ROOM_SNAPSHOT, snapshot);
+    } catch (err: any) {
+      console.error(`[Strategic Command] REQUEST_ROOM_SNAPSHOT Error: ${err.message}`, { id: socket.id, payload });
+      socket.emit(ServerMessage.ERROR, err.message);
+    }
+  });
+
+  socket.on(ClientMessage.REQUEST_MATCH_SNAPSHOT, (payload) => {
+    try {
+      const snapshot = roomManager.getMatchSnapshot(payload, socket.id);
+      socket.join(snapshot.room.roomCode);
+      socket.emit(ServerMessage.MATCH_SNAPSHOT, snapshot);
+    } catch (err: any) {
+      console.error(`[Strategic Command] REQUEST_MATCH_SNAPSHOT Error: ${err.message}`, { id: socket.id, payload });
+      socket.emit(ServerMessage.ERROR, err.message);
+    }
+  });
+
   socket.on(ClientMessage.LEAVE_ROOM, () => {
     const result = roomManager.leaveRoom(socket.id);
     if (result) {
@@ -166,14 +197,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[Strategic Command] Commander Delinked: ${socket.id}`);
-    const result = roomManager.leaveRoom(socket.id);
-    if (result) {
-      if (result.room) {
-        io.to(result.roomCode).emit(ServerMessage.ROOM_STATE, result.room);
-      } else {
-        io.to(result.roomCode).emit(ServerMessage.PLAYER_LEFT, "Dynasty Dissolved");
-      }
-    }
+    roomManager.handleDisconnect(socket.id);
   });
 });
 
