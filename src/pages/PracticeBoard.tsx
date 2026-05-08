@@ -5,6 +5,7 @@ import { ChevronLeft, RotateCcw, Sword, History, Info, ShieldAlert, Settings, Aw
 import { cn } from '@/src/lib/utils';
 import { 
   validateMove, 
+  BotDifficulty,
   Faction, 
   PieceType, 
   Piece, 
@@ -18,15 +19,11 @@ import {
   getPieceName,
   getPieceDescription,
   getLegalDestinationsForPiece,
-  validateBoardIntegrity,
-  MatchStats,
-  RecordedMove,
-  MatchRecord
+  validateBoardIntegrity
 } from '@/src/rules/classicThreeKingdomRules';
-import { chooseBotMove } from '@/src/ai/botAI';
+import type { BotDecision } from '@/src/ai/botAI';
 import { runRuleEngineDevTests } from '@/src/rules/threeKingdomRules.devTests';
 import { useMatchContext } from '@/src/context/MatchContext';
-import { saveMatchRecord, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import { Save, Download, PlayCircle } from 'lucide-react';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import {
@@ -37,8 +34,10 @@ import {
 } from '@/src/services/onlineSessionStorage';
 import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
 import ClassicBoard from '@/src/components/boards/ClassicBoard';
+import { useClassicBotTurns } from '@/src/hooks/useClassicBotTurns';
+import { useClassicMatchRecorder } from '@/src/hooks/useClassicMatchRecorder';
 import { useClassicOnlineSync } from '@/src/hooks/useClassicOnlineSync';
-import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
+import { DEFAULT_GAME_MODE, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {
@@ -107,20 +106,8 @@ function ClassicPracticeBoard() {
     Wu: config.factions.Wu.control,
     None: config.factions.None.control
   });
-  const [isBotThinking, setIsBotThinking] = useState(false);
-  const [lastBotDecision, setLastBotDecision] = useState<any>(null);
-  const [matchStats, setMatchStats] = useState<MatchStats>({
-    totalMoves: 0,
-    totalCaptures: 0,
-    totalChecks: 0,
-    totalCheckmates: 0,
-    capturesByFaction: { Shu: 0, Wei: 0, Wu: 0, None: 0 },
-    eliminationOrder: []
-  });
-  const [showSummary, setShowSummary] = useState(false);
-  const [recordedMoves, setRecordedMoves] = useState<RecordedMove[]>([]);
+  const [lastBotDecision, setLastBotDecision] = useState<(BotDecision & { difficulty: BotDifficulty }) | null>(null);
   const [initialPieces] = useState<Piece[]>(getInitialPieces());
-  const [isSaved, setIsSaved] = useState(false);
   const [appliedMoveIds, setAppliedMoveIds] = useState<Set<string>>(new Set());
   const [lastSyncEvent, setLastSyncEvent] = useState<string | null>(null);
   const [onlineSession, setOnlineSession] = useState<PersistedOnlineMatchSession | null>(() => {
@@ -150,13 +137,26 @@ function ClassicPracticeBoard() {
   const playerFaction = onlineSession?.playerFaction ?? (location.state as any)?.playerFaction;
   const isHost = onlineSession?.isHost ?? (location.state as any)?.isHost;
   const lastProcessedMoveId = React.useRef<string | null>(null);
-  const botTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestMove = history[0] || null;
-  const devLog = (...args: unknown[]) => {
-    if ((import.meta as any).env.DEV) {
-      console.log(...args);
-    }
-  };
+
+  const {
+    matchStats,
+    showSummary,
+    isSaved,
+    recordCompletedMove,
+    resetRecorder,
+    createMatchRecord,
+    handleSaveLocally,
+    handleExportMatch,
+  } = useClassicMatchRecorder({
+    config,
+    initialPieces,
+    pieces,
+    winner,
+    eliminated,
+    roomCode,
+    setStatus,
+  });
 
   const getNextFaction = (currentTurn: Faction, currentPieces: Piece[], currentEliminated: Faction[]): Faction | null => {
     const activeFactions = FACTIONS.filter(f => !currentEliminated.includes(f));
@@ -223,39 +223,9 @@ function ClassicPracticeBoard() {
 
     const nextWinner = FACTIONS.find(f => !newEliminated.includes(f) && FACTIONS.filter(f2 => !newEliminated.includes(f2)).length === 1) || null;
     
-    // Update Stats
-    const capturedThisMove = !!pieceAtPoint;
-    setMatchStats(prev => {
-      const newCapturesByFaction = { ...prev.capturesByFaction };
-      if (capturedThisMove) {
-        newCapturesByFaction[turn] = (newCapturesByFaction[turn] || 0) + 1;
-      }
-      
-      const newElimOrder = [...prev.eliminationOrder];
-      if (checkmateHappened) {
-        FACTIONS.forEach(f => {
-          if (debugResults[f]?.checkmated && !newElimOrder.includes(f)) {
-            newElimOrder.push(f);
-          }
-        });
-      }
-
-      return {
-        totalMoves: prev.totalMoves + 1,
-        totalCaptures: capturedThisMove ? prev.totalCaptures + 1 : prev.totalCaptures,
-        totalChecks: validation.givesCheck ? prev.totalChecks + 1 : prev.totalChecks,
-        totalCheckmates: checkmateHappened ? prev.totalCheckmates + 1 : prev.totalCheckmates,
-        capturesByFaction: newCapturesByFaction,
-        eliminationOrder: newElimOrder,
-        finalMoveText: `${isBot ? 'BOT ' : ''}${turn} ${getPieceName(piece.type)} ${capturedThisMove ? 'captured ' + getPieceName(pieceAtPoint.type) : 'moved'} to (${x}, ${y})`
-      };
-    });
-
     if (nextWinner) {
       setWinner(nextWinner);
       setStatus(`THE BATTLE IS OVER. ${nextWinner.toUpperCase()} UNITES THE LAND.`);
-      // Show summary after a delay
-      setTimeout(() => setShowSummary(true), 1500);
     } else if (checkmateHappened) {
       setStatus(`${isBot ? 'BOT: ' : ''}CHECKMATE! ${isBot ? turn + ' delivers a fatal strike.' : 'A faction has fallen.'}`);
     } else if (validation.givesCheck) {
@@ -278,25 +248,19 @@ function ClassicPracticeBoard() {
     };
     setHistory(prev => [newMove, ...prev]);
 
-    // V4: RecordedMove for Replay
-    const newRecordedMove: RecordedMove = {
-      id: moveId,
-      turnNumber: history.length + 1,
-      actorType: isBot ? 'bot' : 'human',
-      faction: turn,
-      pieceId: piece.id,
-      pieceType: piece.type,
-      from: { x: piece.x, y: piece.y },
-      to: { x, y },
-      capturedPiece: pieceAtPoint ? { type: pieceAtPoint.type, faction: pieceAtPoint.faction } : undefined,
-      givesCheck: validation.givesCheck,
-      checkedFactions: validation.checkedFactions,
+    const newRecordedMove = recordCompletedMove({
+      moveId,
+      historyLength: history.length,
+      actingFaction: turn,
+      piece,
+      destination: { x, y },
+      capturedPiece: pieceAtPoint,
+      validation,
+      isBot,
       checkmateHappened,
-      eliminatedAfterMove: checkmateHappened ? debugResults ? Object.keys(debugResults).filter(f => debugResults[f].checkmated) as Faction[] : [] : [],
-      winnerAfterMove: nextWinner,
-      notationText: `${getPieceName(piece.type)} ${capturedType ? 'captures ' + getPieceName(capturedType) : 'moves'} from (${piece.x},${piece.y}) to (${x},${y})`
-    };
-    setRecordedMoves(prev => [...prev, newRecordedMove]);
+      debugResults,
+      nextWinner,
+    });
 
     // Online Broadcast
     if (roomMode === 'online' && !remoteMoveId) {
@@ -487,118 +451,41 @@ function ClassicPracticeBoard() {
     hydrateSnapshotState,
   });
 
-  // Bot Turn Trigger
-  React.useEffect(() => {
-    if (botTimerRef.current) {
-      clearTimeout(botTimerRef.current);
-      botTimerRef.current = null;
+  const advanceAfterNoLegalMove = React.useCallback((faction: Faction, currentPieces: Piece[], currentEliminated: Faction[]) => {
+    const nextFct = getNextFaction(faction, currentPieces, currentEliminated);
+    if (nextFct) {
+      setTurn(nextFct);
     }
+  }, []);
 
-    const currentControl = controlModes[turn];
-    devLog('[Bot Turn] detected', {
-      roomMode,
-      turn,
-      controlMode: currentControl,
-      isHost,
-      playerFaction,
-      botThinking: isBotThinking,
-      pieceCount: pieces.length
-    });
+  const executeLocalBotMove = React.useCallback((piece: Piece, x: number, y: number) => {
+    return performMoveRef.current(piece, x, y, true);
+  }, []);
 
-    if (winner || isBotThinking || currentControl !== 'Bot') {
-      return;
-    }
+  const submitOnlineBotMove = React.useCallback((piece: Piece, x: number, y: number) => {
+    return performMoveRef.current(piece, x, y, true);
+  }, []);
 
-    if (roomMode === 'online' && !isHost) {
-      devLog('[Bot Turn] skipped non-host online bot', {
-        roomMode,
-        turn,
-        controlMode: currentControl,
-        isHost,
-        playerFaction,
-        botThinking: isBotThinking,
-        pieceCount: pieces.length
-      });
-      return;
-    }
-
-    setIsBotThinking(true);
-    const delay = 600 + Math.random() * 400;
-
-    botTimerRef.current = setTimeout(() => {
-      const activeTurn = turnRef.current;
-      const activeWinner = winnerRef.current;
-      const activeControl = controlModesRef.current[activeTurn];
-
-      if (activeWinner || activeControl !== 'Bot') {
-        setIsBotThinking(false);
-        return;
-      }
-
-      try {
-        const difficulty = configRef.current.factions[activeTurn].difficulty;
-        const currentPieces = piecesRef.current;
-        const decision = chooseBotMove(activeTurn, currentPieces, difficulty);
-
-        if (!decision) {
-          devLog('[Bot Turn] no legal moves', {
-            roomMode,
-            turn: activeTurn,
-            controlMode: activeControl,
-            isHost,
-            playerFaction,
-            botThinking: true,
-            pieceCount: currentPieces.length
-          });
-          setStatus(`${activeTurn} has no legal maneuvers. Skipping turn.`);
-          const nextFct = getNextFaction(activeTurn, currentPieces, eliminatedRef.current);
-          if (nextFct) {
-            setTurn(nextFct);
-          }
-          return;
-        }
-
-        setLastBotDecision({ ...decision, difficulty });
-        const piece = currentPieces.find(p => p.x === decision.move.from.x && p.y === decision.move.from.y);
-        if (!piece) {
-          setStatus(`Bot execution failed: unable to locate ${activeTurn} unit at (${decision.move.from.x}, ${decision.move.from.y}).`);
-          return;
-        }
-
-        const botPrefix = `BOT ${activeTurn} (${difficulty})`;
-        setStatus(`${botPrefix}: ${decision.reason}.`);
-        devLog('[Bot Turn] selected move', {
-          turn: activeTurn,
-          from: decision.move.from,
-          to: decision.move.to,
-          captured: decision.move.captured,
-          score: decision.score,
-          reason: decision.reason
-        });
-
-        const executionLabel = roomMode === 'online'
-          ? '[Bot Turn] host submitting online move'
-          : '[Bot Turn] running locally';
-        const moveId = performMoveRef.current(piece, decision.move.to.x, decision.move.to.y, true);
-        devLog(executionLabel, {
-          moveId,
-          turn: activeTurn,
-          from: decision.move.from,
-          to: decision.move.to
-        });
-      } finally {
-        botTimerRef.current = null;
-        setIsBotThinking(false);
-      }
-    }, delay);
-
-    return () => {
-      if (botTimerRef.current) {
-        clearTimeout(botTimerRef.current);
-        botTimerRef.current = null;
-      }
-    };
-  }, [turn, controlModes, winner, roomMode, isHost, playerFaction, pieces.length]);
+  const { isBotThinking } = useClassicBotTurns({
+    roomMode,
+    isHost,
+    playerFaction,
+    turn,
+    controlModes,
+    winner,
+    piecesCount: pieces.length,
+    turnRef,
+    controlModesRef,
+    winnerRef,
+    piecesRef,
+    configRef,
+    eliminatedRef,
+    executeLocalBotMove,
+    submitOnlineBotMove,
+    advanceAfterNoLegalMove,
+    setStatus,
+    setLastBotDecision,
+  });
 
   React.useEffect(() => {
     if (roomMode !== 'online' || !roomCode) {
@@ -646,18 +533,8 @@ function ClassicPracticeBoard() {
     setLastCheckmateDebug({});
     setStatus("Battlefield reset to initial state.");
     setShowResetConfirm(false);
-    setShowSummary(false);
     setLastBotDecision(null);
-    setRecordedMoves([]);
-    setIsSaved(false);
-    setMatchStats({
-      totalMoves: 0,
-      totalCaptures: 0,
-      totalChecks: 0,
-      totalCheckmates: 0,
-      capturesByFaction: { Shu: 0, Wei: 0, Wu: 0, None: 0 },
-      eliminationOrder: []
-    });
+    resetRecorder();
 
     // V4: Reset control modes to the setup config (if user changed them during game)
     setControlModes({
@@ -683,33 +560,6 @@ function ClassicPracticeBoard() {
     });
     return count > 1 ? "Contested" : faction;
   })();
-
-  const createMatchRecord = (): MatchRecord => ({
-    id: `match-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    createdAt: new Date().toISOString(),
-    ruleset: GAME_MODE_RULESETS.classic,
-    setup: config,
-    winner,
-    eliminatedFactions: eliminated,
-    matchStats,
-    initialPieces,
-    moves: recordedMoves,
-    finalPieces: pieces,
-    source: roomCode ? { mode: "war-room-sim", roomCode } : { mode: "local" }
-  });
-
-  const handleSaveLocally = () => {
-    const record = createMatchRecord();
-    saveMatchRecord(record);
-    setIsSaved(true);
-    setStatus("Match chronicles saved to local archives.");
-  };
-
-  const handleExportMatch = () => {
-    const record = createMatchRecord();
-    exportMatchRecord(record);
-    setStatus("Match records exported for external archives.");
-  };
 
   const selectedPiece = pieces.find(p => p.id === selectedId) || null;
   const checkedGeneralIds = new Set(
