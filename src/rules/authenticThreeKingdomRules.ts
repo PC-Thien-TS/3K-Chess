@@ -239,10 +239,10 @@ export function getAuthenticTerritory(
   x: number,
   y: number
 ): AuthenticFactionOrNeutral | 'neutral' {
-  if (y <= 4 && x >= 3 && x <= 13) return 'Shu';
-  if (x <= 4 && y >= 3 && y <= 13) return 'Wu';
-  if (y >= 12 && x >= 3 && x <= 13) return 'Wei';
   if (x >= 6 && x <= 10 && y >= 6 && y <= 10) return 'Han';
+  if (x <= 4 && y >= 4 && y <= 12) return 'Wu';
+  if (y <= 4 && x >= 4 && x <= 12) return 'Shu';
+  if (y >= 12 && x >= 4 && x <= 12) return 'Wei';
   return 'neutral';
 }
 
@@ -864,7 +864,7 @@ function resolveCheckPriorityAndCheckmates(
   let queue = getPriorityCheckedQueue(workingPieces, workingAllianceState);
   while (queue.length > 0) {
     const factionInCheck = queue[0];
-    if (hasAnyLegalMove(factionInCheck, workingPieces, moveNumber, hanController, workingAllianceState)) {
+    if (hasAnyLegalMove(factionInCheck, workingPieces, moveNumber, workingHanController, workingAllianceState)) {
       break;
     }
 
