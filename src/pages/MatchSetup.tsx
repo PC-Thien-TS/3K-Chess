@@ -54,6 +54,7 @@ export default function MatchSetup() {
   const [localPrimary, setLocalPrimary] = useState(config.primaryKingdom);
   const [localGameMode, setLocalGameMode] = useState<GameMode>(initialGameMode);
   const [modeNotice, setModeNotice] = useState<string | null>(initialGameMode === 'authentic' ? AUTHENTIC_PREVIEW_MESSAGE : null);
+  const isAuthenticMode = localGameMode === 'authentic';
 
   const getAuthenticHumanFactions = () => ({
     ...localFactions,
@@ -171,7 +172,7 @@ export default function MatchSetup() {
         ))}
       </div>
 
-      {localGameMode === 'authentic' && (
+      {isAuthenticMode && (
         <div className="w-full max-w-5xl mb-12 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] p-6 text-amber-100 text-sm font-serif italic">
           {AUTHENTIC_PREVIEW_MESSAGE}
         </div>
@@ -224,81 +225,91 @@ export default function MatchSetup() {
 
             <div className="flex flex-col gap-6 mt-4 relative z-10">
               {/* Command Mode */}
-              <div className="flex flex-col gap-3">
-                <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Military Command</span>
-                <div className="flex gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-inner">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
-                      localFactions[f].control === 'Human' 
-                        ? "bg-white text-black border-white" 
-                        : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
-                    )}
-                  >
-                    <User size={14} className={cn(localFactions[f].control === 'Human' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
-                    Human
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
-                      localFactions[f].control === 'Bot' 
-                        ? "bg-gold text-black border-gold shadow-gold/20" 
-                        : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
-                    )}
-                  >
-                    <Cpu size={14} className={cn(localFactions[f].control === 'Bot' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
-                    Bot
-                  </button>
-                </div>
-              </div>
+                    {isAuthenticMode ? (
+                      <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/10 px-6 py-5 text-amber-100">
+                        <span className="text-[9px] font-black uppercase tracking-[0.35em]">Local Only</span>
+                        <p className="mt-2 text-xs font-serif italic leading-relaxed text-amber-100/85">
+                          Authentic v1 is human-only local play. Bots, online chambers, and tactical difficulty are disabled in this mode.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-3">
+                          <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Military Command</span>
+                          <div className="flex gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-inner">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
+                              className={cn(
+                                "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
+                                localFactions[f].control === 'Human' 
+                                  ? "bg-white text-black border-white" 
+                                  : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
+                              )}
+                            >
+                              <User size={14} className={cn(localFactions[f].control === 'Human' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
+                              Human
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
+                              className={cn(
+                                "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
+                                localFactions[f].control === 'Bot' 
+                                  ? "bg-gold text-black border-gold shadow-gold/20" 
+                                  : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
+                              )}
+                            >
+                              <Cpu size={14} className={cn(localFactions[f].control === 'Bot' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
+                              Bot
+                            </button>
+                          </div>
+                        </div>
 
-              {/* Tactical Adjustments */}
-              <AnimatePresence>
-                {localFactions[f].control === 'Bot' && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0, y: -10 }}
-                    animate={{ opacity: 1, height: 'auto', y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -10 }}
-                    className="flex flex-col gap-3 overflow-hidden pt-2"
-                  >
-                    <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Strategic Intent</span>
-                    <div className="grid grid-cols-1 gap-2">
-                       <button
-                         onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'easy'); }}
-                         className={cn(
-                           "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
-                           localFactions[f].difficulty === 'easy' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
-                         )}
-                       >
-                         {DIFFICULTY_LABELS.easy}
-                         <Zap size={12} className={cn(localFactions[f].difficulty === 'easy' ? "opacity-100" : "opacity-0 group-hover/diff:opacity-20")} />
-                       </button>
-                       <button
-                         onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'normal'); }}
-                         className={cn(
-                           "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
-                           localFactions[f].difficulty === 'normal' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
-                         )}
-                       >
-                         {DIFFICULTY_LABELS.normal}
-                         <div className="flex gap-1">
-                            <Zap size={12} className={cn(localFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
-                            <Zap size={12} className={cn(localFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
-                         </div>
-                       </button>
-                       <div className="px-6 py-4 rounded-2xl bg-white/[0.01] border border-white/[0.03] text-zinc-800 text-[9px] font-black uppercase tracking-widest flex justify-between items-center cursor-not-allowed grayscale">
-                         Divine Tactician (Hard)
-                         <span className="text-[8px] bg-zinc-900 px-2 py-0.5 rounded-full text-zinc-600 border border-white/5">Dormant</span>
-                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        ))}
+                        <AnimatePresence>
+                          {localFactions[f].control === 'Bot' && (
+                            <motion.div 
+                              initial={{ opacity: 0, height: 0, y: -10 }}
+                              animate={{ opacity: 1, height: 'auto', y: 0 }}
+                              exit={{ opacity: 0, height: 0, y: -10 }}
+                              className="flex flex-col gap-3 overflow-hidden pt-2"
+                            >
+                              <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Strategic Intent</span>
+                              <div className="grid grid-cols-1 gap-2">
+                                 <button
+                                   onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'easy'); }}
+                                   className={cn(
+                                     "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
+                                     localFactions[f].difficulty === 'easy' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                                   )}
+                                 >
+                                   {DIFFICULTY_LABELS.easy}
+                                   <Zap size={12} className={cn(localFactions[f].difficulty === 'easy' ? "opacity-100" : "opacity-0 group-hover/diff:opacity-20")} />
+                                 </button>
+                                 <button
+                                   onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'normal'); }}
+                                   className={cn(
+                                     "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
+                                     localFactions[f].difficulty === 'normal' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                                   )}
+                                 >
+                                   {DIFFICULTY_LABELS.normal}
+                                   <div className="flex gap-1">
+                                      <Zap size={12} className={cn(localFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
+                                      <Zap size={12} className={cn(localFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
+                                   </div>
+                                 </button>
+                                 <div className="px-6 py-4 rounded-2xl bg-white/[0.01] border border-white/[0.03] text-zinc-800 text-[9px] font-black uppercase tracking-widest flex justify-between items-center cursor-not-allowed grayscale">
+                                   Divine Tactician (Hard)
+                                   <span className="text-[8px] bg-zinc-900 px-2 py-0.5 rounded-full text-zinc-600 border border-white/5">Dormant</span>
+                                 </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
       </div>
 
       <motion.div 
@@ -313,7 +324,7 @@ export default function MatchSetup() {
           <div className="flex items-center gap-4 text-zinc-500 text-[11px] font-serif italic tracking-wide">
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {GAME_MODE_META[localGameMode].shortLabel} Mode</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> 3-Dominion Battle</span>
-             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> Traditional Protocol</span>
+             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {isAuthenticMode ? 'Local Only' : 'Traditional Protocol'}</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> Unified Objective</span>
           </div>
         </div>

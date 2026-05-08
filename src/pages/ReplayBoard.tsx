@@ -31,7 +31,6 @@ import {
 } from '@/src/rules/classicThreeKingdomRules';
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
-import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTION_COLORS = {
@@ -133,7 +132,47 @@ export default function ReplayBoard() {
 
   const replayMode = normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE);
   if (replayMode === 'authentic') {
-    return <AuthenticBoard context="replay" />;
+    return (
+      <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-10">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 px-4">
+          <div className="space-y-4">
+            <Link to="/archive" className="inline-flex items-center gap-3 text-gold hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.4em] mb-4 bg-gold/10 px-6 py-2.5 rounded-full border border-gold/20 mr-4">
+              <ChevronLeft size={16} /> Return to Archives
+            </Link>
+            <h1 className="text-4xl md:text-7xl font-serif font-black text-white tracking-[0.05em] uppercase leading-none">
+              AUTHENTIC <span className="text-gold italic block md:inline">REPLAY</span>
+            </h1>
+          </div>
+
+          <div className="flex gap-4 w-full lg:w-auto">
+            <button
+              onClick={() => exportMatchRecord(match)}
+              className="flex-1 lg:flex-none glass-dark border border-white/10 text-white px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95"
+            >
+              <Download size={18} className="text-gold" /> Export Log
+            </button>
+            <button
+              onClick={() => navigate('/setup?mode=authentic')}
+              className="flex-1 lg:flex-none bg-gold text-black px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_15px_40px_rgba(212,175,55,0.3)] hover:bg-white hover:scale-[1.02] active:scale-95"
+            >
+              <PlayCircle size={18} /> New Campaign
+            </button>
+          </div>
+        </div>
+
+        <div className="px-4">
+          <div className="glass-dark border border-white/10 rounded-[3rem] p-10 md:p-14 shadow-3xl">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gold">Archive Notice</span>
+            <h2 className="mt-4 text-3xl md:text-5xl font-serif font-black uppercase text-white tracking-tight">
+              Authentic replay is not available in v1.
+            </h2>
+            <p className="mt-6 max-w-2xl text-zinc-400 font-serif italic leading-relaxed">
+              This record can still be exported for reference, but the Authentic local ruleset does not yet support archive playback.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const boardPieces = currentPieces();

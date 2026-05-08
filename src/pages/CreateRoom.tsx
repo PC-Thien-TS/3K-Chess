@@ -185,7 +185,7 @@ export default function CreateRoom() {
                   )}
                 >
                   <div className="text-[10px] font-bold uppercase tracking-widest text-gold mb-2">
-                    {GAME_MODE_META[mode].shortLabel}
+                    {mode === 'authentic' ? 'Local Only' : GAME_MODE_META[mode].shortLabel}
                   </div>
                   <h4 className="text-white text-base font-serif font-black uppercase mb-2">
                     {GAME_MODE_META[mode].label}
