@@ -26,7 +26,8 @@ import {
   MatchRecord, 
   RecordedMove, 
   getPieceName,
-  validateBoardIntegrity
+  validateBoardIntegrity,
+  isFactionInCheck
 } from '@/src/rules/classicThreeKingdomRules';
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
@@ -42,6 +43,7 @@ const FACTION_COLORS = {
 
 const ROWS = 17;
 const COLS = 17;
+const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 
 export default function ReplayBoard() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -190,84 +192,144 @@ export default function ReplayBoard() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start px-4">
         {/* Board Area */}
         <div className="xl:col-span-8 space-y-8">
-          <div className="relative aspect-square w-full max-w-[850px] mx-auto overflow-hidden rounded-[3.5rem] border border-[#5d4926]/40 bg-[#100d09] p-4 sm:p-6 md:p-10 shadow-[0_28px_80px_rgba(0,0,0,0.7)]">
-             {/* Dynamic Faction Background (Very Subtle) */}
-             <AnimatePresence mode="wait">
-                <motion.div
-                  key={lastMove?.faction}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 pointer-events-none opacity-[0.08]"
-                >
-                   <div className={cn("absolute inset-0 bg-gradient-to-br from-current via-transparent to-transparent", lastMove ? FACTION_COLORS[lastMove.faction] : "text-zinc-500")} />
-                </motion.div>
-             </AnimatePresence>
+          <div className="relative w-full max-w-[820px] mx-auto aspect-square overflow-hidden rounded-[2.25rem] border border-[#5d4926]/40 bg-[#100d09] p-3 sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={lastMove?.faction}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 pointer-events-none opacity-[0.08]"
+              >
+                <div className={cn("absolute inset-0 bg-gradient-to-br from-current via-transparent to-transparent", lastMove ? FACTION_COLORS[lastMove.faction] : "text-zinc-500")} />
+              </motion.div>
+            </AnimatePresence>
 
-             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
-             <div className="absolute inset-[1.15%] rounded-[3rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
-             <div className="absolute left-[24%] top-[4%] h-[22%] w-[52%] rounded-full bg-rose-500/[0.08] blur-3xl pointer-events-none" />
-             <div className="absolute left-[4%] top-[24%] h-[52%] w-[22%] rounded-full bg-emerald-500/[0.08] blur-3xl pointer-events-none" />
-             <div className="absolute left-[24%] bottom-[4%] h-[22%] w-[52%] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-             <div className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-overlay [background-image:linear-gradient(120deg,rgba(255,255,255,0.16)_0,transparent_22%,rgba(255,255,255,0.08)_36%,transparent_52%,rgba(0,0,0,0.18)_72%,transparent_100%)]" />
-             <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
-                <div className="absolute left-1/2 top-[4%] -translate-x-1/2 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-rose-500/[0.06]">SHU</div>
-                <div className="absolute left-[4%] top-1/2 -translate-y-1/2 -rotate-90 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-emerald-500/[0.06]">WU</div>
-                <div className="absolute bottom-[4%] left-1/2 -translate-x-1/2 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06]">WEI</div>
-             </div>
-             
-             <div className="relative w-full h-full grid grid-cols-17 grid-rows-17 rounded-[2.5rem] border border-gold/[0.12] shadow-[inset_0_0_60px_rgba(0,0,0,0.55)]">
-                {Array.from({ length: ROWS * COLS }).map((_, i) => {
-                  const x = i % COLS;
-                  const y = Math.floor(i / COLS);
-                  const isHighlighted = lastMove && (
-                    (lastMove.from.x === x && lastMove.from.y === y) || 
-                    (lastMove.to.x === x && lastMove.to.y === y)
-                  );
-                  const isCapture = lastMove?.capturedPiece && lastMove.to.x === x && lastMove.to.y === y;
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
+            <div className="absolute inset-[1.25%] rounded-[2rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
+            <div className="absolute inset-[2.2%] rounded-[1.8rem] border border-black/35 shadow-[inset_0_0_80px_rgba(0,0,0,0.72)]" />
+            <div className="absolute left-[24%] top-[4%] h-[22%] w-[52%] rounded-full bg-rose-500/[0.08] blur-3xl pointer-events-none" />
+            <div className="absolute left-[4%] top-[24%] h-[52%] w-[22%] rounded-full bg-emerald-500/[0.08] blur-3xl pointer-events-none" />
+            <div className="absolute left-[24%] bottom-[4%] h-[22%] w-[52%] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.09] mix-blend-overlay [background-image:linear-gradient(120deg,rgba(255,255,255,0.16)_0,transparent_22%,rgba(255,255,255,0.08)_36%,transparent_52%,rgba(0,0,0,0.18)_72%,transparent_100%)]" />
+
+            <div className="absolute inset-0 pointer-events-none p-3 sm:p-4 md:p-7">
+              <svg viewBox="0 0 170 170" className="w-full h-full fill-none" strokeWidth="0.52">
+                <defs>
+                  <linearGradient id="replay-board-grid-v1" x1="0%" x2="100%">
+                    <stop offset="0%" stopColor="rgba(244, 215, 160, 0.10)" />
+                    <stop offset="50%" stopColor="rgba(225, 194, 136, 0.45)" />
+                    <stop offset="100%" stopColor="rgba(244, 215, 160, 0.10)" />
+                  </linearGradient>
+                </defs>
+                <rect x="5" y="5" width="160" height="160" rx="2" stroke="rgba(212,175,55,0.18)" />
+                {[...Array(17)].map((_, i) => (
+                  <line key={`v-${i}`} x1={i * 10 + 5} y1={5} x2={i * 10 + 5} y2={165} stroke="url(#replay-board-grid-v1)" opacity={i < 4 || i > 12 ? 0.35 : 1} />
+                ))}
+                {[...Array(17)].map((_, i) => (
+                  <line key={`h-${i}`} x1={5} y1={i * 10 + 5} x2={165} y2={i * 10 + 5} stroke="url(#replay-board-grid-v1)" opacity={i < 4 || i > 12 ? 0.35 : 1} />
+                ))}
+                <rect x="71.5" y="1.5" width="27" height="27" rx="3" fill="rgba(127,29,29,0.08)" stroke="rgba(251,113,133,0.18)" />
+                <rect x="1.5" y="71.5" width="27" height="27" rx="3" fill="rgba(6,95,70,0.08)" stroke="rgba(52,211,153,0.18)" />
+                <rect x="71.5" y="141.5" width="27" height="27" rx="3" fill="rgba(30,64,175,0.08)" stroke="rgba(96,165,250,0.18)" />
+                <g className="stroke-[rgba(251,113,133,0.34)] stroke-[0.9]">
+                  <line x1={75} y1={5} x2={95} y2={25} />
+                  <line x1={95} y1={5} x2={75} y2={25} />
+                </g>
+                <g className="stroke-[rgba(52,211,153,0.34)] stroke-[0.9]">
+                  <line x1={5} y1={75} x2={25} y2={95} />
+                  <line x1={25} y1={75} x2={5} y2={95} />
+                </g>
+                <g className="stroke-[rgba(96,165,250,0.34)] stroke-[0.9]">
+                  <line x1={75} y1={145} x2={95} y2={165} />
+                  <line x1={95} y1={145} x2={75} y2={165} />
+                </g>
+                <g className="stroke-[rgba(212,175,55,0.34)] stroke-[0.8]" strokeDasharray="2.4 2.4">
+                  <line x1={65} y1={45} x2={65} y2={125} />
+                  <line x1={45} y1={65} x2={125} y2={65} />
+                  <line x1={45} y1={105} x2={125} y2={105} />
+                </g>
+              </svg>
+            </div>
+
+            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-10 sm:p-14 md:p-20 select-none overflow-hidden">
+              <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-rose-500/[0.06] -mt-6">SHU</div>
+              <div className="flex justify-between w-full">
+                <div className="-ml-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-emerald-500/[0.06] -rotate-90">WU</div>
+                <div className="invisible -mr-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06]">WEI</div>
+              </div>
+              <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06] -mb-6">WEI</div>
+            </div>
+
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-55">
+              <span className="translate-y-[-48px] text-[9px] font-black uppercase tracking-[1.2em] text-[#453726] sm:text-[10px]">Inter-Kingdom River</span>
+              <span className="translate-y-[48px] text-[9px] font-black uppercase tracking-[1.2em] text-[#453726] sm:text-[10px]">Chasm of Three Fates</span>
+            </div>
+
+            <div
+              className="grid gap-0 w-full h-full relative z-10"
+              style={{
+                gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+                gridTemplateRows: `repeat(${ROWS}, 1fr)`
+              }}
+            >
+              {[...Array(ROWS)].map((_, y) => (
+                [...Array(COLS)].map((_, x) => {
+                  const piece = boardPieces.find(p => p.x === x && p.y === y);
+                  const isLastMoveFrom = !!lastMove && lastMove.from.x === x && lastMove.from.y === y;
+                  const isLastMoveTo = !!lastMove && lastMove.to.x === x && lastMove.to.y === y;
+                  const isCheckedGeneral = !!piece && piece.type === 'G' && isFactionInCheck(piece.faction, boardPieces).inCheck;
+
+                  let isAttacker = false;
+                  FACTIONS.forEach(f => {
+                    const check = isFactionInCheck(f, boardPieces);
+                    if (check.inCheck && check.attackers.some(a => a.id === piece?.id)) {
+                      isAttacker = true;
+                    }
+                  });
 
                   return (
-                    <div 
-                      key={i} 
-                      className={cn(
-                        "relative border-[0.5px] border-[#e0c58d]/[0.08] transition-all",
-                        isHighlighted && "bg-gold/[0.10]"
-                      )}
+                    <div
+                      key={`${x}-${y}`}
+                      className="relative flex items-center justify-center"
                     >
-                      {isHighlighted && (
-                          <div className={cn(
-                              "absolute inset-[8%] rounded-2xl border transition-all duration-700",
-                              isCapture ? "border-rose-400/55 bg-rose-500/[0.12] shadow-[0_0_16px_rgba(244,63,94,0.28)]" : "border-gold/45 bg-gold/[0.08]"
-                          )} />
+                      {(isLastMoveFrom || isLastMoveTo) && (
+                        <div
+                          className={cn(
+                            "absolute inset-[9%] rounded-[0.9rem] border z-[1]",
+                            isLastMoveTo
+                              ? lastMove?.capturedPiece
+                                ? "border-rose-400/55 bg-rose-500/[0.12] shadow-[0_0_16px_rgba(244,63,94,0.28)]"
+                                : "border-gold/60 bg-gold/10 shadow-[0_0_18px_rgba(212,175,55,0.18)]"
+                              : "border-sky-200/35 bg-sky-200/5",
+                          )}
+                        />
                       )}
-                      
-                      {/* Grid Ornament */}
-                      {(x === 8 || y === 8) && <div className="absolute inset-0 bg-white/[0.02]" />}
-                      <div className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#8a734b]/55" />
+
+                      <div className="absolute h-[2px] w-3 rounded-full bg-[#6f5b3d]/45" />
+                      <div className="absolute h-3 w-[2px] rounded-full bg-[#6f5b3d]/45" />
+                      <div className="absolute h-[4px] w-[4px] rounded-full bg-[#8a734b]/65 shadow-[0_0_6px_rgba(212,175,55,0.18)]" />
+
+                      {piece && (
+                        <motion.div
+                          layoutId={piece.id}
+                          transition={{ type: "spring", damping: 30, stiffness: 150 }}
+                          className="absolute z-20 h-[90%] w-[90%]"
+                        >
+                          <BoardPieceToken
+                            faction={piece.faction}
+                            pieceType={piece.type as PieceType}
+                            inCheck={isCheckedGeneral}
+                            attacker={isAttacker}
+                            interactive
+                          />
+                        </motion.div>
+                      )}
                     </div>
                   );
-                })}
-
-                {/* Pieces */}
-                {boardPieces.map(piece => (
-                    <motion.div
-                      key={piece.id}
-                      layoutId={piece.id}
-                      transition={{ type: "spring", damping: 30, stiffness: 150 }}
-                      className="absolute z-10 flex h-[5.88%] w-[5.88%] items-center justify-center p-[1.25%]"
-                      style={{ 
-                        left: `${(piece.x / COLS) * 100}%`, 
-                        top: `${(piece.y / ROWS) * 100}%` 
-                      }}
-                    >
-                      <BoardPieceToken
-                        faction={piece.faction}
-                        pieceType={piece.type as PieceType}
-                        compact
-                      />
-                    </motion.div>
-                ))}
-             </div>
+                })
+              ))}
+            </div>
           </div>
 
           {/* Replay Controls & Progress */}
