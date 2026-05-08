@@ -9,12 +9,13 @@ import {
   SlotActionPayload, 
   AddBotPayload, 
   SetReadyPayload, 
-  SubmitMovePayload 
+  SubmitMovePayload,
+  ValidatedSubmitMovePayload
 } from "../../server/protocol";
 
 type RoomStateCallback = (room: OnlineWarRoom) => void;
 type ErrorCallback = (error: string) => void;
-type MoveCallback = (payload: SubmitMovePayload) => void;
+type MoveCallback = (payload: ValidatedSubmitMovePayload) => void;
 
 class OnlineRoomClient {
   private socket: Socket | null = null;
@@ -55,7 +56,7 @@ class OnlineRoomClient {
       this.matchStartListeners.forEach(cb => cb(room));
     });
 
-    this.socket.on(ServerMessage.MOVE_BROADCAST, (payload: SubmitMovePayload) => {
+    this.socket.on(ServerMessage.MOVE_BROADCAST, (payload: ValidatedSubmitMovePayload) => {
       this.moveListeners.forEach(cb => cb(payload));
     });
 

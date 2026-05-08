@@ -105,6 +105,55 @@ export interface MatchRecord {
   };
 }
 
+export const CLASSIC_ACTIVE_FACTIONS: Exclude<Faction, 'None'>[] = ['Shu', 'Wei', 'Wu'];
+
+export function createClassicInitialPieces(): Piece[] {
+  const piecesList: Piece[] = [];
+
+  const shuBack = ['R', 'H', 'E', 'A', 'G', 'A', 'E', 'H', 'R'] as PieceType[];
+  shuBack.forEach((type, i) => piecesList.push({ id: `shu-${type}-${i}`, type, faction: 'Shu', x: 4 + i, y: 0 }));
+  piecesList.push({ id: 'shu-P-1', type: 'P', faction: 'Shu', x: 5, y: 2 });
+  piecesList.push({ id: 'shu-P-2', type: 'P', faction: 'Shu', x: 11, y: 2 });
+  [4, 6, 8, 10, 12].forEach((x, i) => piecesList.push({ id: `shu-S-${i}`, type: 'S', faction: 'Shu', x, y: 3 }));
+
+  const wuBack = ['R', 'H', 'E', 'A', 'G', 'A', 'E', 'H', 'R'] as PieceType[];
+  wuBack.forEach((type, i) => piecesList.push({ id: `wu-${type}-${i}`, type, faction: 'Wu', x: 0, y: 4 + i }));
+  piecesList.push({ id: 'wu-P-1', type: 'P', faction: 'Wu', x: 2, y: 5 });
+  piecesList.push({ id: 'wu-P-2', type: 'P', faction: 'Wu', x: 2, y: 11 });
+  [4, 6, 8, 10, 12].forEach((y, i) => piecesList.push({ id: `wu-S-${i}`, type: 'S', faction: 'Wu', x: 3, y }));
+
+  const weiBack = ['R', 'H', 'E', 'A', 'G', 'A', 'E', 'H', 'R'] as PieceType[];
+  weiBack.forEach((type, i) => piecesList.push({ id: `wei-${type}-${i}`, type, faction: 'Wei', x: 4 + i, y: 16 }));
+  piecesList.push({ id: 'wei-P-1', type: 'P', faction: 'Wei', x: 5, y: 14 });
+  piecesList.push({ id: 'wei-P-2', type: 'P', faction: 'Wei', x: 11, y: 14 });
+  [4, 6, 8, 10, 12].forEach((x, i) => piecesList.push({ id: `wei-S-${i}`, type: 'S', faction: 'Wei', x, y: 13 }));
+
+  return piecesList;
+}
+
+export function getNextClassicFaction(
+  currentTurn: Exclude<Faction, 'None'>,
+  pieces: Piece[],
+  eliminatedFactions: Exclude<Faction, 'None'>[]
+): Exclude<Faction, 'None'> | null {
+  const activeFactions = CLASSIC_ACTIVE_FACTIONS.filter(
+    (faction) =>
+      !eliminatedFactions.includes(faction) &&
+      pieces.some((piece) => piece.faction === faction)
+  );
+
+  if (activeFactions.length <= 1) {
+    return activeFactions[0] || null;
+  }
+
+  let nextIdx = (CLASSIC_ACTIVE_FACTIONS.indexOf(currentTurn) + 1) % CLASSIC_ACTIVE_FACTIONS.length;
+  while (eliminatedFactions.includes(CLASSIC_ACTIVE_FACTIONS[nextIdx])) {
+    nextIdx = (nextIdx + 1) % CLASSIC_ACTIVE_FACTIONS.length;
+  }
+
+  return CLASSIC_ACTIVE_FACTIONS[nextIdx];
+}
+
 export const MOVE_ERRORS = {
   NOT_YOUR_TURN: "Illegal move: it is not this faction's turn.",
   SAME_POINT: "Illegal move: choose a different destination.",

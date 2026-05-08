@@ -87,7 +87,7 @@ export interface SubmitMovePayload {
 }
 
 export interface ValidatedSubmitMovePayload extends SubmitMovePayload {
-  clientGameState?: OnlineRoomGameState & {
+  serverState?: OnlineRoomGameState & {
     status: 'PLAYING' | 'FINISHED';
   };
 }

@@ -142,8 +142,10 @@ io.on('connection', (socket) => {
 
   socket.on(ClientMessage.SUBMIT_MOVE, (payload) => {
     try {
-      const { room, validatedPayload } = roomManager.validateSubmittedMove(payload, socket.id);
-      socket.to(room.roomCode).emit(ServerMessage.MOVE_BROADCAST, validatedPayload);
+      const room = roomManager.getRoom(payload.roomCode);
+      const joinedSocketRoom = !!room && socket.rooms.has(room.roomCode);
+      const { room: validatedRoom, validatedPayload } = roomManager.validateSubmittedMove(payload, socket.id, joinedSocketRoom);
+      io.to(validatedRoom.roomCode).emit(ServerMessage.MOVE_BROADCAST, validatedPayload);
     } catch (err: any) {
       console.error(`[Strategic Command] SUBMIT_MOVE Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);

@@ -419,8 +419,16 @@ function ClassicPracticeBoard() {
       }
       onlineRoomClient.connect();
       const unsubMove = onlineRoomClient.subscribeToMove((payload) => {
+        const syncServerState = () => {
+          if (!payload.serverState) return;
+          setTurn(payload.serverState.currentTurn as Faction);
+          setEliminated(payload.serverState.eliminatedFactions as Faction[]);
+          setWinner(payload.serverState.winner as Faction | null);
+        };
+
         setLastSyncEvent('MOVE_RECEIVED');
         if (payload.move.id === lastProcessedMoveId.current || appliedMoveIdsRef.current.has(payload.move.id)) {
+           syncServerState();
            if ((import.meta as any).env.DEV) {
               console.log(`[Strategic Sync] Skipping already applied move: ${payload.move.id}`);
            }
@@ -433,6 +441,7 @@ function ClassicPracticeBoard() {
           lastProcessedMoveId.current = payload.move.id;
           setAppliedMoveIds(prev => new Set(prev).add(payload.move.id));
           performMoveRef.current(piece, payload.move.to.x, payload.move.to.y, payload.move.id.startsWith('bot-'), payload.move.id);
+          syncServerState();
         }
       });
 

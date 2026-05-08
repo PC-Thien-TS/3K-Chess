@@ -1,16 +1,29 @@
 import { OnlineWarRoom, Faction, OnlineRoomSlot, OnlineRoomGameState } from './types';
 import { CreateRoomPayload, JoinRoomPayload, JoinSlotPayload, SlotActionPayload, AddBotPayload, SetReadyPayload, SubmitMovePayload, ValidatedSubmitMovePayload } from './protocol';
 import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS } from '../shared/gameModes';
+import {
+  CLASSIC_ACTIVE_FACTIONS,
+  Piece,
+  createClassicInitialPieces,
+  getNextClassicFaction,
+  isCheckmateDetailed,
+  validateBoardIntegrity,
+  validateMove,
+} from '../src/rules/classicThreeKingdomRules';
 
 /**
  * TODO: Backend v2 - Implement server-authoritative chess rule validation.
  * Currently, moves are validated by the client and broadcasted by the server.
  */
 
+interface AuthoritativeClassicMatchState extends OnlineRoomGameState {
+  pieces: Piece[];
+}
+
 class RoomManager {
   private rooms: Map<string, OnlineWarRoom> = new Map();
   private processedMoveIds: Map<string, Set<string>> = new Map();
-  private roomGameStates: Map<string, OnlineRoomGameState> = new Map();
+  private roomGameStates: Map<string, AuthoritativeClassicMatchState> = new Map();
 
   createRoom(payload: CreateRoomPayload, clientId: string): OnlineWarRoom {
     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -160,6 +173,7 @@ class RoomManager {
     const room = this.getRoom(roomCode);
     if (!room) throw new Error("Room not found");
     if (room.hostClientId !== clientId) throw new Error("Only host can initiate the incursion");
+    if (room.roomRules.gameMode !== 'classic') throw new Error("SERVER_STATE_ERROR");
 
     const slots = Object.values(room.slots);
     if (slots.some(s => s.occupantType === 'empty')) throw new Error("All kingdom fronts must be occupied");
@@ -174,12 +188,17 @@ class RoomManager {
       currentTurn: 'Shu',
       moveNumber: 0,
       eliminatedFactions: [],
-      winner: null
+      winner: null,
+      pieces: createClassicInitialPieces(),
     });
     return room;
   }
 
-  validateSubmittedMove(payload: SubmitMovePayload, clientId: string): { room: OnlineWarRoom; validatedPayload: ValidatedSubmitMovePayload } {
+  validateSubmittedMove(
+    payload: SubmitMovePayload,
+    clientId: string,
+    joinedSocketRoom: boolean
+  ): { room: OnlineWarRoom; validatedPayload: ValidatedSubmitMovePayload } {
     const room = this.getRoom(payload.roomCode);
     if (!room) {
       throw new Error('ROOM_NOT_FOUND');
@@ -189,6 +208,14 @@ class RoomManager {
       throw new Error('ROOM_NOT_PLAYING');
     }
 
+    if (room.roomRules.gameMode !== 'classic') {
+      throw new Error('SERVER_STATE_ERROR');
+    }
+
+    if (!joinedSocketRoom) {
+      throw new Error('NOT_IN_ROOM');
+    }
+
     const move = payload.move;
     if (!this.isValidMoveShape(move)) {
       throw new Error('MALFORMED_MOVE');
@@ -196,7 +223,12 @@ class RoomManager {
 
     const currentState = this.roomGameStates.get(room.roomCode);
     if (!currentState) {
-      throw new Error('ROOM_NOT_PLAYING');
+      throw new Error('SERVER_STATE_ERROR');
+    }
+
+    const boardIntegrity = validateBoardIntegrity(currentState.pieces, currentState.eliminatedFactions);
+    if (!boardIntegrity.valid) {
+      throw new Error('SERVER_STATE_ERROR');
     }
 
     const moveId = move.id.trim();
@@ -211,10 +243,6 @@ class RoomManager {
     );
     if (!senderSlot && room.hostClientId !== clientId) {
       throw new Error('NOT_IN_ROOM');
-    }
-
-    if (move.faction !== currentState.currentTurn) {
-      throw new Error('UNAUTHORIZED_FACTION');
     }
 
     const actingSlot = room.slots[move.faction];
@@ -233,20 +261,64 @@ class RoomManager {
       throw new Error('UNAUTHORIZED_FACTION');
     }
 
-    const nextState = this.validateClientGameState(payload.clientGameState);
+    if (move.faction !== currentState.currentTurn) {
+      throw new Error('NOT_YOUR_TURN');
+    }
+
+    const actingPiece = currentState.pieces.find((piece) => piece.id === move.pieceId);
+    if (
+      !actingPiece ||
+      actingPiece.faction !== move.faction ||
+      actingPiece.x !== move.from.x ||
+      actingPiece.y !== move.from.y
+    ) {
+      throw new Error('ILLEGAL_MOVE');
+    }
+
+    const validation = validateMove(actingPiece, move.to, currentState.pieces, currentState.currentTurn);
+    if (!validation.legal) {
+      throw new Error('ILLEGAL_MOVE');
+    }
+
+    const targetPiece = currentState.pieces.find((piece) => piece.x === move.to.x && piece.y === move.to.y);
+    let nextPieces = currentState.pieces.filter((piece) => piece.id !== actingPiece.id);
+    if (targetPiece) {
+      nextPieces = nextPieces.filter((piece) => piece.id !== targetPiece.id);
+    }
+    nextPieces.push({ ...actingPiece, x: move.to.x, y: move.to.y });
+
     processedMoveIds.add(moveId);
 
-    const nextEliminated = nextState?.eliminatedFactions ?? currentState.eliminatedFactions;
-    const nextWinner = nextState?.winner ?? currentState.winner;
+    const nextEliminated = [...currentState.eliminatedFactions];
+    const newlyEliminated: Exclude<Faction, 'None'>[] = [];
+    let checkmateHappened = false;
+
+    CLASSIC_ACTIVE_FACTIONS.forEach((faction) => {
+      if (faction === currentState.currentTurn || nextEliminated.includes(faction)) {
+        return;
+      }
+
+      const detail = isCheckmateDetailed(faction, nextPieces);
+      if (detail.checkmated) {
+        nextEliminated.push(faction);
+        newlyEliminated.push(faction);
+        nextPieces = nextPieces.filter((piece) => piece.faction !== faction);
+        checkmateHappened = true;
+      }
+    });
+
+    const survivingFactions = CLASSIC_ACTIVE_FACTIONS.filter((faction) => !nextEliminated.includes(faction));
+    const nextWinner = survivingFactions.length === 1 ? survivingFactions[0] : null;
     const computedNextTurn = nextWinner
       ? currentState.currentTurn
-      : this.getNextActiveFaction(currentState.currentTurn, nextEliminated);
+      : getNextClassicFaction(currentState.currentTurn, nextPieces, nextEliminated);
 
-    const normalizedGameState: OnlineRoomGameState = {
-      currentTurn: computedNextTurn,
+    const normalizedGameState: AuthoritativeClassicMatchState = {
+      currentTurn: computedNextTurn || currentState.currentTurn,
       moveNumber: currentState.moveNumber + 1,
       eliminatedFactions: nextEliminated,
-      winner: nextWinner
+      winner: nextWinner,
+      pieces: nextPieces,
     };
 
     this.roomGameStates.set(room.roomCode, normalizedGameState);
@@ -259,10 +331,26 @@ class RoomManager {
       ...payload,
       move: {
         ...move,
-        id: moveId
+        id: moveId,
+        faction: currentState.currentTurn,
+        pieceId: actingPiece.id,
+        pieceType: actingPiece.type,
+        from: { x: actingPiece.x, y: actingPiece.y },
+        to: { ...move.to },
+        capturedPiece: targetPiece ? { type: targetPiece.type, faction: targetPiece.faction } : undefined,
+        givesCheck: validation.givesCheck,
+        checkedFactions: validation.checkedFactions,
+        checkmateHappened: checkmateHappened || move.checkmateHappened,
+        eliminatedAfterMove: newlyEliminated,
+        winnerAfterMove: nextWinner,
+        turnNumber: currentState.moveNumber + 1,
+        actorType: isHostBotMove ? 'bot' : 'human',
       },
-      clientGameState: {
-        ...normalizedGameState,
+      serverState: {
+        currentTurn: normalizedGameState.currentTurn,
+        moveNumber: normalizedGameState.moveNumber,
+        eliminatedFactions: normalizedGameState.eliminatedFactions,
+        winner: normalizedGameState.winner,
         status: nextWinner ? 'FINISHED' : 'PLAYING'
       }
     };
@@ -325,58 +413,6 @@ class RoomManager {
       point.y <= 16;
   }
 
-  private validateClientGameState(
-    state: SubmitMovePayload['clientGameState']
-  ): (OnlineRoomGameState & { status: 'PLAYING' | 'FINISHED' }) | undefined {
-    if (!state) return undefined;
-    if (!['Shu', 'Wei', 'Wu'].includes(state.currentTurn)) {
-      throw new Error('MALFORMED_MOVE');
-    }
-    if (!Array.isArray(state.eliminatedFactions) || state.eliminatedFactions.some((faction) => !['Shu', 'Wei', 'Wu'].includes(faction))) {
-      throw new Error('MALFORMED_MOVE');
-    }
-    if (state.winner !== null && !['Shu', 'Wei', 'Wu'].includes(state.winner)) {
-      throw new Error('MALFORMED_MOVE');
-    }
-    if (state.status !== 'PLAYING' && state.status !== 'FINISHED') {
-      throw new Error('MALFORMED_MOVE');
-    }
-    if (state.moveNumber !== undefined && (!Number.isInteger(state.moveNumber) || state.moveNumber < 0)) {
-      throw new Error('MALFORMED_MOVE');
-    }
-
-    return {
-      currentTurn: state.currentTurn as Exclude<Faction, 'None'>,
-      moveNumber: state.moveNumber ?? 0,
-      eliminatedFactions: state.eliminatedFactions as Exclude<Faction, 'None'>[],
-      winner: state.winner as Exclude<Faction, 'None'> | null,
-      status: state.status
-    };
-  }
-
-  private getNextActiveFaction(
-    currentTurn: Exclude<Faction, 'None'>,
-    eliminatedFactions: Exclude<Faction, 'None'>[]
-  ): Exclude<Faction, 'None'> {
-    const order: Exclude<Faction, 'None'>[] = ['Shu', 'Wei', 'Wu'];
-    const active = order.filter((faction) => !eliminatedFactions.includes(faction));
-    if (active.length === 0) {
-      return currentTurn;
-    }
-    if (active.length === 1) {
-      return active[0];
-    }
-
-    const currentIndex = order.indexOf(currentTurn);
-    for (let step = 1; step <= order.length; step++) {
-      const candidate = order[(currentIndex + step) % order.length];
-      if (!eliminatedFactions.includes(candidate)) {
-        return candidate;
-      }
-    }
-
-    return currentTurn;
-  }
 }
 
 export const roomManager = new RoomManager();
