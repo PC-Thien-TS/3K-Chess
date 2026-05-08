@@ -1,5 +1,5 @@
-import { OnlineWarRoom, Faction, OnlineRoomSlot } from './types';
-import { CreateRoomPayload, JoinRoomPayload, JoinSlotPayload, SlotActionPayload, AddBotPayload, SetReadyPayload, SubmitMovePayload } from './protocol';
+import { OnlineWarRoom, Faction, OnlineRoomSlot, OnlineRoomGameState } from './types';
+import { CreateRoomPayload, JoinRoomPayload, JoinSlotPayload, SlotActionPayload, AddBotPayload, SetReadyPayload, SubmitMovePayload, ValidatedSubmitMovePayload } from './protocol';
 import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS } from '../shared/gameModes';
 
 /**
@@ -9,6 +9,8 @@ import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS } from '../shared/gameModes';
 
 class RoomManager {
   private rooms: Map<string, OnlineWarRoom> = new Map();
+  private processedMoveIds: Map<string, Set<string>> = new Map();
+  private roomGameStates: Map<string, OnlineRoomGameState> = new Map();
 
   createRoom(payload: CreateRoomPayload, clientId: string): OnlineWarRoom {
     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -57,6 +59,7 @@ class RoomManager {
     };
 
     this.rooms.set(roomCode, room);
+    this.processedMoveIds.set(roomCode, new Set());
     return room;
   }
 
@@ -176,9 +179,107 @@ class RoomManager {
     
     const humanCount = slots.filter(s => s.occupantType === 'human').length;
     if (humanCount === 0) throw new Error("Strategic Error: Zero human commanders present");
-
+    
     room.status = 'playing';
+    this.processedMoveIds.set(room.roomCode, new Set());
+    this.roomGameStates.set(room.roomCode, {
+      currentTurn: 'Shu',
+      moveNumber: 0,
+      eliminatedFactions: [],
+      winner: null
+    });
     return room;
+  }
+
+  validateSubmittedMove(payload: SubmitMovePayload, clientId: string): { room: OnlineWarRoom; validatedPayload: ValidatedSubmitMovePayload } {
+    const room = this.getRoom(payload.roomCode);
+    if (!room) {
+      throw new Error('ROOM_NOT_FOUND');
+    }
+
+    if (room.status !== 'playing') {
+      throw new Error('ROOM_NOT_PLAYING');
+    }
+
+    const move = payload.move;
+    if (!this.isValidMoveShape(move)) {
+      throw new Error('MALFORMED_MOVE');
+    }
+
+    const currentState = this.roomGameStates.get(room.roomCode);
+    if (!currentState) {
+      throw new Error('ROOM_NOT_PLAYING');
+    }
+
+    const moveId = move.id.trim();
+    const processedMoveIds = this.processedMoveIds.get(room.roomCode) ?? new Set<string>();
+    this.processedMoveIds.set(room.roomCode, processedMoveIds);
+    if (processedMoveIds.has(moveId)) {
+      throw new Error('DUPLICATE_MOVE');
+    }
+
+    const senderSlot = (Object.keys(room.slots) as Exclude<Faction, 'None'>[]).find(
+      (faction) => room.slots[faction].clientId === clientId
+    );
+    if (!senderSlot && room.hostClientId !== clientId) {
+      throw new Error('NOT_IN_ROOM');
+    }
+
+    if (move.faction !== currentState.currentTurn) {
+      throw new Error('UNAUTHORIZED_FACTION');
+    }
+
+    const actingSlot = room.slots[move.faction];
+    if (!actingSlot) {
+      throw new Error('UNAUTHORIZED_FACTION');
+    }
+
+    const isHumanMove =
+      actingSlot.occupantType === 'human' &&
+      actingSlot.clientId === clientId;
+    const isHostBotMove =
+      actingSlot.occupantType === 'bot' &&
+      room.hostClientId === clientId;
+
+    if (!isHumanMove && !isHostBotMove) {
+      throw new Error('UNAUTHORIZED_FACTION');
+    }
+
+    const nextState = this.validateClientGameState(payload.clientGameState);
+    processedMoveIds.add(moveId);
+
+    const nextEliminated = nextState?.eliminatedFactions ?? currentState.eliminatedFactions;
+    const nextWinner = nextState?.winner ?? currentState.winner;
+    const computedNextTurn = nextWinner
+      ? currentState.currentTurn
+      : this.getNextActiveFaction(currentState.currentTurn, nextEliminated);
+
+    const normalizedGameState: OnlineRoomGameState = {
+      currentTurn: computedNextTurn,
+      moveNumber: currentState.moveNumber + 1,
+      eliminatedFactions: nextEliminated,
+      winner: nextWinner
+    };
+
+    this.roomGameStates.set(room.roomCode, normalizedGameState);
+
+    if (nextWinner) {
+      room.status = 'finished';
+    }
+
+    const validatedPayload: ValidatedSubmitMovePayload = {
+      ...payload,
+      move: {
+        ...move,
+        id: moveId
+      },
+      clientGameState: {
+        ...normalizedGameState,
+        status: nextWinner ? 'FINISHED' : 'PLAYING'
+      }
+    };
+
+    return { room, validatedPayload };
   }
 
   leaveRoom(clientId: string): { roomCode: string; room: OnlineWarRoom | null } | null {
@@ -205,6 +306,8 @@ class RoomManager {
             room.hostName = nextHuman.playerName || "New Strategist";
           } else {
             this.rooms.delete(code);
+            this.processedMoveIds.delete(code);
+            this.roomGameStates.delete(code);
             return { roomCode: code, room: null };
           }
         }
@@ -212,6 +315,79 @@ class RoomManager {
       }
     }
     return null;
+  }
+
+  private isValidMoveShape(move: SubmitMovePayload['move'] | undefined): move is SubmitMovePayload['move'] {
+    if (!move || typeof move !== 'object') return false;
+    if (typeof move.id !== 'string' || move.id.trim().length === 0) return false;
+    if (!['Shu', 'Wei', 'Wu'].includes(move.faction)) return false;
+    if (typeof move.pieceId !== 'string' || move.pieceId.trim().length === 0) return false;
+    if (typeof move.pieceType !== 'string' || move.pieceType.trim().length === 0) return false;
+    if (!this.isValidPoint(move.from) || !this.isValidPoint(move.to)) return false;
+    return true;
+  }
+
+  private isValidPoint(point: { x: number; y: number } | undefined): boolean {
+    return !!point &&
+      Number.isInteger(point.x) &&
+      Number.isInteger(point.y) &&
+      point.x >= 0 &&
+      point.x <= 16 &&
+      point.y >= 0 &&
+      point.y <= 16;
+  }
+
+  private validateClientGameState(
+    state: SubmitMovePayload['clientGameState']
+  ): (OnlineRoomGameState & { status: 'PLAYING' | 'FINISHED' }) | undefined {
+    if (!state) return undefined;
+    if (!['Shu', 'Wei', 'Wu'].includes(state.currentTurn)) {
+      throw new Error('MALFORMED_MOVE');
+    }
+    if (!Array.isArray(state.eliminatedFactions) || state.eliminatedFactions.some((faction) => !['Shu', 'Wei', 'Wu'].includes(faction))) {
+      throw new Error('MALFORMED_MOVE');
+    }
+    if (state.winner !== null && !['Shu', 'Wei', 'Wu'].includes(state.winner)) {
+      throw new Error('MALFORMED_MOVE');
+    }
+    if (state.status !== 'PLAYING' && state.status !== 'FINISHED') {
+      throw new Error('MALFORMED_MOVE');
+    }
+    if (state.moveNumber !== undefined && (!Number.isInteger(state.moveNumber) || state.moveNumber < 0)) {
+      throw new Error('MALFORMED_MOVE');
+    }
+
+    return {
+      currentTurn: state.currentTurn as Exclude<Faction, 'None'>,
+      moveNumber: state.moveNumber ?? 0,
+      eliminatedFactions: state.eliminatedFactions as Exclude<Faction, 'None'>[],
+      winner: state.winner as Exclude<Faction, 'None'> | null,
+      status: state.status
+    };
+  }
+
+  private getNextActiveFaction(
+    currentTurn: Exclude<Faction, 'None'>,
+    eliminatedFactions: Exclude<Faction, 'None'>[]
+  ): Exclude<Faction, 'None'> {
+    const order: Exclude<Faction, 'None'>[] = ['Shu', 'Wei', 'Wu'];
+    const active = order.filter((faction) => !eliminatedFactions.includes(faction));
+    if (active.length === 0) {
+      return currentTurn;
+    }
+    if (active.length === 1) {
+      return active[0];
+    }
+
+    const currentIndex = order.indexOf(currentTurn);
+    for (let step = 1; step <= order.length; step++) {
+      const candidate = order[(currentIndex + step) % order.length];
+      if (!eliminatedFactions.includes(candidate)) {
+        return candidate;
+      }
+    }
+
+    return currentTurn;
   }
 }
 

@@ -27,3 +27,10 @@ export interface OnlineWarRoom {
 }
 
 export type RoomStatus = "waiting" | "playing" | "finished";
+
+export interface OnlineRoomGameState {
+  currentTurn: Exclude<Faction, 'None'>;
+  moveNumber: number;
+  eliminatedFactions: Exclude<Faction, 'None'>[];
+  winner: Exclude<Faction, 'None'> | null;
+}

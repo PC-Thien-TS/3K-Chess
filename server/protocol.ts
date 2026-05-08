@@ -1,5 +1,5 @@
 export type { OnlineWarRoom };
-import { Faction, OnlineWarRoom } from './types';
+import { Faction, OnlineWarRoom, OnlineRoomGameState } from './types';
 import { GameMode } from '../shared/gameModes';
 
 export enum ClientMessage {
@@ -57,11 +57,37 @@ export interface SetReadyPayload extends SlotActionPayload {
 
 export interface SubmitMovePayload {
   roomCode: string;
-  move: any; 
+  move: {
+    id: string;
+    faction: Faction;
+    pieceId: string;
+    pieceType: string;
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    capturedPiece?: {
+      type: string;
+      faction: Faction;
+    };
+    givesCheck?: boolean;
+    checkedFactions?: Faction[];
+    checkmateHappened?: boolean;
+    eliminatedAfterMove?: Faction[];
+    winnerAfterMove?: Faction | null;
+    notationText?: string;
+    turnNumber?: number;
+    actorType?: 'human' | 'bot';
+  };
   clientGameState?: {
-    currentTurn: any;
-    eliminatedFactions: any[];
-    winner: any;
+    currentTurn: Faction;
+    eliminatedFactions: Faction[];
+    winner: Faction | null;
     status: string;
+    moveNumber?: number;
+  };
+}
+
+export interface ValidatedSubmitMovePayload extends SubmitMovePayload {
+  clientGameState?: OnlineRoomGameState & {
+    status: 'PLAYING' | 'FINISHED';
   };
 }
