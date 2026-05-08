@@ -36,8 +36,8 @@ import {
   saveOnlineMatchSession,
   saveOnlineRoomSession,
 } from '@/src/services/onlineSessionStorage';
-import BoardPieceToken from '@/src/components/BoardPieceToken';
 import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
+import ClassicBoard from '@/src/components/boards/ClassicBoard';
 import { DEFAULT_GAME_MODE, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
@@ -54,10 +54,6 @@ const FACTION_NAMES = {
   Wu: 'Nation of Wu',
   None: 'Unaligned'
 };
-
-// --- Traditional 17x17 Grid for 3-Player Expansion ---
-const ROWS = 17;
-const COLS = 17;
 
 const getInitialPieces = (): Piece[] => {
   const piecesList: Piece[] = [];
@@ -152,12 +148,6 @@ function ClassicPracticeBoard() {
   const lastProcessedMoveId = React.useRef<string | null>(null);
   const botTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestMove = history[0] || null;
-  const isRemoteWaiting =
-    roomMode === 'online' &&
-    !!playerFaction &&
-    turn !== playerFaction &&
-    controlModes[turn] !== 'Bot' &&
-    !winner;
   const devLog = (...args: unknown[]) => {
     if ((import.meta as any).env.DEV) {
       console.log(...args);
@@ -803,6 +793,20 @@ function ClassicPracticeBoard() {
   };
 
   const selectedPiece = pieces.find(p => p.id === selectedId) || null;
+  const checkedGeneralIds = new Set(
+    pieces
+      .filter((piece) => piece.type === 'G' && isFactionInCheck(piece.faction, pieces).inCheck)
+      .map((piece) => piece.id)
+  );
+  const attackerIds = new Set(
+    FACTIONS.flatMap((faction) => {
+      const check = isFactionInCheck(faction, pieces);
+      if (!check.inCheck) {
+        return [];
+      }
+      return check.attackers.map((piece) => piece.id);
+    })
+  );
 
   if (roomExpired) {
     return (
@@ -1391,191 +1395,21 @@ function ClassicPracticeBoard() {
 
         {/* Main Board Area */}
         <div className="lg:col-span-6 flex flex-col items-center">
-          <div className="relative w-full max-w-[820px] aspect-square overflow-hidden rounded-[2.25rem] border border-[#5d4926]/40 bg-[#100d09] p-3 sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
-            <div className="absolute inset-[1.25%] rounded-[2rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
-            <div className="absolute inset-[2.2%] rounded-[1.8rem] border border-black/35 shadow-[inset_0_0_80px_rgba(0,0,0,0.72)]" />
-            <div className="absolute left-[24%] top-[4%] h-[22%] w-[52%] rounded-full bg-rose-500/[0.08] blur-3xl pointer-events-none" />
-            <div className="absolute left-[4%] top-[24%] h-[52%] w-[22%] rounded-full bg-emerald-500/[0.08] blur-3xl pointer-events-none" />
-            <div className="absolute left-[24%] bottom-[4%] h-[22%] w-[52%] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-            <div className="absolute inset-0 pointer-events-none opacity-[0.09] mix-blend-overlay [background-image:linear-gradient(120deg,rgba(255,255,255,0.16)_0,transparent_22%,rgba(255,255,255,0.08)_36%,transparent_52%,rgba(0,0,0,0.18)_72%,transparent_100%)]" />
-
-            {/* Traditional Grid Overlay */}
-            <div className="absolute inset-0 pointer-events-none p-3 sm:p-4 md:p-7">
-              <svg viewBox="0 0 170 170" className="w-full h-full fill-none" strokeWidth="0.52">
-                <defs>
-                  <linearGradient id="board-grid-v1" x1="0%" x2="100%">
-                    <stop offset="0%" stopColor="rgba(244, 215, 160, 0.10)" />
-                    <stop offset="50%" stopColor="rgba(225, 194, 136, 0.45)" />
-                    <stop offset="100%" stopColor="rgba(244, 215, 160, 0.10)" />
-                  </linearGradient>
-                </defs>
-                <rect x="5" y="5" width="160" height="160" rx="2" stroke="rgba(212,175,55,0.18)" />
-                {/* Vertical Lines */}
-                {[...Array(17)].map((_, i) => (
-                  <line key={`v-${i}`} x1={i * 10 + 5} y1={5} x2={i * 10 + 5} y2={165} stroke="url(#board-grid-v1)" opacity={i < 4 || i > 12 ? 0.35 : 1} />
-                ))}
-                {/* Horizontal Lines */}
-                {[...Array(17)].map((_, i) => (
-                  <line key={`h-${i}`} x1={5} y1={i * 10 + 5} x2={165} y2={i * 10 + 5} stroke="url(#board-grid-v1)" opacity={i < 4 || i > 12 ? 0.35 : 1} />
-                ))}
-                <rect x="71.5" y="1.5" width="27" height="27" rx="3" fill="rgba(127,29,29,0.08)" stroke="rgba(251,113,133,0.18)" />
-                <rect x="1.5" y="71.5" width="27" height="27" rx="3" fill="rgba(6,95,70,0.08)" stroke="rgba(52,211,153,0.18)" />
-                <rect x="71.5" y="141.5" width="27" height="27" rx="3" fill="rgba(30,64,175,0.08)" stroke="rgba(96,165,250,0.18)" />
-                
-                {/* Palace Diagonals - Shu (Top) */}
-                <g className="stroke-[rgba(251,113,133,0.34)] stroke-[0.9]">
-                  <line x1={75} y1={5} x2={95} y2={25} />
-                  <line x1={95} y1={5} x2={75} y2={25} />
-                </g>
-                
-                {/* Palace Diagonals - Wu (Left) */}
-                <g className="stroke-[rgba(52,211,153,0.34)] stroke-[0.9]">
-                  <line x1={5} y1={75} x2={25} y2={95} />
-                  <line x1={25} y1={75} x2={5} y2={95} />
-                </g>
-                
-                {/* Palace Diagonals - Wei (Bottom) */}
-                <g className="stroke-[rgba(96,165,250,0.34)] stroke-[0.9]">
-                  <line x1={75} y1={145} x2={95} y2={165} />
-                  <line x1={95} y1={145} x2={75} y2={165} />
-                </g>
-
-                {/* River Boundary Decorations */}
-                <g className="stroke-[rgba(212,175,55,0.34)] stroke-[0.8]" strokeDasharray="2.4 2.4">
-                  {/* Vertical River */}
-                  <line x1={65} y1={45} x2={65} y2={125} />
-                  {/* Horizontal River Top */}
-                  <line x1={45} y1={65} x2={125} y2={65} />
-                  {/* Horizontal River Bottom */}
-                  <line x1={45} y1={105} x2={125} y2={105} />
-                </g>
-              </svg>
-            </div>
-
-            {/* Faction Large Aesthetic Character Labels */}
-            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-20 select-none overflow-hidden opacity-0">
-              <div className="text-[180px] font-serif text-rose-900/10 -mt-16 blur-[1px]">蜀</div>
-              <div className="flex justify-between w-full">
-                <div className="text-[180px] font-serif text-emerald-900/10 -ml-20 blur-[1px]">吴</div>
-                <div className="text-[180px] font-serif text-blue-900/10 -mr-20 blur-[1px] invisible">魏</div>
-              </div>
-              <div className="text-[180px] font-serif text-blue-900/10 -mb-16 blur-[1px]">魏</div>
-            </div>
-
-            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-10 sm:p-14 md:p-20 select-none overflow-hidden">
-              <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-rose-500/[0.06] -mt-6">SHU</div>
-              <div className="flex justify-between w-full">
-                <div className="-ml-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-emerald-500/[0.06] -rotate-90">WU</div>
-                <div className="invisible -mr-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06]">WEI</div>
-              </div>
-              <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-blue-500/[0.06] -mb-6">WEI</div>
-            </div>
-
-            {/* Central Battlefield Legend */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-55">
-              <span className="translate-y-[-48px] text-[9px] font-black uppercase tracking-[1.2em] text-[#453726] sm:text-[10px]">Inter-Kingdom River</span>
-              <span className="translate-y-[48px] text-[9px] font-black uppercase tracking-[1.2em] text-[#453726] sm:text-[10px]">Chasm of Three Fates</span>
-            </div>
-
-            {/* Interactive Grid Points */}
-            <div 
-              className="grid gap-0 w-full h-full relative z-10"
-              style={{ 
-                gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-                gridTemplateRows: `repeat(${ROWS}, 1fr)` 
-              }}
-            >
-              {[...Array(ROWS)].map((_, y) => (
-                [...Array(COLS)].map((_, x) => {
-                  const piece = pieces.find(p => p.x === x && p.y === y);
-                  const isSelected = selectedId === piece?.id;
-                  const isLegalMove = legalMoves.some(m => m.to.x === x && m.to.y === y);
-                  const isLastMoveFrom = !!latestMove && latestMove.from.x === x && latestMove.from.y === y;
-                  const isLastMoveTo = !!latestMove && latestMove.to.x === x && latestMove.to.y === y;
-                  const isCheckedGeneral = !!piece && piece.type === 'G' && isFactionInCheck(piece.faction, pieces).inCheck;
-                  
-                  // Check if this piece is an attacker for any faction in check
-                  let isAttacker = false;
-                  FACTIONS.forEach(f => {
-                    const check = isFactionInCheck(f, pieces);
-                    if (check.inCheck && check.attackers.some(a => a.id === piece?.id)) {
-                      isAttacker = true;
-                    }
-                  });
-
-                  return (
-                    <div 
-                      key={`${x}-${y}`}
-                      onClick={() => handlePointClick(x, y)}
-                      className={cn(
-                        "relative flex items-center justify-center group",
-                        isRemoteWaiting ? "cursor-not-allowed" : "cursor-pointer",
-                      )}
-                    >
-                      {(isLastMoveFrom || isLastMoveTo) && (
-                        <div
-                          className={cn(
-                            "absolute inset-[9%] rounded-[0.9rem] border z-[1]",
-                            isLastMoveTo
-                              ? "border-gold/60 bg-gold/10 shadow-[0_0_18px_rgba(212,175,55,0.18)]"
-                              : "border-sky-200/35 bg-sky-200/5",
-                          )}
-                        />
-                      )}
-
-                      <div className="absolute h-[2px] w-3 rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55" />
-                      <div className="absolute h-3 w-[2px] rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55" />
-                      <div className="absolute h-[4px] w-[4px] rounded-full bg-[#8a734b]/65 shadow-[0_0_6px_rgba(212,175,55,0.18)]" />
-                      
-                      {/* Legal Move Indicators */}
-                      {isLegalMove && (
-                        <motion.div 
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          className={cn(
-                            "absolute z-40 transition-all",
-                            piece
-                              ? "h-7 w-7 rounded-full border-2 border-rose-400/80 bg-rose-500/[0.16] shadow-[0_0_20px_rgba(244,63,94,0.42)]"
-                              : "h-5 w-5 rounded-full border border-gold/80 bg-gold/55 shadow-[0_0_18px_rgba(212,175,55,0.42)]",
-                          )} 
-                        >
-                          {piece && <div className="absolute inset-[22%] rotate-45 border border-rose-200/70" />}
-                        </motion.div>
-                      )}
-
-                      {piece && (
-                        <motion.div 
-                          layoutId={piece.id}
-                          onMouseEnter={() => setHoveredPoint({ x, y })}
-                          onMouseLeave={() => setHoveredPoint(null)}
-                          className="absolute z-20 h-[90%] w-[90%] cursor-grab transition-all active:cursor-grabbing"
-                        >
-                          <BoardPieceToken
-                            faction={piece.faction}
-                            pieceType={piece.type}
-                            selected={isSelected}
-                            inCheck={isCheckedGeneral}
-                            attacker={isAttacker}
-                            dimmed={isRemoteWaiting && piece.faction === playerFaction}
-                            interactive
-                          />
-                        </motion.div>
-                      )}
-                    </div>
-                  );
-                })
-              ))}
-            </div>
-
-            {isRemoteWaiting && (
-              <div className="pointer-events-none absolute inset-x-[9%] top-[3.5%] z-30 rounded-full border border-white/10 bg-black/55 px-4 py-2 text-center shadow-[0_12px_30px_rgba(0,0,0,0.4)] backdrop-blur-sm">
-                <span className="text-[10px] font-black uppercase tracking-[0.32em] text-zinc-200">
-                  Awaiting {turn} commander
-                </span>
-              </div>
-            )}
-          </div>
+          <ClassicBoard
+            pieces={pieces}
+            selectedId={selectedId}
+            legalMoves={legalMoves}
+            latestMove={latestMove}
+            turn={turn}
+            playerFaction={playerFaction || null}
+            roomMode={roomMode}
+            controlModes={controlModes}
+            winner={winner}
+            checkedGeneralIds={checkedGeneralIds}
+            attackerIds={attackerIds}
+            onHoverPoint={setHoveredPoint}
+            onPointClick={handlePointClick}
+          />
           
           <div className="mt-10 flex items-center gap-6 py-6 px-10 glass-dark border border-white/5 rounded-3xl shadow-2xl max-w-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-gold/[0.02] pointer-events-none" />
