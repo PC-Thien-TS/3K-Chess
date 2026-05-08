@@ -130,21 +130,6 @@ export default function WarRoomLobby() {
         }
         setRoom(found);
         setIsLoading(false);
-        
-        if (commanderName) {
-            const firstEmpty = FACTIONS.find(f => found.slots[f].occupantType === 'empty');
-            if (firstEmpty) {
-                const updated = { ...found };
-                updated.slots[firstEmpty] = {
-                    faction: firstEmpty,
-                    occupantType: 'human',
-                    playerName: commanderName,
-                    ready: false
-                };
-                saveWarRoom(updated);
-                setRoom(updated);
-            }
-        }
       } else {
         const wsUrl = (import.meta as any).env.VITE_WS_URL;
         if (!wsUrl) {

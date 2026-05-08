@@ -78,18 +78,6 @@ class RoomManager {
       return room; // Already in a slot, just return the state
     }
 
-    // Automatically try to join an empty slot if possible
-    const firstEmpty = (['Shu', 'Wei', 'Wu'] as const).find(f => room.slots[f].occupantType === 'empty');
-    if (firstEmpty) {
-      room.slots[firstEmpty] = {
-        faction: firstEmpty,
-        occupantType: 'human',
-        playerName: payload.playerName,
-        clientId: clientId,
-        ready: false
-      };
-    }
-
     return room;
   }
 

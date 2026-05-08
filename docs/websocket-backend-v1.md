@@ -12,7 +12,7 @@ This documentation outlines the minimal WebSocket backend implemented for online
 The project is configured as a full-stack application.
 1. Install dependencies: `npm install`
 2. Start development server: `npm run dev`
-   - This runs `tsx server.ts`, which starts both the Express backend and the Vite frontend middleware.
+   - Start the frontend with `npm run dev` and the WebSocket backend with `npm run server:dev`.
 
 ## WebSocket Protocol
 The communication uses defined messages in `server/protocol.ts`.
