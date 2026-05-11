@@ -29,7 +29,7 @@ import {
   saveOnlineRoomSession,
 } from '@/src/services/onlineSessionStorage';
 const AUTHENTIC_DISABLED_MESSAGE =
-  'Modern Three Kingdoms Xiangqi is local-only for now. Use /setup?mode=authentic to play it locally.';
+  'Modern 3K is local-only. Start it from /setup?mode=authentic.';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {
@@ -80,10 +80,10 @@ export default function WarRoomLobby() {
       if (!wsUrl) {
         const localFound = getWarRoom(roomCode || "");
         if (localFound) {
-           setError("WebSocket server not configured. Reverting to Local Simulation of this chamber.");
+           setError("WebSocket unavailable. Falling back to the local room on this device.");
            setRoomMode('local');
         } else {
-           setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+           setError("WebSocket unavailable. This Classic room is not stored on this device.");
            setIsLoading(false);
         }
         return;
@@ -152,7 +152,7 @@ export default function WarRoomLobby() {
         } else if (err === 'CANNOT_CONNECT') {
           setError('Cannot connect to Strategic Command.');
         } else {
-          setError(`Strategic Failure: ${err}`);
+          setError(`Connection issue: ${err}`);
         }
         setIsConnected(false);
         setIsReconnecting(false);
@@ -223,7 +223,7 @@ export default function WarRoomLobby() {
       if (found) {
         const validation = validateWarRoom(found);
         if (!validation.valid) {
-          setError(`Strategic Breach Detected: ${validation.errors[0]}`);
+          setError(`Room data issue: ${validation.errors[0]}`);
           setRoom(found);
           setIsReconnecting(false);
           setIsLoading(false);
@@ -235,10 +235,10 @@ export default function WarRoomLobby() {
       } else {
         const wsUrl = (import.meta as any).env.VITE_WS_URL;
         if (!wsUrl) {
-            setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+            setError("Room not found on this device, and WebSocket is unavailable.");
             setIsLoading(false);
         } else {
-            setError("Chamber not found locally. Attempting to locate in cloud repositories...");
+            setError("Room not found locally. Checking Classic online rooms...");
             setRoomMode('online');
             // Effect will re-run with online mode
         }
@@ -415,7 +415,7 @@ export default function WarRoomLobby() {
         <div className="text-center">
             <h2 className="text-2xl font-serif font-black text-white tracking-[0.3em] uppercase mb-2">Synchronizing War Room</h2>
             <p className="text-zinc-500 font-serif italic uppercase text-[10px] tracking-widest animate-pulse">
-              {isReconnecting ? 'Reconnecting...' : 'Contacting Strategic Command...'}
+              {isReconnecting ? 'Reconnecting...' : 'Connecting...'}
             </p>
         </div>
       </div>
@@ -435,6 +435,12 @@ export default function WarRoomLobby() {
                <p className="text-zinc-500 text-xs font-serif italic leading-relaxed">{error}</p>
             </div>
             <div className="grid grid-cols-1 gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="block w-full bg-gold/10 hover:bg-gold text-gold hover:text-black py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-gold/20 transition-all"
+              >
+                 Retry
+              </button>
               <Link 
                 to="/rooms" 
                 className="block w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
@@ -445,7 +451,7 @@ export default function WarRoomLobby() {
                 to="/rooms/create?mode=classic"
                 className="block w-full bg-gold/10 hover:bg-gold text-gold hover:text-black py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-gold/20 transition-all"
               >
-                 Create New Room
+                 Create New Classic Room
               </Link>
               <Link 
                 to="/"
@@ -475,6 +481,8 @@ export default function WarRoomLobby() {
             </h1>
             <button 
                 onClick={handleCopyCode}
+                aria-label="Copy Classic room code"
+                title="Copy Classic room code"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] font-bold uppercase tracking-widest text-gold transition-all hover:bg-white/10 sm:w-auto"
             >
                 {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}

@@ -41,7 +41,7 @@ export default function JoinRoom() {
     // 2. Try online if configured
     const wsUrl = (import.meta as any).env.VITE_WS_URL;
     if (!wsUrl) {
-        setError("Room not found in this browser. Local Simulation rooms are stored only on this device. Deploy WebSocket backend for real online joining.");
+        setError("WebSocket unavailable. This Classic room is not stored on this device.");
         setIsJoining(false);
         return;
     }
@@ -49,7 +49,7 @@ export default function JoinRoom() {
     onlineRoomClient.connect();
     
     const timeout = setTimeout(() => {
-        setError("The targeted chamber does not exist in the local archives or cloud repository.");
+        setError("Cannot connect to that Classic room. Check the code and try again.");
         setIsJoining(false);
         cleanup();
     }, 5000);
@@ -61,7 +61,7 @@ export default function JoinRoom() {
     };
 
     const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
-        setError(`Cloud Breach: ${err}`);
+        setError(err === 'CANNOT_CONNECT' ? 'Cannot connect. Check the backend and retry.' : `Connection issue: ${err}`);
         setIsJoining(false);
         cleanup();
     });
@@ -149,7 +149,7 @@ export default function JoinRoom() {
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-400 rounded-full"
                 />
-                Decrypting...
+                Connecting...
               </>
             ) : "Access Chamber"}
           </button>

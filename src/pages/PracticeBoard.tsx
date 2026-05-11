@@ -564,6 +564,12 @@ function ClassicPracticeBoard() {
             <p className="text-zinc-500 text-xs font-serif italic leading-relaxed">{roomExpired}</p>
           </div>
           <button
+            onClick={() => window.location.reload()}
+            className="block w-full bg-gold/10 hover:bg-gold text-gold hover:text-black py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-gold/20 transition-all"
+          >
+            Retry
+          </button>
+          <button
             onClick={() => navigate('/rooms')}
             className="block w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
           >
@@ -573,7 +579,7 @@ function ClassicPracticeBoard() {
             onClick={() => navigate('/rooms/create?mode=classic')}
             className="block w-full bg-gold/10 hover:bg-gold text-gold hover:text-black py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-gold/20 transition-all"
           >
-            Create New Room
+            Create New Classic Room
           </button>
           <button
             onClick={() => navigate('/')}

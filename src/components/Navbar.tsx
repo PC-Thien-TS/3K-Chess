@@ -32,6 +32,8 @@ export default function Navbar() {
               <a 
                 key={item.path}
                 href={item.path}
+                aria-label={item.name}
+                title={item.name}
                 className={cn(
                   "relative text-[10px] font-bold tracking-widest uppercase transition-colors hover:text-zinc-50 flex items-center gap-2 text-zinc-400"
                 )}

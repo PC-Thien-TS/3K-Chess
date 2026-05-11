@@ -10,6 +10,7 @@ import WarCouncil from './pages/WarCouncil';
 import CreateRoom from './pages/CreateRoom';
 import JoinRoom from './pages/JoinRoom';
 import WarRoomLobby from './pages/WarRoomLobby';
+import NotFound from './pages/NotFound';
 import { MatchProvider } from './context/MatchContext';
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <Route path="/rooms/create" element={<CreateRoom />} />
           <Route path="/rooms/join" element={<JoinRoom />} />
           <Route path="/rooms/:roomCode" element={<WarRoomLobby />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />

@@ -45,7 +45,7 @@ export default function CreateRoom() {
 
     const timeout = setTimeout(() => {
       if (isCreating) {
-        setError("Strategic Delay: Room initialization timed out. Please try again.");
+        setError("Creating the Classic room took too long. Please retry.");
         setIsCreating(false);
       }
     }, 5000);
@@ -55,7 +55,7 @@ export default function CreateRoom() {
         const wsUrl = (import.meta as any).env.VITE_WS_URL;
         if (!wsUrl) {
           clearTimeout(timeout);
-          setError("WebSocket server not configured. Use Local Simulation or configure VITE_WS_URL.");
+          setError("WebSocket unavailable. Use Local Simulation or configure the backend.");
           setIsCreating(false);
           return;
         }
@@ -64,7 +64,7 @@ export default function CreateRoom() {
         
         const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
           clearTimeout(timeout);
-          setError(`Strategic Failure: ${err}`);
+          setError(err === 'CANNOT_CONNECT' ? 'Cannot connect. Check the backend and retry.' : `Connection issue: ${err}`);
           setIsCreating(false);
           unsubscribeError();
         });
@@ -146,7 +146,7 @@ export default function CreateRoom() {
       navigate(`/rooms/${roomCode}`, { state: { mode: 'local', gameMode } });
     } catch (err: any) {
       clearTimeout(timeout);
-      setError(err?.message || "Tactical Error: Failed to secure the war room.");
+      setError(err?.message || "Could not create the Classic room.");
       setIsCreating(false);
     }
   };
@@ -387,12 +387,12 @@ export default function CreateRoom() {
               disabled={isCreating || gameMode === 'authentic' || (roomMode === 'online' && !wsUrlAvailable)}
               className="flex w-full items-center justify-center gap-3 rounded-[1.75rem] bg-gold py-5 text-[11px] font-bold uppercase tracking-[0.28em] text-black shadow-[0_0_30px_rgba(212,175,55,0.2)] transition-all hover:bg-white disabled:opacity-50 sm:rounded-[2rem] sm:py-6 sm:text-xs sm:tracking-[0.4em]"
             >
-              <Sword size={20} /> {gameMode === 'authentic' ? "Local Only" : isCreating ? "Initializing..." : "Initialize Room"}
+              <Sword size={20} /> {gameMode === 'authentic' ? "Local Only" : isCreating ? "Creating..." : "Initialize Room"}
             </button>
 
             {roomMode === 'online' && !wsUrlAvailable && (
               <p className="text-rose-500/80 text-[10px] font-serif italic text-center mt-4">
-                Online WebSocket requires a deployed backend. Use Local Simulation to create a room without a server.
+                WebSocket unavailable. Use Local Simulation to create a Classic room without a backend.
               </p>
             )}
 
