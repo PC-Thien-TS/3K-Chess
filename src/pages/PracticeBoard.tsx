@@ -557,7 +557,7 @@ function ClassicPracticeBoard() {
   }
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-8 relative">
+    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 relative">
       {/* Match Summary Modal */}
       <AnimatePresence>
         {showSummary && winner && (
@@ -916,12 +916,13 @@ function ClassicPracticeBoard() {
             <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
             {roomCode ? "Retreat to Council" : "Retreat to Stronghold"}
           </Link>
-          <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
-            <h1 className="text-4xl md:text-6xl font-serif font-black text-white tracking-widest uppercase leading-none">
+          <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-10">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-serif font-black text-white tracking-[0.12em] sm:tracking-widest uppercase leading-none">
               3-PLAYER <span className="text-gold italic block md:inline">TACTICAL BOARD</span>
             </h1>
             {roomCode && (
-               <div className="bg-gold/5 border border-gold/20 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-[0_0_40px_rgba(212,175,55,0.05)] backdrop-blur-sm self-start md:self-auto">
+               <div className="max-w-full self-start rounded-2xl border border-gold/20 bg-gold/5 px-4 py-3 shadow-[0_0_40px_rgba(212,175,55,0.05)] backdrop-blur-sm md:self-auto">
+                  <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className="w-2.5 h-2.5 rounded-full bg-gold animate-ping absolute inset-0" />
                     <div className="w-2.5 h-2.5 rounded-full bg-gold relative z-10" />
@@ -930,15 +931,16 @@ function ClassicPracticeBoard() {
                     <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">War Room Chamber</span>
                     <span className="text-sm font-mono font-black text-gold uppercase tracking-[0.2em]">{roomCode}</span>
                   </div>
+                  </div>
                </div>
             )}
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
           <button 
             onClick={() => navigate('/archive')}
-            className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-400 hover:text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-all hover:bg-white/10 hover:text-white sm:w-auto"
           >
             <History size={16} className="text-gold" /> Archive
           </button>
@@ -951,24 +953,24 @@ function ClassicPracticeBoard() {
                 navigate(`/setup?mode=${config.gameMode}`);
               }
             }}
-            className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/5 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white/10 sm:w-auto"
           >
             <Settings size={16} className="text-gold" /> {roomCode ? "To Lobby" : "Change Setup"}
           </button>
 
           <button 
             onClick={resetGame}
-            className="flex items-center gap-3 bg-gold/10 hover:bg-gold text-gold hover:text-black border border-gold/10 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-gold/10 bg-gold/10 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-gold transition-all shadow-[0_0_20px_rgba(212,175,55,0.1)] hover:bg-gold hover:text-black sm:w-auto"
           >
             <RotateCcw size={16} /> Restore Armies
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12 xl:gap-8">
         {/* Left Panel: Faction Status */}
-        <div className="lg:col-span-3 space-y-8">
-          <div className="glass-dark border border-white/5 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
+        <div className="order-2 space-y-6 xl:order-1 xl:col-span-3 xl:space-y-8">
+          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] shadow-2xl relative overflow-hidden">
             {/* Subtle Texture Overlay */}
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none" />
             
@@ -1080,7 +1082,7 @@ function ClassicPracticeBoard() {
             </div>
           </div>
 
-          <div className="glass-dark border border-white/5 p-8 rounded-[3rem] shadow-xl relative overflow-hidden">
+          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] shadow-xl relative overflow-hidden">
             <div className="absolute inset-0 bg-rose-500/[0.02] pointer-events-none" />
             <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10">
               <Skull size={16} className="text-zinc-700" /> Fallen Warriors
@@ -1120,7 +1122,7 @@ function ClassicPracticeBoard() {
         </div>
 
         {/* Main Board Area */}
-        <div className="lg:col-span-6 flex flex-col items-center">
+        <div className="order-1 flex min-w-0 flex-col items-center xl:order-2 xl:col-span-9">
           <ClassicBoard
             pieces={pieces}
             selectedId={selectedId}
@@ -1137,7 +1139,7 @@ function ClassicPracticeBoard() {
             onPointClick={handlePointClick}
           />
           
-          <div className="mt-10 flex items-center gap-6 py-6 px-10 glass-dark border border-white/5 rounded-3xl shadow-2xl max-w-2xl relative overflow-hidden group">
+          <div className="group relative mt-6 flex w-full max-w-[820px] flex-col gap-4 overflow-hidden rounded-[1.75rem] border border-white/5 px-4 py-4 shadow-2xl sm:mt-8 sm:flex-row sm:items-center sm:gap-6 sm:rounded-3xl sm:px-8 sm:py-6">
             <div className="absolute inset-0 bg-gold/[0.02] pointer-events-none" />
             <div className="bg-gold/10 p-3 rounded-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
                <Info size={20} className="text-gold" />
@@ -1147,13 +1149,13 @@ function ClassicPracticeBoard() {
             </p>
           </div>
               {/* Right Panel: History */}
-        <div className="lg:col-span-3 space-y-8">
-          <div className="glass-dark border border-white/5 p-8 rounded-[3rem] h-[650px] overflow-hidden flex flex-col shadow-2xl relative">
+        <div className="mt-6 w-full space-y-6 sm:mt-8 sm:space-y-8">
+          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] max-h-[28rem] overflow-hidden flex flex-col shadow-2xl relative xl:max-h-[650px]">
             <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
             <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10 font-sans">
               <History size={16} className="text-gold" /> Chronicle of Fates
             </h3>
-            <div className="space-y-4 overflow-y-auto flex-grow pr-4 scrollbar-thin scrollbar-thumb-white/5 relative z-10 pb-8">
+            <div className="relative z-10 flex-grow space-y-4 overflow-y-auto pr-2 pb-8 sm:pr-4 scrollbar-thin scrollbar-thumb-white/5">
               {history.map((m, idx) => (
                 <motion.div 
                   key={m.id} 
@@ -1220,9 +1222,9 @@ function ClassicPracticeBoard() {
           </div>
 
           {roomMode === 'online' && (
-            <div className="glass-dark border border-gold/10 p-6 rounded-[2rem] flex flex-col gap-4 shadow-2xl relative overflow-hidden">
+            <div className="glass-dark border border-gold/10 p-4 sm:p-6 rounded-[2rem] flex flex-col gap-4 shadow-2xl relative overflow-hidden">
                 <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
-                <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 relative z-10">
+                <div className="relative z-10 flex flex-col gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
                     <span>Synchrony Protocol</span>
                     <div className="flex items-center gap-2">
                        <div className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
@@ -1234,7 +1236,7 @@ function ClassicPracticeBoard() {
                         <span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest block mb-2">Tactical Intelligence</span>
                         <span className="text-[10px] text-zinc-300 font-mono tracking-tighter uppercase">{lastSyncEvent || 'Listening for Intel...'}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-center items-center">
                           <span className="text-[7px] text-zinc-600 uppercase font-black tracking-widest block mb-1">Assigned Front</span>
                           <span className={cn("text-[10px] font-black font-mono tracking-widest uppercase", playerFaction && FACTION_COLORS[playerFaction])}>
@@ -1250,7 +1252,7 @@ function ClassicPracticeBoard() {
             </div>
           )}
 
-          <div className="p-10 glass-dark border border-gold/10 rounded-[3rem] text-center shadow-2xl relative overflow-hidden group">
+          <div className="p-6 sm:p-10 glass-dark border border-gold/10 rounded-[2rem] sm:rounded-[3rem] text-center shadow-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-gold/[0.02] group-hover:scale-110 transition-transform duration-1000" />
             <h4 className="text-[10px] font-black text-gold uppercase tracking-[0.5em] mb-6 relative z-10">Tactical Insight</h4>
             <div className="w-8 h-px bg-gold/30 mx-auto mb-6 relative z-10" />

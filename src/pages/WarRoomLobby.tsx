@@ -424,20 +424,20 @@ export default function WarRoomLobby() {
   if (!room) return null;
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-10">
+    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
       {/* Header Area */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-4">
             <ChevronLeft size={16} /> Retreat to Council
           </Link>
-          <div className="flex items-center gap-4">
-            <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-widest">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <h1 className="text-3xl font-serif font-black tracking-[0.14em] text-white sm:text-4xl md:text-5xl md:tracking-widest">
                 LOBBY: <span className="text-gold italic uppercase">{room.roomCode}</span>
             </h1>
             <button 
                 onClick={handleCopyCode}
-                className="bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-white/10 transition-all text-gold flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] font-bold uppercase tracking-widest text-gold transition-all hover:bg-white/10 sm:w-auto"
             >
                 {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                 {copied ? "Copied" : "Copy Code"}
@@ -445,9 +445,9 @@ export default function WarRoomLobby() {
           </div>
         </div>
 
-        <div className="flex flex-col items-end">
+        <div className="flex w-full flex-col items-start lg:w-auto lg:items-end">
             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.4em] mb-2">Host Protocol</div>
-            <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl flex items-center gap-3">
+            <div className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 lg:w-auto">
                 <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold border border-gold/30">
                     <User size={14} />
                 </div>
@@ -460,7 +460,7 @@ export default function WarRoomLobby() {
       </div>
 
       {/* Main Content: The Faction Slots */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         {FACTIONS.map((fct) => {
           const slot = room.slots[fct];
           const isOccupied = slot.occupantType !== 'empty';
@@ -469,7 +469,7 @@ export default function WarRoomLobby() {
 
           return (
             <div key={fct} className={cn(
-              "group relative flex flex-col glass-dark border p-10 rounded-[4rem] transition-all duration-500 hover:scale-[1.02] min-h-[450px]",
+              "group relative flex min-h-[380px] flex-col rounded-[2rem] border p-5 transition-all duration-500 hover:scale-[1.02] glass-dark sm:min-h-[420px] sm:rounded-[3rem] sm:p-8 xl:min-h-[450px] xl:rounded-[4rem] xl:p-10",
               isOccupied ? FACTION_COLORS[slot.faction] : "border-white/5 text-zinc-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100"
             )}>
               {/* Background Crest (Subtle) */}
@@ -505,7 +505,7 @@ export default function WarRoomLobby() {
                           )}>
                              <User size={48} strokeWidth={1} />
                           </div>
-                          <div className="flex flex-col gap-4 w-full px-4">
+                          <div className="flex flex-col gap-3 w-full px-2 sm:px-4">
                              <button 
                                 onClick={() => claimSlot(fct)}
                                 disabled={roomMode === 'online' && !!claimedFaction}
@@ -560,7 +560,7 @@ export default function WarRoomLobby() {
                               </div>
                            </div>
  
-                           <div className="flex gap-3 w-full px-4">
+                           <div className="flex w-full flex-col gap-3 px-2 sm:flex-row sm:px-4">
                               {slot.occupantType === 'human' && canIControl && (
                                 <button 
                                     onClick={() => toggleReady(fct)}
@@ -605,13 +605,13 @@ export default function WarRoomLobby() {
       </div>
 
       {/* Rules Summary & Controls */}
-      <div className="flex flex-col lg:flex-row gap-8 items-stretch pt-4">
-          <div className="flex-1 bg-white/[0.02] border border-white/5 p-8 rounded-[3rem] flex flex-col gap-6 shadow-2xl">
-              <div className="flex items-center gap-8">
+      <div className="flex flex-col gap-6 items-stretch pt-2 lg:flex-row lg:gap-8 lg:pt-4">
+          <div className="flex flex-1 flex-col gap-6 rounded-[2rem] border border-white/5 bg-white/[0.02] p-5 shadow-2xl sm:rounded-[3rem] sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
                   <div className="w-16 h-16 rounded-3xl bg-gold/10 flex items-center justify-center text-gold shrink-0 border border-gold/10">
                      <Shield size={32} />
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-12 gap-y-4 flex-1">
+                  <div className="grid flex-1 grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-12">
                       <div>
                           <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-widest block mb-1">Standard Of Rules</span>
                           <p className="text-white text-xs font-serif italic">{(room as any).roomRules.ruleset}</p>
@@ -636,7 +636,7 @@ export default function WarRoomLobby() {
               </div>
 
               {roomMode === 'online' && diagnostics && (
-                <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 border-t border-white/5 pt-4 sm:grid-cols-2">
                     <div>
                         <span className="text-[7px] text-zinc-600 uppercase font-bold tracking-widest block mb-1">Commander Signal (Socket ID)</span>
                         <p className="text-zinc-500 text-[9px] font-mono truncate">{diagnostics.socketId || 'Negotiating...'}</p>
@@ -649,7 +649,7 @@ export default function WarRoomLobby() {
               )}
           </div>
 
-          <div className="w-full lg:w-96 flex flex-col justify-center">
+          <div className="flex w-full flex-col justify-center lg:w-96">
               <AnimatePresence mode="wait">
                   {isReconnecting && (
                     <motion.div
@@ -677,7 +677,7 @@ export default function WarRoomLobby() {
                 onClick={startMatch}
                 disabled={!canStart || isStarting || activeGameMode === 'authentic'}
                 className={cn(
-                  "w-full py-8 rounded-[3rem] font-black uppercase tracking-[0.5em] text-sm transition-all flex items-center justify-center gap-4 border overflow-hidden relative",
+                  "relative flex w-full items-center justify-center gap-4 overflow-hidden rounded-[2rem] border py-6 text-[11px] font-black uppercase tracking-[0.28em] transition-all sm:rounded-[3rem] sm:py-8 sm:text-sm sm:tracking-[0.5em]",
                   canStart && activeGameMode !== 'authentic'
                     ? "bg-gold text-black border-gold hover:bg-white shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:-translate-y-1" 
                     : "bg-white/5 border-white/5 text-zinc-700 cursor-not-allowed"

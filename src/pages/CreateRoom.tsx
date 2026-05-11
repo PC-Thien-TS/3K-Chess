@@ -152,24 +152,24 @@ export default function CreateRoom() {
   };
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col items-center">
+    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col items-center">
       <div className="w-full max-w-2xl">
         <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-8">
           <ChevronLeft size={16} /> Return to Classic Rooms
         </Link>
-        <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-widest uppercase mb-2">
+        <h1 className="mb-2 text-3xl font-serif font-black uppercase tracking-[0.14em] text-white sm:text-4xl md:text-5xl md:tracking-widest">
           ESTABLISH <span className="text-gold italic">CLASSIC ROOM</span>
         </h1>
-        <p className="text-zinc-500 font-serif italic text-lg mb-12">
+        <p className="mb-8 text-base font-serif italic text-zinc-500 sm:mb-12 sm:text-lg">
           Classic rooms support online sync, local war-room play, bots, and replay-ready matches.
         </p>
 
-        <form onSubmit={handleCreate} className="space-y-10">
+        <form onSubmit={handleCreate} className="space-y-8 sm:space-y-10">
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
               <Shield size={14} className="text-gold" /> Campaign Mode
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {(['classic', 'authentic'] as GameMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -180,7 +180,7 @@ export default function CreateRoom() {
                     setError(mode === 'authentic' ? AUTHENTIC_DISABLED_MESSAGE : null);
                   }}
                   className={cn(
-                    "p-6 rounded-3xl border text-left transition-all",
+                    "rounded-[1.75rem] border p-5 text-left transition-all sm:rounded-3xl sm:p-6",
                     gameMode === mode ? "bg-gold/10 border-gold" : "bg-white/[0.03] border-white/5 hover:border-white/10"
                   )}
                 >
@@ -206,12 +206,12 @@ export default function CreateRoom() {
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
               <Zap size={14} className="text-gold" /> Engagement Layer
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setRoomMode('local')}
                 className={cn(
-                  "p-6 rounded-3xl border text-left transition-all relative overflow-hidden group",
+                  "rounded-[1.75rem] border p-5 text-left transition-all relative overflow-hidden group sm:rounded-3xl sm:p-6",
                   roomMode === 'local' 
                     ? "bg-gold/10 border-gold shadow-[0_0_20px_rgba(212,175,55,0.1)]" 
                     : "bg-white/[0.03] border-white/5 hover:border-white/10"
@@ -238,7 +238,7 @@ export default function CreateRoom() {
                 disabled={!wsUrlAvailable}
                 onClick={() => setRoomMode('online')}
                 className={cn(
-                  "p-6 rounded-3xl border text-left transition-all relative overflow-hidden group",
+                  "rounded-[1.75rem] border p-5 text-left transition-all relative overflow-hidden group sm:rounded-3xl sm:p-6",
                   !wsUrlAvailable && "opacity-50 grayscale cursor-not-allowed",
                   roomMode === 'online' 
                     ? "bg-gold/10 border-gold shadow-[0_0_20px_rgba(212,175,55,0.1)]" 
@@ -280,7 +280,7 @@ export default function CreateRoom() {
                 placeholder="Enter your name or title..."
                 value={hostName}
                 onChange={(e) => setHostName(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-3xl py-8 px-10 text-white placeholder:text-zinc-700 focus:outline-none focus:border-gold/30 transition-all font-serif text-2xl tracking-wide"
+                className="w-full rounded-[1.75rem] border border-white/10 bg-white/[0.03] px-6 py-5 text-lg tracking-wide text-white placeholder:text-zinc-700 transition-all focus:outline-none focus:border-gold/30 font-serif sm:rounded-3xl sm:px-10 sm:py-8 sm:text-2xl"
               />
               <div className="absolute right-8 top-1/2 -translate-y-1/2 flex gap-1">
                 {[1, 2, 3].map(i => <div key={i} className="w-1 h-3 bg-gold/20 rounded-full" />)}
@@ -293,7 +293,7 @@ export default function CreateRoom() {
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
               <Shield size={14} className="text-gold" /> Initial Allegiance
             </label>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
               {[
                 { id: 'Shu', name: 'Benevolence', color: 'bg-shu', textColor: 'text-shu' },
                 { id: 'Wei', name: 'Authority', color: 'bg-wei', textColor: 'text-wei' },
@@ -304,14 +304,14 @@ export default function CreateRoom() {
                   type="button"
                   onClick={() => setSelectedFaction(f.id as Faction)}
                   className={cn(
-                    "relative py-12 rounded-[2.5rem] border transition-all overflow-hidden flex flex-col items-center justify-center gap-4 group",
+                    "relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-[1.75rem] border py-8 transition-all group sm:rounded-[2.5rem] sm:py-12",
                     selectedFaction === f.id 
                       ? "bg-white/[0.05] border-gold shadow-[0_0_40px_rgba(212,175,55,0.1)]" 
                       : "bg-white/[0.02] border-white/5 hover:border-white/10 text-zinc-500 hover:text-zinc-300"
                   )}
                 >
                   <div className={cn(
-                    "w-20 h-20 rounded-[2rem] flex items-center justify-center text-5xl font-black font-serif transition-transform duration-500 group-hover:scale-110",
+                    "flex h-16 w-16 items-center justify-center rounded-[1.5rem] text-4xl font-black font-serif transition-transform duration-500 group-hover:scale-110 sm:h-20 sm:w-20 sm:rounded-[2rem] sm:text-5xl",
                     selectedFaction === f.id ? f.color + " text-white shadow-2xl" : "bg-white/5 text-zinc-800"
                   )}>{f.id[0]}</div>
                   <div className="text-center">
@@ -333,8 +333,8 @@ export default function CreateRoom() {
           </div>
 
           {/* Rule Settings */}
-          <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-8">
-            <div className="flex items-center justify-between">
+          <div className="space-y-6 rounded-[1.75rem] border border-white/5 bg-white/[0.02] p-5 sm:space-y-8 sm:rounded-[2rem] sm:p-8">
+            <div className="flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <h4 className="text-white text-sm font-bold uppercase tracking-widest flex items-center gap-2">
                   <Settings2 size={16} className="text-gold" /> Strategic Automata
@@ -359,7 +359,7 @@ export default function CreateRoom() {
             {allowBots && (
               <div className="space-y-4">
                 <label className="text-zinc-600 text-[9px] uppercase font-bold tracking-widest">Bot Tactical Difficulty</label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {(['easy', 'normal', 'hard'] as BotDifficulty[]).map((d) => (
                     <button
                       key={d}
@@ -385,7 +385,7 @@ export default function CreateRoom() {
             <button 
               type="submit"
               disabled={isCreating || gameMode === 'authentic' || (roomMode === 'online' && !wsUrlAvailable)}
-              className="w-full bg-gold hover:bg-white text-black py-6 rounded-[2rem] font-bold uppercase tracking-[0.4em] text-xs transition-all shadow-[0_0_30px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-3 rounded-[1.75rem] bg-gold py-5 text-[11px] font-bold uppercase tracking-[0.28em] text-black shadow-[0_0_30px_rgba(212,175,55,0.2)] transition-all hover:bg-white disabled:opacity-50 sm:rounded-[2rem] sm:py-6 sm:text-xs sm:tracking-[0.4em]"
             >
               <Sword size={20} /> {gameMode === 'authentic' ? "Local Only" : isCreating ? "Initializing..." : "Initialize Room"}
             </button>

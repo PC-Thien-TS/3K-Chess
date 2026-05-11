@@ -45,7 +45,7 @@ export default function ClassicBoard({
     !winner;
 
   return (
-    <div className="relative w-full max-w-[820px] aspect-square overflow-hidden rounded-[2.25rem] border border-[#5d4926]/40 bg-[#100d09] p-3 sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
+    <div className="relative mx-auto w-full max-w-[820px] min-w-0 aspect-square overflow-hidden rounded-[1.8rem] border border-[#5d4926]/40 bg-[#100d09] p-2 sm:rounded-[2.25rem] sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
       <div className="absolute inset-[1.25%] rounded-[2rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
       <div className="absolute inset-[2.2%] rounded-[1.8rem] border border-black/35 shadow-[inset_0_0_80px_rgba(0,0,0,0.72)]" />
@@ -54,7 +54,7 @@ export default function ClassicBoard({
       <div className="absolute left-[24%] bottom-[4%] h-[22%] w-[52%] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
       <div className="absolute inset-0 pointer-events-none opacity-[0.09] mix-blend-overlay [background-image:linear-gradient(120deg,rgba(255,255,255,0.16)_0,transparent_22%,rgba(255,255,255,0.08)_36%,transparent_52%,rgba(0,0,0,0.18)_72%,transparent_100%)]" />
 
-      <div className="absolute inset-0 pointer-events-none p-3 sm:p-4 md:p-7">
+      <div className="absolute inset-0 pointer-events-none p-2 sm:p-4 md:p-7">
         <svg viewBox="0 0 170 170" className="w-full h-full fill-none" strokeWidth="0.52">
           <defs>
             <linearGradient id="board-grid-v1" x1="0%" x2="100%">
@@ -106,7 +106,7 @@ export default function ClassicBoard({
         <div className="text-[180px] font-serif text-blue-900/10 -mb-16 blur-[1px]">é­</div>
       </div>
 
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-10 sm:p-14 md:p-20 select-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-6 sm:p-14 md:p-20 select-none overflow-hidden">
         <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-rose-500/[0.06] -mt-6">SHU</div>
         <div className="flex justify-between w-full">
           <div className="-ml-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-emerald-500/[0.06] -rotate-90">WU</div>
@@ -121,7 +121,7 @@ export default function ClassicBoard({
       </div>
 
       <div
-        className="grid gap-0 w-full h-full relative z-10"
+        className="relative z-10 grid h-full w-full gap-0 touch-manipulation"
         style={{
           gridTemplateColumns: `repeat(${COLS}, 1fr)`,
           gridTemplateRows: `repeat(${ROWS}, 1fr)`,
@@ -142,14 +142,14 @@ export default function ClassicBoard({
                 key={`${x}-${y}`}
                 onClick={() => onPointClick(x, y)}
                 className={cn(
-                  'relative flex items-center justify-center group',
+                  'group relative flex min-h-0 items-center justify-center',
                   isRemoteWaiting ? 'cursor-not-allowed' : 'cursor-pointer',
                 )}
               >
                 {(isLastMoveFrom || isLastMoveTo) && (
                   <div
                     className={cn(
-                      'absolute inset-[9%] rounded-[0.9rem] border z-[1]',
+                      'absolute inset-[7%] z-[1] rounded-[0.7rem] border sm:inset-[9%] sm:rounded-[0.9rem]',
                       isLastMoveTo
                         ? 'border-gold/60 bg-gold/10 shadow-[0_0_18px_rgba(212,175,55,0.18)]'
                         : 'border-sky-200/35 bg-sky-200/5',
@@ -168,8 +168,8 @@ export default function ClassicBoard({
                     className={cn(
                       'absolute z-40 transition-all',
                       piece
-                        ? 'h-7 w-7 rounded-full border-2 border-rose-400/80 bg-rose-500/[0.16] shadow-[0_0_20px_rgba(244,63,94,0.42)]'
-                        : 'h-5 w-5 rounded-full border border-gold/80 bg-gold/55 shadow-[0_0_18px_rgba(212,175,55,0.42)]',
+                        ? 'h-8 w-8 rounded-full border-2 border-rose-400/80 bg-rose-500/[0.16] shadow-[0_0_20px_rgba(244,63,94,0.42)] sm:h-7 sm:w-7'
+                        : 'h-6 w-6 rounded-full border border-gold/80 bg-gold/55 shadow-[0_0_18px_rgba(212,175,55,0.42)] sm:h-5 sm:w-5',
                     )}
                   >
                     {piece && <div className="absolute inset-[22%] rotate-45 border border-rose-200/70" />}
@@ -181,7 +181,7 @@ export default function ClassicBoard({
                     layoutId={piece.id}
                     onMouseEnter={() => onHoverPoint({ x, y })}
                     onMouseLeave={() => onHoverPoint(null)}
-                    className="absolute z-20 h-[90%] w-[90%] cursor-grab transition-all active:cursor-grabbing"
+                    className="absolute z-20 h-[94%] w-[94%] cursor-grab transition-all active:cursor-grabbing sm:h-[90%] sm:w-[90%]"
                   >
                     <BoardPieceToken
                       faction={piece.faction}

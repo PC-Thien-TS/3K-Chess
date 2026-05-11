@@ -133,8 +133,8 @@ export default function ReplayBoard() {
   const replayMode = normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE);
   if (replayMode === 'authentic') {
     return (
-      <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-10">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 px-4">
+      <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
+        <div className="flex flex-col gap-6 px-0 sm:px-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
           <div className="space-y-4">
             <Link to="/archive" className="inline-flex items-center gap-3 text-gold hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.4em] mb-4 bg-gold/10 px-6 py-2.5 rounded-full border border-gold/20 mr-4">
               <ChevronLeft size={16} /> Return to Archives
@@ -144,16 +144,16 @@ export default function ReplayBoard() {
             </h1>
           </div>
 
-          <div className="flex gap-4 w-full lg:w-auto">
+          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:gap-4">
             <button
               onClick={() => exportMatchRecord(match)}
-              className="flex-1 lg:flex-none glass-dark border border-white/10 text-white px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95"
+              className="glass-dark flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-all hover:scale-[1.02] hover:bg-white/10 active:scale-95 lg:w-auto lg:px-8 lg:py-5"
             >
               <Download size={18} className="text-gold" /> Export Log
             </button>
             <button
               onClick={() => navigate('/setup?mode=authentic')}
-              className="flex-1 lg:flex-none bg-gold text-black px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_15px_40px_rgba(212,175,55,0.3)] hover:bg-white hover:scale-[1.02] active:scale-95"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gold px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_15px_40px_rgba(212,175,55,0.3)] transition-all hover:scale-[1.02] hover:bg-white active:scale-95 lg:w-auto lg:px-8 lg:py-5"
             >
               <PlayCircle size={18} /> New Campaign
             </button>
@@ -178,9 +178,9 @@ export default function ReplayBoard() {
   const boardPieces = currentPieces();
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col gap-10">
+    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 px-4">
+      <div className="flex flex-col gap-6 px-0 sm:px-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
         <div className="space-y-4">
           <Link to="/archive" className="inline-flex items-center gap-3 text-gold hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.4em] mb-4 bg-gold/10 px-6 py-2.5 rounded-full border border-gold/20 mr-4">
             <ChevronLeft size={16} /> Return to Archives
@@ -212,26 +212,26 @@ export default function ReplayBoard() {
           </div>
         </div>
 
-        <div className="flex gap-4 w-full lg:w-auto">
+        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:gap-4">
             <button 
                 onClick={() => exportMatchRecord(match)}
-                className="flex-1 lg:flex-none glass-dark border border-white/10 text-white px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-white/10 hover:scale-[1.02] active:scale-95"
+                className="glass-dark flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-all hover:scale-[1.02] hover:bg-white/10 active:scale-95 lg:w-auto lg:px-8 lg:py-5"
             >
                 <Download size={18} className="text-gold" /> Export Log
             </button>
             <button 
                 onClick={() => navigate(`/setup?mode=${replayMode}`)}
-                className="flex-1 lg:flex-none bg-gold text-black px-8 py-5 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_15px_40px_rgba(212,175,55,0.3)] hover:bg-white hover:scale-[1.02] active:scale-95"
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gold px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_15px_40px_rgba(212,175,55,0.3)] transition-all hover:scale-[1.02] hover:bg-white active:scale-95 lg:w-auto lg:px-8 lg:py-5"
             >
                 <PlayCircle size={18} /> New Campaign
             </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start px-4">
+      <div className="grid grid-cols-1 items-start gap-6 px-0 sm:px-4 xl:grid-cols-12 xl:gap-8">
         {/* Board Area */}
         <div className="xl:col-span-8 space-y-8">
-          <div className="relative w-full max-w-[820px] mx-auto aspect-square overflow-hidden rounded-[2.25rem] border border-[#5d4926]/40 bg-[#100d09] p-3 sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
+          <div className="relative mx-auto aspect-square w-full max-w-[820px] overflow-hidden rounded-[1.8rem] border border-[#5d4926]/40 bg-[#100d09] p-2 sm:rounded-[2.25rem] sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={lastMove?.faction}
@@ -252,7 +252,7 @@ export default function ReplayBoard() {
             <div className="absolute left-[24%] bottom-[4%] h-[22%] w-[52%] rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
             <div className="absolute inset-0 pointer-events-none opacity-[0.09] mix-blend-overlay [background-image:linear-gradient(120deg,rgba(255,255,255,0.16)_0,transparent_22%,rgba(255,255,255,0.08)_36%,transparent_52%,rgba(0,0,0,0.18)_72%,transparent_100%)]" />
 
-            <div className="absolute inset-0 pointer-events-none p-3 sm:p-4 md:p-7">
+            <div className="absolute inset-0 pointer-events-none p-2 sm:p-4 md:p-7">
               <svg viewBox="0 0 170 170" className="w-full h-full fill-none" strokeWidth="0.52">
                 <defs>
                   <linearGradient id="replay-board-grid-v1" x1="0%" x2="100%">
@@ -291,7 +291,7 @@ export default function ReplayBoard() {
               </svg>
             </div>
 
-            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-10 sm:p-14 md:p-20 select-none overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-6 sm:p-14 md:p-20 select-none overflow-hidden">
               <div className="text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-rose-500/[0.06] -mt-6">SHU</div>
               <div className="flex justify-between w-full">
                 <div className="-ml-10 text-[clamp(3.5rem,10vw,8rem)] font-serif font-black tracking-[0.28em] text-emerald-500/[0.06] -rotate-90">WU</div>
@@ -372,21 +372,21 @@ export default function ReplayBoard() {
           </div>
 
           {/* Replay Controls & Progress */}
-          <div className="glass-dark border border-white/5 p-8 rounded-[3.5rem] flex flex-col gap-10 shadow-3xl">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                  <div className="flex items-center gap-4 bg-white/[0.02] border border-white/10 px-8 py-4 rounded-3xl">
-                       <span className="text-4xl font-mono text-gold font-black tracking-tighter leading-none">{currentStep}</span>
+          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3.5rem] flex flex-col gap-6 sm:gap-10 shadow-3xl">
+              <div className="flex flex-col items-stretch gap-6 sm:gap-8 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center justify-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.02] px-5 py-4 sm:rounded-3xl sm:px-8">
+                       <span className="text-3xl font-mono font-black leading-none tracking-tighter text-gold sm:text-4xl">{currentStep}</span>
                        <div className="w-px h-8 bg-zinc-800" />
                        <span className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] leading-none mb-1">
                           OF {match.moves.length}
                        </span>
                   </div>
                   
-                  <div className="flex items-center gap-6 p-2 rounded-full relative">
-                      <div className="flex items-center gap-3">
+                  <div className="relative flex flex-col items-center gap-4 rounded-[2rem] p-2 sm:flex-row sm:gap-6">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <button 
                           onClick={() => setCurrentStep(0)}
-                          className="p-5 text-zinc-500 hover:text-white transition-all rounded-[1.5rem] hover:bg-white/5 shadow-inner"
+                          className="rounded-[1.2rem] p-4 text-zinc-500 shadow-inner transition-all hover:bg-white/5 hover:text-white sm:rounded-[1.5rem] sm:p-5"
                           title="Rewind to Deployment"
                         >
                           <RotateCcw size={24} />
@@ -394,7 +394,7 @@ export default function ReplayBoard() {
                         <button 
                           onClick={prevStep}
                           disabled={currentStep === 0}
-                          className="p-5 text-zinc-500 hover:text-white disabled:opacity-10 transition-all rounded-[1.5rem] hover:bg-white/5 shadow-inner"
+                          className="rounded-[1.2rem] p-4 text-zinc-500 shadow-inner transition-all hover:bg-white/5 hover:text-white disabled:opacity-10 sm:rounded-[1.5rem] sm:p-5"
                         >
                           <ChevronLeft size={32} />
                         </button>
@@ -402,22 +402,22 @@ export default function ReplayBoard() {
 
                       <button 
                         onClick={() => setIsPlaying(!isPlaying)}
-                        className="w-20 h-20 bg-gold text-black rounded-[2rem] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_15px_40px_rgba(212,175,55,0.3)] hover:bg-white"
+                        className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-gold text-black shadow-[0_15px_40px_rgba(212,175,55,0.3)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:h-20 sm:w-20 sm:rounded-[2rem]"
                       >
                         {isPlaying ? <Pause size={36} fill="currentColor" /> : <Play size={36} className="translate-x-1" fill="currentColor" />}
                       </button>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <button 
                           onClick={nextStep}
                           disabled={currentStep === match.moves.length}
-                          className="p-5 text-zinc-500 hover:text-white disabled:opacity-10 transition-all rounded-[1.5rem] hover:bg-white/5 shadow-inner"
+                          className="rounded-[1.2rem] p-4 text-zinc-500 shadow-inner transition-all hover:bg-white/5 hover:text-white disabled:opacity-10 sm:rounded-[1.5rem] sm:p-5"
                         >
                           <ChevronRight size={32} />
                         </button>
                         <button 
                           onClick={() => setCurrentStep(match.moves.length)}
-                          className="p-5 text-gold/60 hover:text-gold transition-all rounded-[1.5rem] hover:bg-gold/5 px-6 font-mono font-black text-xs uppercase tracking-widest"
+                          className="rounded-[1.2rem] px-5 py-4 text-xs font-mono font-black uppercase tracking-widest text-gold/60 transition-all hover:bg-gold/5 hover:text-gold sm:rounded-[1.5rem] sm:px-6 sm:py-5"
                         >
                           FIN
                         </button>
@@ -439,7 +439,7 @@ export default function ReplayBoard() {
         </div>
 
         {/* Right Panel: Analysis */}
-        <div className="xl:col-span-4 space-y-8">
+        <div className="xl:col-span-4 space-y-6 sm:space-y-8">
             {/* Tactical Intel */}
             <AnimatePresence mode="wait">
                 <motion.div
@@ -447,7 +447,7 @@ export default function ReplayBoard() {
                     initial={{ opacity: 0, x: 40 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -40 }}
-                    className="glass-dark border border-white/10 p-10 rounded-[3rem] shadow-[0_20px_80px_rgba(0,0,0,0.4)] relative overflow-hidden flex flex-col h-full min-h-[500px]"
+                    className="glass-dark relative flex h-full min-h-[420px] flex-col overflow-hidden rounded-[2rem] border border-white/10 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.4)] sm:min-h-[500px] sm:rounded-[3rem] sm:p-10"
                 >
                     <div className="absolute top-0 right-0 w-48 h-48 bg-gold/[0.02] blur-[80px] rounded-full" />
                     <div className="flex items-center justify-between mb-10 relative z-10">
@@ -535,7 +535,7 @@ export default function ReplayBoard() {
             </AnimatePresence>
 
             {/* Performance Metrics */}
-            <div className="glass-dark border border-white/5 p-10 rounded-[3rem] shadow-2xl">
+            <div className="glass-dark border border-white/5 p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-2xl">
                 <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10">Historical Context</h3>
                 <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-center justify-between p-6 bg-white/[0.02] rounded-[2rem] border border-white/5 hover:bg-white/[0.04] transition-all group">

@@ -85,18 +85,18 @@ export default function MatchArchive() {
   );
 
   return (
-    <div className="pt-24 min-h-screen max-w-7xl mx-auto px-6 pb-12">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-16 px-4">
+    <div className="pt-24 min-h-screen max-w-7xl mx-auto px-4 pb-12 sm:px-6">
+      <div className="mb-12 flex flex-col gap-8 px-0 sm:px-4 lg:mb-16 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
         <div className="space-y-4">
           <Link to="/" className="inline-flex items-center gap-3 text-gold hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.4em] mb-4 bg-gold/10 px-6 py-2.5 rounded-full border border-gold/20 hover:scale-105 active:scale-95">
             <ChevronLeft size={16} /> Throne Room
           </Link>
-          <h1 className="text-5xl md:text-8xl font-serif font-black text-white tracking-[0.1em] uppercase leading-none drop-shadow-2xl">
+          <h1 className="text-4xl font-serif font-black uppercase leading-none tracking-[0.08em] text-white drop-shadow-2xl sm:text-5xl md:text-8xl md:tracking-[0.1em]">
             IMPERIAL <span className="text-gold italic block md:inline">ARCHIVES</span>
           </h1>
           <div className="flex items-center gap-4">
             <div className="w-12 h-px bg-gold/30" />
-            <p className="text-zinc-500 font-serif italic text-lg tracking-widest opacity-80">
+            <p className="text-base font-serif italic tracking-wide text-zinc-500 opacity-80 sm:text-lg sm:tracking-widest">
               Chronicles of conquests, defeats, and tactical genius.
             </p>
           </div>
@@ -133,8 +133,8 @@ export default function MatchArchive() {
         )}
       </AnimatePresence>
 
-      <div className="mb-16 relative px-4 group">
-        <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
+      <div className="group relative mb-12 px-0 sm:px-4 sm:mb-16">
+        <div className="pointer-events-none absolute inset-y-0 left-6 flex items-center sm:left-10">
           <Search className="text-gold group-focus-within:scale-125 transition-transform" size={24} />
         </div>
         <input 
@@ -142,12 +142,12 @@ export default function MatchArchive() {
           placeholder="SEARCH CHRONICLES (WINNER, ID, OR LOCATION)..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white/[0.02] border-2 border-white/5 rounded-[2.5rem] py-8 pl-24 pr-10 text-white placeholder:text-zinc-800 focus:outline-none focus:border-gold/40 focus:bg-white/[0.04] transition-all font-mono font-black text-xs tracking-[0.2em] shadow-inner"
+          className="w-full rounded-[1.75rem] border-2 border-white/5 bg-white/[0.02] py-5 pl-16 pr-6 text-[11px] tracking-[0.16em] text-white placeholder:text-zinc-800 shadow-inner transition-all focus:outline-none focus:border-gold/40 focus:bg-white/[0.04] font-mono font-black sm:rounded-[2.5rem] sm:py-8 sm:pl-24 sm:pr-10 sm:text-xs sm:tracking-[0.2em]"
         />
       </div>
 
       {filteredMatches.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+        <div className="grid grid-cols-1 gap-6 px-0 sm:px-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
           {filteredMatches.map((match, idx) => (
             <motion.div
               layout
@@ -156,7 +156,7 @@ export default function MatchArchive() {
               transition={{ delay: idx * 0.05, type: "spring", stiffness: 100, damping: 20 }}
               key={match.id}
               onClick={() => navigate(`/replay/${match.id}`)}
-              className="group glass-dark border border-white/5 p-10 rounded-[3rem] hover:border-gold/40 transition-all cursor-pointer relative overflow-hidden flex flex-col shadow-2xl"
+              className="group glass-dark relative flex cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-white/5 p-5 shadow-2xl transition-all hover:border-gold/40 sm:rounded-[3rem] sm:p-8 xl:p-10"
             >
               {/* Card Ambient Glow */}
               <div className="absolute -top-20 -right-20 w-48 h-48 bg-gold/5 blur-[80px] rounded-full group-hover:scale-150 transition-transform duration-1000" />
@@ -203,7 +203,7 @@ export default function MatchArchive() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-8 border-t border-white/5 mb-8 relative z-10">
+              <div className="relative z-10 mb-6 grid grid-cols-2 gap-4 border-t border-white/5 pt-6 sm:mb-8 sm:pt-8">
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-700 font-black">Maneuvers</span>
                   <div className="flex items-center gap-2">
@@ -220,23 +220,23 @@ export default function MatchArchive() {
                 </div>
               </div>
 
-              <div className="flex gap-4 relative z-10">
+              <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
                 <button 
                   onClick={(e) => { e.stopPropagation(); navigate(`/replay/${match.id}`); }}
-                  className="flex-[2] bg-white/5 hover:bg-gold hover:text-black border border-white/10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 group/btn"
+                  className="group/btn flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-4 text-[10px] font-black uppercase tracking-[0.3em] transition-all hover:bg-gold hover:text-black sm:flex-[2]"
                 >
                   <PlayCircle size={16} className="text-gold group-hover/btn:text-black" /> View Replay
                 </button>
                 <button 
                   onClick={(e) => handleExport(match, e)}
-                  className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all text-zinc-500 hover:text-gold shadow-lg"
+                  className="rounded-2xl border border-white/10 bg-white/5 p-4 text-zinc-500 shadow-lg transition-all hover:bg-white/10 hover:text-gold"
                   title="Export Scroll"
                 >
                   <Download size={18} />
                 </button>
                 <button 
                   onClick={(e) => handleDelete(match.id, e)}
-                  className="p-4 bg-rose-500/10 hover:bg-rose-600 text-rose-500 hover:text-white border border-rose-500/20 rounded-2xl transition-all shadow-lg"
+                  className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-rose-500 shadow-lg transition-all hover:bg-rose-600 hover:text-white"
                   title="Strike from Record"
                 >
                   <Trash2 size={18} />

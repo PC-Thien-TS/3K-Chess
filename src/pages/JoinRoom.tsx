@@ -80,19 +80,19 @@ export default function JoinRoom() {
   };
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col items-center">
+    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col items-center">
       <div className="w-full max-w-lg">
         <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-8">
           <ChevronLeft size={16} /> Return to Classic Rooms
         </Link>
-        <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-widest uppercase mb-2 text-center">
+        <h1 className="mb-2 text-center text-3xl font-serif font-black uppercase tracking-[0.14em] text-white sm:text-4xl md:text-5xl md:tracking-widest">
           JOIN <span className="text-gold italic">CLASSIC ROOM</span>
         </h1>
-        <p className="text-zinc-500 font-serif italic text-lg mb-12 text-center">
+        <p className="mb-8 text-center text-base font-serif italic text-zinc-500 sm:mb-12 sm:text-lg">
           Enter a Classic room code. Modern 3K is local-only and does not use room codes.
         </p>
 
-        <form onSubmit={handleJoin} className="space-y-8 glass-dark p-12 rounded-[3.5rem] border border-white/5 relative overflow-hidden shadow-2xl">
+        <form onSubmit={handleJoin} className="glass-dark relative space-y-6 overflow-hidden rounded-[2rem] border border-white/5 p-5 shadow-2xl sm:space-y-8 sm:rounded-[3.5rem] sm:p-12">
           <div className="absolute top-0 right-0 w-48 h-48 bg-gold/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
           
           <div className="space-y-4">
@@ -105,7 +105,7 @@ export default function JoinRoom() {
               placeholder="Your name..."
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-6 px-8 text-white placeholder:text-zinc-700 focus:outline-none focus:border-gold/30 transition-all font-serif text-xl tracking-wide"
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 text-lg tracking-wide text-white placeholder:text-zinc-700 transition-all focus:outline-none focus:border-gold/30 font-serif sm:px-8 sm:py-6 sm:text-xl"
             />
           </div>
 
@@ -120,7 +120,7 @@ export default function JoinRoom() {
                 placeholder="e.g. FJTF18"
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-8 px-10 text-white placeholder:text-zinc-700 font-mono focus:outline-none focus:border-gold/30 transition-all text-4xl tracking-[0.3em] uppercase"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 text-2xl uppercase tracking-[0.24em] text-white placeholder:text-zinc-700 transition-all focus:outline-none focus:border-gold/30 font-mono sm:px-10 sm:py-8 sm:text-4xl sm:tracking-[0.3em]"
               />
               <div className="absolute left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-gold/20 rounded-full" />
             </div>
@@ -136,7 +136,7 @@ export default function JoinRoom() {
             type="submit"
             disabled={isJoining}
             className={cn(
-              "w-full py-6 rounded-[2rem] font-bold uppercase tracking-[0.5em] text-xs transition-all shadow-[0_0_40px_rgba(212,175,55,0.15)] flex items-center justify-center gap-4",
+              "flex w-full items-center justify-center gap-4 rounded-[1.75rem] py-5 text-[11px] font-bold uppercase tracking-[0.3em] shadow-[0_0_40px_rgba(212,175,55,0.15)] transition-all sm:rounded-[2rem] sm:py-6 sm:text-xs sm:tracking-[0.5em]",
               isJoining 
                 ? "bg-white/5 text-zinc-500" 
                 : "bg-gold hover:bg-white text-ink hover:scale-[1.02]"

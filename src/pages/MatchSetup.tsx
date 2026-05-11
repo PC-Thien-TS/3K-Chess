@@ -136,30 +136,30 @@ export default function MatchSetup() {
   };
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col items-center">
+    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col items-center">
       <motion.div 
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-16 max-w-3xl"
+        className="text-center mb-12 max-w-3xl sm:mb-16"
       >
         <span className="text-gold text-[10px] font-black uppercase tracking-[0.6em] mb-4 block animate-pulse">Preparation of War</span>
-        <h1 className="text-5xl md:text-8xl font-serif font-black text-white mb-6 uppercase tracking-[0.1em] leading-tight shadow-xl">
+        <h1 className="mb-6 text-4xl font-serif font-black uppercase leading-tight tracking-[0.08em] text-white shadow-xl sm:text-5xl md:text-8xl md:tracking-[0.1em]">
            PREPARE THE <span className="text-gold italic">FIELD</span>
         </h1>
         <div className="w-16 h-px bg-gold/30 mx-auto mb-6" />
-        <p className="text-zinc-500 font-serif italic text-xl leading-relaxed tracking-wide opacity-80">
+        <p className="text-zinc-500 font-serif italic text-lg leading-relaxed tracking-wide opacity-80 sm:text-xl">
           "The three powers have gathered at the river's edge. Finalize your command and seal the fate of the realm."
         </p>
       </motion.div>
 
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      <div className="mb-10 grid w-full max-w-5xl grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 md:mb-12">
         {(['classic', 'authentic'] as GameMode[]).map((mode) => (
           <button
             key={mode}
             type="button"
             onClick={() => handleModeSelect(mode)}
             className={cn(
-              "text-left glass-dark border rounded-[2.5rem] p-8 transition-all shadow-2xl",
+              "text-left glass-dark border rounded-[2rem] p-5 transition-all shadow-2xl sm:rounded-[2.5rem] sm:p-8",
               localGameMode === mode
                 ? "border-gold/40 bg-gold/[0.06]"
                 : "border-white/5 bg-white/[0.02] hover:border-white/10"
@@ -188,17 +188,17 @@ export default function MatchSetup() {
       </div>
 
       {isAuthenticMode && (
-        <div className="w-full max-w-5xl mb-12 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] p-6 text-amber-100 text-sm font-serif italic">
+        <div className="w-full max-w-5xl mb-10 rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-serif italic text-amber-100 sm:mb-12 sm:rounded-[2rem] sm:p-6">
           {AUTHENTIC_PREVIEW_MESSAGE}
         </div>
       )}
       {modeNotice && localGameMode === 'classic' && (
-        <div className="w-full max-w-5xl mb-12 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] p-6 text-amber-100 text-sm font-serif italic">
+        <div className="w-full max-w-5xl mb-10 rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-serif italic text-amber-100 sm:mb-12 sm:rounded-[2rem] sm:p-6">
           {modeNotice}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full max-w-7xl mb-16">
+      <div className="mb-12 grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 xl:gap-10 xl:mb-16">
         {FACTIONS.map((f, idx) => (
           <motion.div
             key={f}
@@ -207,7 +207,7 @@ export default function MatchSetup() {
             transition={{ delay: idx * 0.15, type: "spring", stiffness: 100 }}
             onClick={() => handleSelectPrimary(f)}
             className={cn(
-              "group glass-dark border-2 p-10 rounded-[3.5rem] flex flex-col gap-8 cursor-pointer transition-all duration-500 hover:-translate-y-4 relative overflow-hidden shadow-2xl",
+              "group glass-dark border-2 p-5 sm:p-8 xl:p-10 rounded-[2rem] sm:rounded-[3rem] xl:rounded-[3.5rem] flex flex-col gap-6 sm:gap-8 cursor-pointer transition-all duration-500 hover:-translate-y-2 sm:hover:-translate-y-4 relative overflow-hidden shadow-2xl",
               FACTION_DETAILS[f].color,
               localPrimary === f ? "border-gold/50 shadow-[0_0_80px_rgba(212,175,55,0.15)] ring-1 ring-gold/20" : "border-white/5 hover:border-white/10"
             )}
@@ -243,7 +243,7 @@ export default function MatchSetup() {
                     {isAuthenticMode ? (
                       <div className="flex flex-col gap-3">
                         <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Local Command</span>
-                        <div className="flex gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-inner">
+                        <div className="flex flex-col gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-inner sm:flex-row">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
                             className={cn(
@@ -269,7 +269,7 @@ export default function MatchSetup() {
                             Bot
                           </button>
                         </div>
-                        <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/10 px-6 py-4 text-amber-100">
+                        <div className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-amber-100 sm:rounded-[2rem] sm:px-6">
                           <span className="text-[9px] font-black uppercase tracking-[0.35em]">Han Court</span>
                           <p className="mt-2 text-xs font-serif italic leading-relaxed text-amber-100/85">
                             Local only. Han is never directly controlled, and Modern 3K does not use online rooms.
@@ -280,7 +280,7 @@ export default function MatchSetup() {
                       <>
                         <div className="flex flex-col gap-3">
                           <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Military Command</span>
-                          <div className="flex gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-inner">
+                          <div className="flex flex-col gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-inner sm:flex-row">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
                               className={cn(
@@ -360,12 +360,12 @@ export default function MatchSetup() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="w-full max-w-5xl glass-dark border-2 border-white/5 p-12 rounded-[4rem] flex flex-col md:flex-row items-center justify-between gap-10 mb-12 shadow-3xl relative overflow-hidden"
+        className="mb-12 flex w-full max-w-5xl flex-col gap-6 overflow-hidden rounded-[2rem] border-2 border-white/5 p-5 shadow-3xl relative glass-dark sm:gap-8 sm:rounded-[3rem] sm:p-8 md:flex-row md:items-center md:justify-between xl:gap-10 xl:rounded-[4rem] xl:p-12"
       >
         <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
         <div className="flex flex-col gap-2 relative z-10">
           <h4 className="text-gold font-serif font-black uppercase tracking-[0.4em] text-sm">Treaty of the Three Kingdoms</h4>
-          <div className="flex items-center gap-4 text-zinc-500 text-[11px] font-serif italic tracking-wide">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] font-serif italic tracking-wide text-zinc-500 sm:gap-4">
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {GAME_MODE_META[localGameMode].shortLabel} Mode</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> 3-Dominion Battle</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {isAuthenticMode ? 'Local Only' : 'Online + Local'}</span>
@@ -373,16 +373,16 @@ export default function MatchSetup() {
           </div>
         </div>
         
-        <div className="flex gap-6 items-center relative z-10 w-full md:w-auto">
+        <div className="relative z-10 flex w-full flex-col gap-3 sm:gap-4 md:w-auto md:flex-row md:items-center md:gap-6">
           <button 
             onClick={() => navigate('/')}
-            className="flex-1 md:flex-none px-8 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 hover:text-white transition-colors"
+            className="w-full rounded-2xl px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600 transition-colors hover:text-white md:w-auto md:px-8 md:py-5 md:tracking-[0.4em]"
           >
             Retreat
           </button>
           <button 
             onClick={handleStart}
-            className="flex-[2] md:flex-none px-16 py-6 bg-gold text-black rounded-2xl text-[12px] font-black uppercase tracking-[0.4em] shadow-[0_20px_50px_rgba(212,175,55,0.35)] hover:bg-white hover:scale-[1.05] active:scale-95 transition-all flex items-center justify-center gap-4"
+            className="flex w-full items-center justify-center gap-4 rounded-2xl bg-gold px-8 py-5 text-[11px] font-black uppercase tracking-[0.28em] text-black shadow-[0_20px_50px_rgba(212,175,55,0.35)] transition-all hover:scale-[1.03] hover:bg-white active:scale-95 md:w-auto md:px-16 md:py-6 md:text-[12px] md:tracking-[0.4em]"
           >
             {localGameMode === 'authentic' ? 'Start Local Authentic Match' : 'SEAL FATE'}
             <ChevronRight size={20} className="animate-pulse" />

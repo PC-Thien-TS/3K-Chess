@@ -478,17 +478,17 @@ export default function AuthenticBoard({
   };
 
   return (
-    <div className="min-h-screen container mx-auto px-6 pb-12 pt-24">
-      <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="space-y-8">
-          <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#6b4a26]">
+    <div className="min-h-screen container mx-auto px-4 pb-12 pt-24 sm:px-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:gap-8 2xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="space-y-6 sm:space-y-8">
+          <div className="flex flex-wrap items-center gap-2 text-[9px] font-black uppercase tracking-[0.28em] text-[#6b4a26] sm:gap-3 sm:text-[10px] sm:tracking-[0.35em]">
             <span className="rounded-full border border-[#8c6331]/25 bg-[#f3e4be] px-4 py-2">{modeMeta.shortLabel}</span>
             <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Tabletop Local</span>
             <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Human + Bot</span>
           </div>
 
-          <div className="rounded-[3rem] border border-[#8c6331]/22 bg-[#ead7b0] p-4 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:p-6 md:p-8">
-            <div className="relative aspect-square w-full overflow-hidden rounded-[2.2rem] border border-[#7a5730]/28 bg-[#f4e7c9] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]">
+          <div className="mx-auto w-full max-w-[820px] rounded-[2rem] border border-[#8c6331]/22 bg-[#ead7b0] p-3 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:rounded-[3rem] sm:p-6 md:p-8">
+            <div className="relative aspect-square w-full overflow-hidden rounded-[1.65rem] border border-[#7a5730]/28 bg-[#f4e7c9] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)] sm:rounded-[2.2rem]">
               <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(120,86,46,0.025)_0,rgba(120,86,46,0.025)_2px,transparent_2px,transparent_18px),repeating-linear-gradient(0deg,rgba(120,86,46,0.018)_0,rgba(120,86,46,0.018)_1px,transparent_1px,transparent_12px)] opacity-70" />
               <div className="absolute inset-[4.8%] rounded-[2rem] border border-[#7a5730]/18" />
               <div
@@ -588,13 +588,11 @@ export default function AuthenticBoard({
                         type="button"
                         onClick={() => handlePointClick(x, y)}
                         className={cn(
-                          'absolute z-10 rounded-full bg-transparent',
+                          'absolute z-10 h-[6.8%] w-[6.8%] rounded-full bg-transparent touch-manipulation sm:h-[5.8%] sm:w-[5.8%] lg:h-[4.8%] lg:w-[4.8%]',
                           isInteractive ? 'cursor-pointer' : 'cursor-default'
                         )}
                         style={{
                           ...coordinateToStyle(x, y),
-                          width: '4.6%',
-                          height: '4.6%',
                           transform: 'translate(-50%, -50%)',
                         }}
                         aria-label={`Point ${x}, ${y}`}
@@ -609,10 +607,10 @@ export default function AuthenticBoard({
                           }}
                         >
                           {isLastMoveFrom && (
-                            <div className="absolute left-1/2 top-1/2 h-[1.65rem] w-[1.65rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-400/35 bg-sky-100/8" />
+                            <div className="absolute left-1/2 top-1/2 h-[1.45rem] w-[1.45rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-400/35 bg-sky-100/8 sm:h-[1.65rem] sm:w-[1.65rem]" />
                           )}
                           {isLastMoveTo && (
-                            <div className="absolute left-1/2 top-1/2 h-[1.9rem] w-[1.9rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-600/48 bg-amber-200/10" />
+                            <div className="absolute left-1/2 top-1/2 h-[1.65rem] w-[1.65rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-600/48 bg-amber-200/10 sm:h-[1.9rem] sm:w-[1.9rem]" />
                           )}
                           {allianceFaction && (
                             <div className="absolute left-1/2 top-1/2 flex h-[1rem] w-[1rem] -translate-x-1/2 -translate-y-1/2 rotate-45 items-center justify-center rounded-[0.14rem] border border-[#7a521f]/45 bg-amber-200/28">
@@ -622,7 +620,7 @@ export default function AuthenticBoard({
                             </div>
                           )}
                           {x === 8 && y === 8 && (
-                            <div className="absolute left-1/2 top-1/2 h-[1.35rem] w-[1.35rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/42" />
+                            <div className="absolute left-1/2 top-1/2 h-[1.15rem] w-[1.15rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/42 sm:h-[1.35rem] sm:w-[1.35rem]" />
                           )}
                           {isAccent && (
                             <div
@@ -633,10 +631,10 @@ export default function AuthenticBoard({
                             />
                           )}
                           {isLegalMove && !markerOnPiece && (
-                            <div className="absolute left-1/2 top-1/2 h-[0.78rem] w-[0.78rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45 bg-amber-100/20" />
+                            <div className="absolute left-1/2 top-1/2 h-[0.92rem] w-[0.92rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45 bg-amber-100/20 sm:h-[0.78rem] sm:w-[0.78rem]" />
                           )}
                           {markerOnPiece && (
-                            <div className="absolute left-1/2 top-1/2 h-[2.25rem] w-[2.25rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-rose-500/70 bg-rose-100/6" />
+                            <div className="absolute left-1/2 top-1/2 h-[2.45rem] w-[2.45rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-rose-500/70 bg-rose-100/6 sm:h-[2.25rem] sm:w-[2.25rem]" />
                           )}
                         </div>
                       )}
@@ -649,7 +647,7 @@ export default function AuthenticBoard({
                   return (
                     <div
                       key={piece.id}
-                      className="pointer-events-none absolute z-30 h-[6.1%] w-[6.1%] sm:h-[5.8%] sm:w-[5.8%]"
+                      className="pointer-events-none absolute z-30 h-[8.1%] w-[8.1%] sm:h-[6.8%] sm:w-[6.8%] lg:h-[6.1%] lg:w-[6.1%]"
                       style={{
                         ...coordinateToStyle(piece.x, piece.y),
                         transform: 'translate(-50%, -50%)',
@@ -667,12 +665,12 @@ export default function AuthenticBoard({
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-6">
+          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
             <div className="flex items-center gap-3 text-[#6f4c28]">
               <ShieldAlert size={18} />
               <span className="text-[10px] font-black uppercase tracking-[0.35em]">Command Status</span>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
               <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Current Turn</p>
                 <div className="mt-2 flex items-center justify-between gap-3">
@@ -715,25 +713,25 @@ export default function AuthenticBoard({
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="rounded-[2.5rem] border border-[#8b6433]/25 bg-[linear-gradient(180deg,#f4ead3_0%,#ead7b0_100%)] p-8 shadow-[0_18px_50px_rgba(57,32,15,0.18)]">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="rounded-[2rem] border border-[#8b6433]/25 bg-[linear-gradient(180deg,#f4ead3_0%,#ead7b0_100%)] p-5 shadow-[0_18px_50px_rgba(57,32,15,0.18)] sm:rounded-[2.5rem] sm:p-8">
             <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
               <Crown size={20} />
               <span className="text-[10px] font-black uppercase tracking-[0.35em]">{modeMeta.label}</span>
             </div>
-            <h1 className="text-3xl font-serif font-black uppercase leading-tight text-[#35210f]">
+            <h1 className="text-2xl font-serif font-black uppercase leading-tight text-[#35210f] sm:text-3xl">
               Authentic Modern Three Kingdoms Xiangqi
             </h1>
             <p className="mt-4 text-sm font-serif italic leading-relaxed text-[#6f5737]">{AUTHENTIC_MODE_STATUS}</p>
             <p className="mt-4 text-xs font-serif italic leading-relaxed text-[#826744]">{AUTHENTIC_BOARD_NOTE}</p>
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-6">
+          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
             <div className="mb-3 flex items-center gap-3 text-[#6f4c28]">
               <ShieldAlert size={18} />
               <span className="text-[10px] font-black uppercase tracking-[0.35em]">Rules Help</span>
             </div>
-            <ul className="space-y-3 text-sm font-serif text-[#6d5334]">
+            <ul className="grid gap-3 text-sm font-serif text-[#6d5334] sm:grid-cols-2 2xl:grid-cols-1">
               <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Wu moves first.</li>
               <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Horse ignores leg-blocks.</li>
               <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Elephant ignores eye-blocks.</li>
@@ -742,7 +740,7 @@ export default function AuthenticBoard({
             </ul>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-1">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-1">
             {AUTHENTIC_FACTIONS.map((faction) => (
               <div key={faction} className={cn('rounded-[2rem] border p-5 shadow-sm', FACTION_CARD_THEME[faction])}>
                 <div className="flex items-start justify-between gap-3">
@@ -772,7 +770,7 @@ export default function AuthenticBoard({
             ))}
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-6">
+          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
             <div className="mb-3 flex items-center gap-3 text-[#6f4c28]">
               <Trophy size={18} />
               <span className="text-[10px] font-black uppercase tracking-[0.35em]">Winner</span>
@@ -782,12 +780,12 @@ export default function AuthenticBoard({
             </p>
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-6">
+          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
             <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
               <ScrollText size={18} />
               <span className="text-[10px] font-black uppercase tracking-[0.35em]">Move History</span>
             </div>
-            <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
+            <div className="max-h-72 space-y-3 overflow-y-auto pr-1 sm:max-h-80">
               {gameState.history.length === 0 ? (
                 <p className="text-sm font-serif italic text-[#6d5334]">No moves recorded yet.</p>
               ) : (
@@ -843,7 +841,7 @@ export default function AuthenticBoard({
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-6">
+          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
             <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
               <ShieldAlert size={18} />
               <span className="text-[10px] font-black uppercase tracking-[0.35em]">Captured Pieces</span>
@@ -857,24 +855,24 @@ export default function AuthenticBoard({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             <button
               type="button"
               onClick={resetBoard}
-              className="flex items-center justify-center gap-3 rounded-2xl bg-[#5f4021] px-8 py-5 text-center text-xs font-black uppercase tracking-[0.3em] text-[#f8edd6] transition-all hover:bg-[#4d341b]"
+              className="flex items-center justify-center gap-3 rounded-2xl bg-[#5f4021] px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#f8edd6] transition-all hover:bg-[#4d341b] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
             >
               <RotateCcw size={16} />
               Reset Board
             </button>
             <Link
               to="/setup?mode=classic"
-              className="rounded-2xl border border-[#8b6433]/20 bg-white/40 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.3em] text-[#35210f] transition-all hover:bg-white/55"
+              className="rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
             >
               Launch Classic
             </Link>
             <Link
               to={returnHref}
-              className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.3em] text-[#35210f] transition-all hover:bg-white/55"
+              className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
             >
               <Wrench size={16} />
               {returnLabel}
