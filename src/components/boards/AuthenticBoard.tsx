@@ -29,6 +29,7 @@ import {
   type AuthenticFaction,
   type AuthenticFactionOrNeutral,
   type AuthenticPiece,
+  type AuthenticSpecialMove,
 } from '@/src/rules/authenticThreeKingdomRules';
 
 interface AuthenticBoardProps {
@@ -75,6 +76,22 @@ const PIECE_THEME: Record<AuthenticFactionOrNeutral, { rim: string; ink: string;
     chip: 'bg-amber-100/80',
     shadow: 'shadow-[0_3px_7px_rgba(180,120,20,0.12)]',
   },
+};
+
+const SPECIAL_EVENT_THEME: Record<AuthenticSpecialMove, string> = {
+  ALLIANCE: 'border-emerald-300/55 bg-emerald-100/70 text-emerald-900',
+  DEPOSE_EMPEROR: 'border-amber-300/60 bg-amber-100/75 text-amber-900',
+  ABSORB_ARMY: 'border-rose-300/55 bg-rose-100/70 text-rose-900',
+  CHECK: 'border-sky-300/55 bg-sky-100/70 text-sky-900',
+  CHECKMATE: 'border-violet-300/55 bg-violet-100/75 text-violet-900',
+};
+
+const SPECIAL_EVENT_LABELS: Record<AuthenticSpecialMove, string> = {
+  ALLIANCE: 'Alliance',
+  DEPOSE_EMPEROR: 'Depose Emperor',
+  ABSORB_ARMY: 'Absorb Army',
+  CHECK: 'Check',
+  CHECKMATE: 'Checkmate',
 };
 
 const BOARD_MIN = 8.75;
@@ -184,6 +201,21 @@ function CapturedBadge({ piece }: { piece: AuthenticCapturedPieceRecord }) {
   );
 }
 
+function formatPoint(point: { x: number; y: number }) {
+  return `${point.x},${point.y}`;
+}
+
+function formatSelectedPiece(piece: AuthenticPiece | null) {
+  if (!piece) return 'None';
+  const controller = piece.owner !== piece.visualFaction ? ` / ${piece.owner}` : '';
+  return `${piece.visualFaction} ${AUTHENTIC_LABELS[piece.type]}${controller} @ ${formatPoint(piece)}`;
+}
+
+function formatPriorityStatus(queue: AuthenticFaction[]) {
+  if (queue.length === 0) return 'Base turn order active.';
+  return `${queue.join(' -> ')} has check priority.`;
+}
+
 export default function AuthenticBoard({
   roomCode,
   roomMode = 'local',
@@ -194,6 +226,7 @@ export default function AuthenticBoard({
   const returnLabel = context === 'replay' ? 'Return to Archive' : roomCode ? 'Return to Lobby' : 'Return to Setup';
   const [gameState, setGameState] = useState<AuthenticBoardState>(createInitialAuthenticState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lastValidationReason, setLastValidationReason] = useState<string | null>(null);
   const [status, setStatus] = useState(
     roomMode === 'online'
       ? AUTHENTIC_LOCAL_ONLY_MESSAGE
@@ -218,9 +251,8 @@ export default function AuthenticBoard({
   );
 
   const isInteractive = context === 'practice' && roomMode === 'local';
-  const checkedPriorityText = gameState.checkedPriorityQueue.length
-    ? gameState.checkedPriorityQueue.join(' -> ')
-    : 'None';
+  const checkedPriorityText = formatPriorityStatus(gameState.checkedPriorityQueue);
+  const selectedPieceText = formatSelectedPiece(selectedPiece);
   const devLog = (...args: unknown[]) => {
     if ((import.meta as any).env.DEV) {
       console.log(...args);
@@ -230,6 +262,7 @@ export default function AuthenticBoard({
   const resetBoard = () => {
     setGameState(createInitialAuthenticState());
     setSelectedId(null);
+    setLastValidationReason(null);
     setStatus('Wu / Green opens the match. The first move cannot capture.');
   };
 
@@ -271,6 +304,7 @@ export default function AuthenticBoard({
           owner: pieceAtPoint.owner,
         });
         setSelectedId(pieceAtPoint.id);
+        setLastValidationReason(null);
         setStatus(`${getAuthenticFactionLabel(gameState.currentTurn)} ${AUTHENTIC_LABELS[pieceAtPoint.type]} selected.`);
         return;
       }
@@ -280,12 +314,14 @@ export default function AuthenticBoard({
 
     if (pieceAtPoint?.id === selectedPiece.id) {
       setSelectedId(null);
+      setLastValidationReason(null);
       setStatus(`${AUTHENTIC_LABELS[selectedPiece.type]} stood down.`);
       return;
     }
 
     if (pieceAtPoint?.owner === gameState.currentTurn) {
       setSelectedId(pieceAtPoint.id);
+      setLastValidationReason(null);
       setStatus(`${getAuthenticFactionLabel(gameState.currentTurn)} ${AUTHENTIC_LABELS[pieceAtPoint.type]} selected.`);
       return;
     }
@@ -307,7 +343,9 @@ export default function AuthenticBoard({
     });
 
     if (!validation.legal) {
-      setStatus(validation.reason || AUTHENTIC_MOVE_BLOCKED_MESSAGE);
+      const reason = validation.reason || AUTHENTIC_MOVE_BLOCKED_MESSAGE;
+      setLastValidationReason(reason);
+      setStatus(reason);
       return;
     }
 
@@ -316,6 +354,7 @@ export default function AuthenticBoard({
       devLog('[Authentic Click] move result', {
         success: false,
       });
+      setLastValidationReason(AUTHENTIC_MOVE_BLOCKED_MESSAGE);
       setStatus(AUTHENTIC_MOVE_BLOCKED_MESSAGE);
       return;
     }
@@ -326,6 +365,7 @@ export default function AuthenticBoard({
       nextTurn: resolution.nextTurn,
     });
 
+    setLastValidationReason(null);
     setGameState((prev) => ({
       pieces: resolution.pieces,
       currentTurn: resolution.nextTurn || prev.currentTurn,
@@ -537,9 +577,40 @@ export default function AuthenticBoard({
           <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-6">
             <div className="flex items-center gap-3 text-[#6f4c28]">
               <ShieldAlert size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Board Status</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Command Status</span>
             </div>
-            <p className="mt-3 text-sm font-serif italic leading-relaxed text-[#6d5334]">{status}</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Current Turn</p>
+                <p className="mt-1 text-base font-serif font-black uppercase text-[#35210f]">{gameState.currentTurn}</p>
+              </div>
+              <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Selected Piece</p>
+                <p className="mt-1 text-sm font-serif font-black text-[#35210f]">{selectedPieceText}</p>
+              </div>
+              <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Last Validation</p>
+                <p className="mt-1 text-sm font-serif text-[#35210f]">
+                  {lastValidationReason || 'No blocked move.'}
+                </p>
+              </div>
+              <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Han Court</p>
+                <p className="mt-1 text-sm font-serif font-black text-[#35210f]">{getHanStatus(gameState.hanController)}</p>
+              </div>
+              <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Alliance</p>
+                <p className="mt-1 text-sm font-serif text-[#35210f]">{getAllianceStatus(gameState.allianceState)}</p>
+              </div>
+              <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Check Priority</p>
+                <p className="mt-1 text-sm font-serif text-[#35210f]">{checkedPriorityText}</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-[1.4rem] border border-[#8b6433]/15 bg-[#f2e6ce] px-4 py-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Field Note</p>
+              <p className="mt-2 text-sm font-serif italic leading-relaxed text-[#6d5334]">{status}</p>
+            </div>
           </div>
         </div>
 
@@ -558,36 +629,16 @@ export default function AuthenticBoard({
 
           <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-6">
             <div className="mb-3 flex items-center gap-3 text-[#6f4c28]">
-              <ScrollText size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Turn & Priority</span>
+              <ShieldAlert size={18} />
+              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Rules Help</span>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-[1.5rem] border border-[#8b6433]/15 bg-white/40 px-5 py-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.25em] text-[#90714a]">Current Turn</p>
-                  <p className="text-xl font-serif font-black uppercase text-[#35210f]">{gameState.currentTurn}</p>
-                </div>
-                <div className={cn('rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em]', FACTION_CARD_THEME[gameState.currentTurn])}>
-                  Move {gameState.moveNumber + 1}
-                </div>
-              </div>
-              <div className="rounded-[1.5rem] border border-[#8b6433]/15 bg-white/40 px-5 py-4">
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#90714a]">Checked Priority</p>
-                <p className="mt-1 text-lg font-serif font-black uppercase text-[#35210f]">{checkedPriorityText}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-[#8b6433]/15 bg-white/40 px-5 py-4">
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#90714a]">Han Court</p>
-                <p className="mt-1 text-lg font-serif font-black uppercase text-[#35210f]">
-                  {getHanStatus(gameState.hanController)}
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] border border-[#8b6433]/15 bg-white/40 px-5 py-4">
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#90714a]">Alliance Status</p>
-                <p className="mt-1 text-sm font-serif font-black uppercase text-[#35210f]">
-                  {getAllianceStatus(gameState.allianceState)}
-                </p>
-              </div>
-            </div>
+            <ul className="space-y-3 text-sm font-serif text-[#6d5334]">
+              <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Wu moves first.</li>
+              <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Horse ignores leg-blocks.</li>
+              <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Elephant ignores eye-blocks.</li>
+              <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Only a Horse can depose the Han Emperor.</li>
+              <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Authentic mode is local-only.</li>
+            </ul>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-1">
@@ -636,10 +687,50 @@ export default function AuthenticBoard({
               ) : (
                 gameState.history.map((entry) => (
                   <div key={entry.id} className="rounded-[1.5rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#90714a]">
-                      Turn {entry.turnNumber} / {entry.faction}
-                    </p>
-                    <p className="mt-1 text-sm font-serif text-[#35210f]">{entry.note}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-[#8b6433]/18 bg-[#f2e6ce] px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#7b5d36]">
+                        Turn {entry.turnNumber}
+                      </span>
+                      <span className={cn('rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em]', FACTION_CARD_THEME[entry.faction])}>
+                        {entry.faction}
+                      </span>
+                      <span className="rounded-full border border-[#8b6433]/15 bg-white/55 px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#35210f]">
+                        {AUTHENTIC_LABELS[entry.pieceType]}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-4 rounded-[1.1rem] border border-[#8b6433]/10 bg-[#f8f0df] px-3 py-2">
+                      <div>
+                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-[#90714a]">From</p>
+                        <p className="font-mono text-sm text-[#35210f]">{formatPoint(entry.from)}</p>
+                      </div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#90714a]">to</div>
+                      <div className="text-right">
+                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-[#90714a]">To</p>
+                        <p className="font-mono text-sm text-[#35210f]">{formatPoint(entry.to)}</p>
+                      </div>
+                    </div>
+                    {entry.captured && (
+                      <p className="mt-3 text-xs font-serif text-[#6d5334]">
+                        Capture: {entry.captured.visualFaction} {AUTHENTIC_LABELS[entry.captured.type]}
+                        {entry.captured.owner !== entry.captured.visualFaction ? ` / ${entry.captured.owner}` : ''}
+                      </p>
+                    )}
+                    {entry.special && entry.special.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {entry.special.map((special) => (
+                          <span
+                            key={`${entry.id}-${special}`}
+                            className={cn(
+                              'rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]',
+                              SPECIAL_EVENT_THEME[special]
+                            )}
+                          >
+                            {SPECIAL_EVENT_LABELS[special]}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-3 text-xs font-serif italic leading-relaxed text-[#6d5334]">{entry.note}</p>
                   </div>
                 ))
               )}
