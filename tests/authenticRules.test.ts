@@ -148,11 +148,22 @@ test('Authentic: Elephant ignores eye blocking but respects territory', () => {
   assert.match(illegal.reason ?? '', /territory/i);
 });
 
-test('Authentic: Soldier home and cross-border movement rules work', () => {
+test('Authentic: Soldier home behavior allows forward and sideways but blocks backward', () => {
   const homePieces = [
     ...standardGenerals(),
     makePiece('wu-s-home', 'S', 'Wu', 3, 8),
   ];
+
+  const forwardHome = validateAuthenticMove(
+    homePieces.find((piece) => piece.id === 'wu-s-home') ?? null,
+    { x: 4, y: 8 },
+    homePieces,
+    'Wu',
+    1,
+    null,
+    { allies: null, target: null, source: null }
+  );
+  assert.equal(forwardHome.legal, true);
 
   const sidewaysHome = validateAuthenticMove(
     homePieces.find((piece) => piece.id === 'wu-s-home') ?? null,
@@ -175,7 +186,10 @@ test('Authentic: Soldier home and cross-border movement rules work', () => {
     { allies: null, target: null, source: null }
   );
   assert.equal(backwardHome.legal, false);
+  assert.match(backwardHome.reason ?? '', /cannot move backward/i);
+});
 
+test('Authentic: Soldier crossed-border behavior allows backward movement', () => {
   const crossedPieces = [
     ...standardGenerals(),
     makePiece('wu-s-crossed', 'S', 'Wu', 5, 8),
@@ -212,26 +226,60 @@ test('Authentic: Cannon first-move territory restriction works', () => {
   assert.match(validation.reason ?? '', /cannot leave its home territory/i);
 });
 
-test('Authentic: Cannon screen capture works', () => {
-  const pieces = [
+test('Authentic: Cannon capture requires exactly one screen', () => {
+  const noScreenPieces = [
     ...standardGenerals(),
     makePiece('shu-cannon', 'P', 'Shu', 5, 2, { firstMoveDone: true }),
-    makePiece('screen', 'S', 'Wu', 5, 4),
     makePiece('target', 'R', 'Wei', 5, 6),
   ];
-
-  const validation = validateAuthenticMove(
-    pieces.find((piece) => piece.id === 'shu-cannon') ?? null,
+  const noScreen = validateAuthenticMove(
+    noScreenPieces.find((piece) => piece.id === 'shu-cannon') ?? null,
     { x: 5, y: 6 },
-    pieces,
+    noScreenPieces,
     'Shu',
     1,
     null,
     { allies: null, target: null, source: null }
   );
+  assert.equal(noScreen.legal, false);
+  assert.match(noScreen.reason ?? '', /exactly one screen/i);
 
-  assert.equal(validation.legal, true);
-  assert.equal(validation.isCapture, true);
+  const oneScreenPieces = [
+    ...standardGenerals(),
+    makePiece('shu-cannon-ok', 'P', 'Shu', 5, 2, { firstMoveDone: true }),
+    makePiece('screen', 'S', 'Wu', 5, 4),
+    makePiece('target', 'R', 'Wei', 5, 6),
+  ];
+  const oneScreen = validateAuthenticMove(
+    oneScreenPieces.find((piece) => piece.id === 'shu-cannon-ok') ?? null,
+    { x: 5, y: 6 },
+    oneScreenPieces,
+    'Shu',
+    1,
+    null,
+    { allies: null, target: null, source: null }
+  );
+  assert.equal(oneScreen.legal, true);
+  assert.equal(oneScreen.isCapture, true);
+
+  const twoScreenPieces = [
+    ...standardGenerals(),
+    makePiece('shu-cannon-too-many', 'P', 'Shu', 5, 2, { firstMoveDone: true }),
+    makePiece('screen-a', 'S', 'Wu', 5, 3),
+    makePiece('screen-b', 'S', 'Wu', 5, 4),
+    makePiece('target', 'R', 'Wei', 5, 6),
+  ];
+  const twoScreen = validateAuthenticMove(
+    twoScreenPieces.find((piece) => piece.id === 'shu-cannon-too-many') ?? null,
+    { x: 5, y: 6 },
+    twoScreenPieces,
+    'Shu',
+    1,
+    null,
+    { allies: null, target: null, source: null }
+  );
+  assert.equal(twoScreen.legal, false);
+  assert.match(twoScreen.reason ?? '', /exactly one screen/i);
 });
 
 test('Authentic: Han military is protected before the Emperor is deposed', () => {
@@ -310,6 +358,26 @@ test('Authentic: Han military transfers after Emperor depose', () => {
   assert.ok(next.pieces.some((piece) => piece.id === 'han-p' && piece.owner === 'Shu'));
 });
 
+test('Authentic: Anti-emperor alliance forms after depose', () => {
+  const state = makeState({
+    currentTurn: 'Shu',
+    moveNumber: 1,
+    pieces: [
+      ...standardGenerals(),
+      makePiece('shu-h', 'H', 'Shu', 7, 6),
+      makePiece('han-emperor', 'G', 'Han', 8, 8),
+      makePiece('han-r', 'R', 'Han', 6, 8),
+    ],
+  });
+
+  const next = advanceState(state, 'shu-h', { x: 8, y: 8 });
+  assert.deepEqual(next.allianceState, {
+    allies: ['Wu', 'Wei'],
+    target: 'Shu',
+    source: 'anti-emperor',
+  });
+});
+
 test('Authentic: Alliance blocks captures between allies', () => {
   const allianceState: AllianceState = {
     allies: ['Wu', 'Wei'],
@@ -382,10 +450,51 @@ test('Authentic: Victory resolves when one faction remains', () => {
   assert.equal(next.winner, 'Wu');
 });
 
-test('Authentic: Initial board still includes Wu/Wei/Shu plus Han court', () => {
-  const pieces = getAuthenticInitialPieces();
-  assert.ok(pieces.some((piece) => piece.owner === 'Wu'));
-  assert.ok(pieces.some((piece) => piece.owner === 'Wei'));
-  assert.ok(pieces.some((piece) => piece.owner === 'Shu'));
-  assert.ok(pieces.some((piece) => piece.owner === 'Han' && piece.type === 'G'));
+test('Authentic: Initial state helper returns a fresh default board', () => {
+  const first = createInitialAuthenticState();
+  const second = createInitialAuthenticState();
+
+  assert.equal(first.currentTurn, 'Wu');
+  assert.equal(first.moveNumber, 0);
+  assert.equal(first.winner, null);
+  assert.deepEqual(first.history, []);
+  assert.deepEqual(first.pieces, getAuthenticInitialPieces());
+  assert.notEqual(first.pieces, second.pieces);
+  assert.notEqual(first.allianceState, second.allianceState);
+  assert.ok(first.pieces.some((piece) => piece.owner === 'Han' && piece.type === 'G'));
+});
+
+test('Authentic: Invalid move returns a clear reason', () => {
+  const pieces = [
+    ...standardGenerals(),
+    makePiece('wu-r', 'R', 'Wu', 4, 8),
+  ];
+
+  const validation = validateAuthenticMove(
+    pieces.find((piece) => piece.id === 'wu-r') ?? null,
+    { x: 5, y: 9 },
+    pieces,
+    'Wu',
+    1,
+    null,
+    { allies: null, target: null, source: null }
+  );
+
+  assert.equal(validation.legal, false);
+  assert.equal(validation.reason, 'Chariots move orthogonally.');
+});
+
+test('Authentic: apply move does not mutate input state', () => {
+  const state = createInitialAuthenticState();
+  const snapshot = structuredClone(state);
+  const selectedPiece = state.pieces.find((piece) => piece.id === 'auth-wu-S-0');
+  assert.ok(selectedPiece, 'Missing auth-wu-S-0');
+
+  const resolution = applyAuthenticMove(state, selectedPiece, { x: 4, y: 4 });
+  assert.ok(resolution, 'Expected a legal move resolution');
+
+  assert.deepEqual(state, snapshot);
+  assert.deepEqual(selectedPiece, snapshot.pieces.find((piece) => piece.id === 'auth-wu-S-0'));
+  assert.notEqual(resolution.pieces, state.pieces);
+  assert.ok(resolution.pieces.some((piece) => piece.id === 'auth-wu-S-0' && piece.x === 4 && piece.y === 4));
 });
