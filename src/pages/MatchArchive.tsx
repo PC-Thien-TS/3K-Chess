@@ -169,13 +169,18 @@ export default function MatchArchive() {
                         {new Date(match.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                      </span>
                   </div>
-                  {match.source?.mode === 'war-room-sim' && (
-                    <div className="inline-flex items-center gap-2 text-[8px] font-black text-gold uppercase tracking-[0.2em] bg-gold/10 border border-gold/20 px-4 py-1.5 rounded-full">
-                       War Room: {match.source.roomCode}
+                  <div className="flex flex-wrap gap-2">
+                    <div className="inline-flex items-center gap-2 text-[8px] font-black text-white uppercase tracking-[0.2em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
+                      {GAME_MODE_META[normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE)].shortLabel}
                     </div>
-                  )}
-                  <div className="inline-flex items-center gap-2 text-[8px] font-black text-white uppercase tracking-[0.2em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
-                     Mode: {GAME_MODE_META[normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE)].shortLabel}
+                    <div className="inline-flex items-center gap-2 text-[8px] font-black text-zinc-200 uppercase tracking-[0.2em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
+                      {match.source?.mode === 'war-room-sim' ? 'War Room' : 'Local'}
+                    </div>
+                    {match.source?.mode === 'war-room-sim' && match.source.roomCode && (
+                      <div className="inline-flex items-center gap-2 text-[8px] font-black text-gold uppercase tracking-[0.2em] bg-gold/10 border border-gold/20 px-4 py-1.5 rounded-full">
+                        {match.source.roomCode}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-black group-hover:rotate-12 group-hover:scale-110 transition-all shadow-xl">

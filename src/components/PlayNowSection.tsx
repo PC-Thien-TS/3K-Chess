@@ -5,27 +5,27 @@ import { cn } from '@/src/lib/utils';
 
 const modes = [
   {
-    title: "Quick Match",
-    desc: "Jump into a casual local 3-player match with custom kingdom setup.",
-    btnText: "Play as Guest",
-    path: "/setup?mode=classic",
-    icon: Play,
-    active: true
-  },
-  {
-    title: "Play vs AI",
-    desc: "Practice tactics against AI-controlled kingdoms before entering real battles.",
-    btnText: "Start Practice",
-    path: "/setup?mode=classic",
+    title: "Classic Online Room",
+    desc: "Create or host a Classic room for online multiplayer or local war-room sessions.",
+    btnText: "Play Classic Online",
+    path: "/rooms/create?mode=classic",
     icon: User,
     active: true
   },
   {
-    title: "Create Room",
-    desc: "Invite friends and customize your private battlefield.",
-    btnText: "Create Room",
-    path: "/rooms/create?mode=classic",
+    title: "Classic Practice",
+    desc: "Practice Classic locally with bots, standard rules, and replay-ready match flow.",
+    btnText: "Practice Classic",
+    path: "/setup?mode=classic",
     icon: PlusCircle,
+    active: true
+  },
+  {
+    title: "Modern 3K Local",
+    desc: "Play the local-only authentic ruleset with Han court, alliance mechanics, and local bot support.",
+    btnText: "Play Modern 3K Local",
+    path: "/setup?mode=authentic",
+    icon: Play,
     active: true
   },
   {
@@ -43,7 +43,7 @@ export default function PlayNowSection() {
       <div className="text-center mb-20">
         <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4 uppercase tracking-widest">ENTER THE <span className="text-gold">THREE KINGDOMS</span></h2>
         <p className="text-zinc-500 font-medium uppercase tracking-[0.2em] text-sm italic">
-          Choose your battlefield and prepare to command your faction.
+          Choose Classic for rooms and replay, or Modern 3K for local authentic-rules command.
         </p>
       </div>
 
@@ -96,10 +96,10 @@ export default function PlayNowSection() {
 
       <div className="flex flex-wrap justify-center gap-4">
         {[
-          { label: "3 Players", icon: Users },
-          { label: "Shu Moves First", icon: Zap },
-          { label: "Last General Standing", icon: Sword },
-          { label: "Standard Pieces Only", icon: ShieldAlert },
+          { label: "Classic Rooms", icon: Users },
+          { label: "Modern 3K Local", icon: Zap },
+          { label: "Replay Archive", icon: Sword },
+          { label: "Han Court Rules", icon: ShieldAlert },
         ].map((badge, idx) => (
           <div key={idx} className="flex items-center gap-2 px-6 py-3 rounded-full border border-white/5 bg-white/2 text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
             <badge.icon size={12} className="text-gold" />

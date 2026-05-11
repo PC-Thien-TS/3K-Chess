@@ -49,7 +49,7 @@ export default function Home() {
             <div className="w-24 h-2 bg-gold/40 mx-auto rounded-full mb-10" />
 
             <p className="text-xl md:text-3xl text-zinc-400 max-w-3xl mx-auto font-serif italic font-light leading-relaxed opacity-90">
-              "When three dragons fight, the heaven trembles. Command the legends. Claim the throne."
+              Classic delivers online rooms, bots, and replay archives. Modern 3K delivers local-only authentic rules with Han court and alliance mechanics.
             </p>
           </motion.div>
 
@@ -57,18 +57,24 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
-            className="flex flex-col md:flex-row items-center justify-center gap-8 pt-8"
+            className="flex flex-col md:flex-row items-center justify-center gap-5 pt-8"
           >
-            <Link to="/setup?mode=classic" className="group relative bg-gold text-black font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_60px_rgba(212,175,55,0.4)] hover:bg-white overflow-hidden">
+            <Link to="/rooms/create?mode=classic" className="group relative bg-gold text-black font-black px-10 py-6 rounded-2xl text-lg uppercase tracking-[0.24em] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_60px_rgba(212,175,55,0.4)] hover:bg-white overflow-hidden">
                <span className="relative z-10 flex items-center gap-3">
-                 Begin Conquest <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
+                 Play Classic Online <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
                </span>
                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
             </Link>
             
-            <Link to="/rooms/create?mode=classic" className="group relative glass-dark border border-white/10 text-white font-black px-12 py-6 rounded-2xl text-lg uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 hover:bg-white/10 overflow-hidden">
+            <Link to="/setup?mode=classic" className="group relative glass-dark border border-white/10 text-white font-black px-10 py-6 rounded-2xl text-lg uppercase tracking-[0.24em] transition-all hover:scale-105 active:scale-95 hover:bg-white/10 overflow-hidden">
                <span className="relative z-10 flex items-center gap-3">
-                 Forge War Room <Play size={20} className="text-gold group-hover:scale-125 transition-transform" fill="currentColor" />
+                 Practice Classic <Play size={20} className="text-gold group-hover:scale-125 transition-transform" fill="currentColor" />
+               </span>
+            </Link>
+
+            <Link to="/setup?mode=authentic" className="group relative glass-dark border border-gold/20 text-white font-black px-10 py-6 rounded-2xl text-lg uppercase tracking-[0.24em] transition-all hover:scale-105 active:scale-95 hover:bg-gold/10 overflow-hidden">
+               <span className="relative z-10 flex items-center gap-3">
+                 Play Modern 3K Local <ArrowRight size={20} className="text-gold group-hover:translate-x-1 transition-transform" />
                </span>
             </Link>
           </motion.div>
@@ -336,11 +342,14 @@ export default function Home() {
         <div className="relative z-10 max-w-3xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8">ARE YOU READY TO <br className="hidden md:block" /> UNITE THE LAND?</h2>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <Link to="/setup?mode=classic" className="bg-gold text-ink font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:scale-105 transition-transform">
-              Play vs AI
+            <Link to="/rooms/create?mode=classic" className="bg-gold text-ink font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:scale-105 transition-transform">
+              Play Classic Online
             </Link>
-            <Link to="/rooms/create?mode=classic" className="bg-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/20 transition-colors">
-               Create War Room
+            <Link to="/setup?mode=classic" className="bg-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/20 transition-colors">
+               Practice Classic
+            </Link>
+            <Link to="/setup?mode=authentic" className="bg-white/5 border border-gold/20 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-gold/10 transition-colors">
+              Play Modern 3K Local
             </Link>
             <Link to="/archive" className="bg-white/5 border border-white/10 text-white font-bold px-12 py-5 rounded-full uppercase tracking-widest hover:bg-white/10 transition-colors">
               Battle Archive

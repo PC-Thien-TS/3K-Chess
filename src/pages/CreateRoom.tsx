@@ -8,7 +8,7 @@ import { cn } from '@/src/lib/utils';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
 const AUTHENTIC_DISABLED_MESSAGE =
-  'Modern Three Kingdoms Xiangqi is local-only for now. Use /setup?mode=authentic to play it locally.';
+  'Modern 3K is local-only. Start it from /setup?mode=authentic.';
 
 export default function CreateRoom() {
   const navigate = useNavigate();
@@ -155,13 +155,13 @@ export default function CreateRoom() {
     <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col items-center">
       <div className="w-full max-w-2xl">
         <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-8">
-          <ChevronLeft size={16} /> Return to Council
+          <ChevronLeft size={16} /> Return to Classic Rooms
         </Link>
         <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-widest uppercase mb-2">
-          ESTABLISH <span className="text-gold italic">WAR ROOM</span>
+          ESTABLISH <span className="text-gold italic">CLASSIC ROOM</span>
         </h1>
         <p className="text-zinc-500 font-serif italic text-lg mb-12">
-          "Define the parameters for your next grand campaign."
+          Classic rooms support online sync, local war-room play, bots, and replay-ready matches.
         </p>
 
         <form onSubmit={handleCreate} className="space-y-10">
@@ -196,7 +196,7 @@ export default function CreateRoom() {
             </div>
             {gameMode === 'authentic' && (
               <p className="text-[10px] text-amber-300/80 font-serif italic">
-                {AUTHENTIC_DISABLED_MESSAGE}
+                Modern 3K is local-only. Start it from /setup?mode=authentic.
               </p>
             )}
           </div>

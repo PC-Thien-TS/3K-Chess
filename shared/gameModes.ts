@@ -17,12 +17,12 @@ export const GAME_MODE_META: Record<GameMode, {
   classic: {
     label: 'Classic 3-Player Xiangqi',
     shortLabel: 'Classic',
-    description: 'The current competitive 3-player ruleset with existing bots, online sync, replay, and archives.'
+    description: 'Online + Local + Bot + Replay. The main competitive 3-player mode with rooms, bots, and match archives.'
   },
   authentic: {
     label: 'Authentic Modern Three Kingdoms Xiangqi',
     shortLabel: 'Modern 3K',
-    description: 'Local-only Sanguo Yanyi Qi with Han court mechanics, alliance triggers, check priority, and a separate rules engine from Classic.'
+    description: 'Local-only + Authentic rules + Bot. SANGUO_YANYI_QI_V1 with Han court control, alliance triggers, and check priority.'
   }
 };
 

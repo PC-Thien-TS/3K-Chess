@@ -83,13 +83,13 @@ export default function JoinRoom() {
     <div className="pt-24 min-h-screen container mx-auto px-6 pb-12 flex flex-col items-center">
       <div className="w-full max-w-lg">
         <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-8">
-          <ChevronLeft size={16} /> Return to Council
+          <ChevronLeft size={16} /> Return to Classic Rooms
         </Link>
         <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-widest uppercase mb-2 text-center">
-          JOIN <span className="text-gold italic">ROOM</span>
+          JOIN <span className="text-gold italic">CLASSIC ROOM</span>
         </h1>
         <p className="text-zinc-500 font-serif italic text-lg mb-12 text-center">
-          "Enter the tactical chamber of your allies."
+          Enter a Classic room code. Modern 3K is local-only and does not use room codes.
         </p>
 
         <form onSubmit={handleJoin} className="space-y-8 glass-dark p-12 rounded-[3.5rem] border border-white/5 relative overflow-hidden shadow-2xl">
@@ -111,7 +111,7 @@ export default function JoinRoom() {
 
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.4em] flex items-center gap-2">
-              <Key size={14} className="text-gold" /> Chamber Cipher
+              <Key size={14} className="text-gold" /> Classic Room Code
             </label>
             <div className="relative">
               <input 
@@ -157,6 +157,8 @@ export default function JoinRoom() {
           <div className="flex flex-col gap-2 items-center opacity-60">
             <div className="w-12 h-[1px] bg-white/10" />
             <p className="text-[9px] text-zinc-500 font-serif italic text-center uppercase tracking-widest leading-relaxed">
+              Enter a Classic room code. <br/>
+              Modern 3K is local-only and does not use room codes. <br/>
               Local simulation chambers remain client-side. <br/>
               Access is restricted to the device of origin unless cloud synced.
             </p>

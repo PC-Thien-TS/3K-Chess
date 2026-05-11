@@ -9,7 +9,7 @@ import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, normalizeGameMode } from '
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const AUTHENTIC_PREVIEW_MESSAGE =
-  'Modern Three Kingdoms Xiangqi supports local Human/Bot command only. Online rooms remain Classic-only.';
+  'Modern 3K is local-only. Start local matches here with authentic rules, local bots, Han court control, and alliance mechanics.';
 const AUTHENTIC_DEFAULT_CONTROLS = {
   Shu: 'Bot' as const,
   Wei: 'Bot' as const,
@@ -180,6 +180,9 @@ export default function MatchSetup() {
             <p className="text-zinc-500 font-serif italic text-sm leading-relaxed">
               {GAME_MODE_META[mode].description}
             </p>
+            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-gold">
+              {mode === 'classic' ? 'Online + Local + Bot + Replay' : 'Local-only + Authentic rules + Bot'}
+            </p>
           </button>
         ))}
       </div>
@@ -269,7 +272,7 @@ export default function MatchSetup() {
                         <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/10 px-6 py-4 text-amber-100">
                           <span className="text-[9px] font-black uppercase tracking-[0.35em]">Han Court</span>
                           <p className="mt-2 text-xs font-serif italic leading-relaxed text-amber-100/85">
-                            Han is never directly controlled. Authentic remains local-only.
+                            Local only. Han is never directly controlled, and Modern 3K does not use online rooms.
                           </p>
                         </div>
                       </div>
@@ -365,8 +368,8 @@ export default function MatchSetup() {
           <div className="flex items-center gap-4 text-zinc-500 text-[11px] font-serif italic tracking-wide">
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {GAME_MODE_META[localGameMode].shortLabel} Mode</span>
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> 3-Dominion Battle</span>
-             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {isAuthenticMode ? 'Local Only' : 'Traditional Protocol'}</span>
-             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> Unified Objective</span>
+             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {isAuthenticMode ? 'Local Only' : 'Online + Local'}</span>
+             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gold/50" /> {isAuthenticMode ? 'Authentic Rules + Bot' : 'Replay + Bot Support'}</span>
           </div>
         </div>
         

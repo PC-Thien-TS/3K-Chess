@@ -11,7 +11,7 @@ export default function Footer() {
             <span className="font-serif font-bold text-xl tracking-wider text-gold">3K CHESS</span>
           </Link>
           <p className="text-sm leading-relaxed mb-6">
-            Experience the legendary Three Kingdoms era through a lens of grand strategy, tactical alliances, and real-time maneuvers.
+            Classic focuses on online rooms, bots, and archives. Modern 3K focuses on local authentic rules, Han court politics, and alliance play.
           </p>
           <div className="flex gap-4">
             <Twitter size={20} className="hover:text-gold cursor-pointer" />
@@ -23,10 +23,12 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-serif font-bold mb-6 tracking-wider">GAME</h4>
           <ul className="space-y-4 text-sm uppercase tracking-widest text-xs">
+            <li><a href="/rooms" className="hover:text-white">Classic Rooms</a></li>
+            <li><a href="/setup?mode=classic" className="hover:text-white">Practice Classic</a></li>
+            <li><a href="/setup?mode=authentic" className="hover:text-white">Modern 3K Local</a></li>
             <li><a href="/#how-to-play" className="hover:text-white">How to Play</a></li>
             <li><a href="/#community" className="hover:text-white">Leaderboard</a></li>
-            <li><a href="/#lore" className="hover:text-white">Lore & Factions</a></li>
-            <li><a href="/#shop" className="hover:text-white">Premium Shop</a></li>
+            <li><a href="/archive" className="hover:text-white">Battle Archive</a></li>
           </ul>
         </div>
 
