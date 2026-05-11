@@ -55,6 +55,12 @@ class OnlineRoomClient {
       this.connectionStateListeners.forEach(cb => cb(true));
     });
 
+    this.socket.on("connect_error", (error) => {
+      console.warn("Strategic Command: Connection error", error?.message || error);
+      this.connectionStateListeners.forEach(cb => cb(false));
+      this.errorListeners.forEach(cb => cb("CANNOT_CONNECT"));
+    });
+
     this.socket.on(ServerMessage.ROOM_STATE, (room: OnlineWarRoom) => {
       this.roomStateListeners.forEach(cb => cb(room));
     });

@@ -94,7 +94,6 @@ export default function WarRoomLobby() {
       setIsReconnecting(true);
 
       const recoverRoom = () => {
-        onlineRoomClient.joinRoom({ roomCode, playerName: commanderName });
         onlineRoomClient.requestRoomSnapshot({ roomCode, playerName: commanderName });
       };
 
@@ -150,6 +149,8 @@ export default function WarRoomLobby() {
           clearAllOnlineSessions();
           setRoom(null);
           setError('Room expired.');
+        } else if (err === 'CANNOT_CONNECT') {
+          setError('Cannot connect to Strategic Command.');
         } else {
           setError(`Strategic Failure: ${err}`);
         }
@@ -246,6 +247,28 @@ export default function WarRoomLobby() {
   }, [roomCode, roomMode, commanderName]);
 
   const activeGameMode = normalizeGameMode((room as any)?.roomRules?.gameMode, requestedGameMode);
+  const connectionStatus = roomMode !== 'online'
+    ? 'Local'
+    : error === 'Room expired.'
+      ? 'Room expired'
+      : error === 'Cannot connect to Strategic Command.'
+        ? 'Cannot connect'
+        : isReconnecting
+          ? 'Reconnecting...'
+          : isConnected
+            ? 'Connected'
+            : 'Cannot connect';
+  const connectionStatusClassName = roomMode !== 'online'
+    ? 'border-white/10 bg-white/5 text-zinc-300'
+    : error === 'Room expired.'
+      ? 'border-rose-500/20 bg-rose-500/10 text-rose-400'
+      : error === 'Cannot connect to Strategic Command.'
+        ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+        : isReconnecting
+          ? 'border-gold/20 bg-gold/10 text-gold'
+          : isConnected
+            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+            : 'border-amber-500/20 bg-amber-500/10 text-amber-300';
 
   const handleCopyCode = () => {
     if (room?.roomCode) {
@@ -400,6 +423,7 @@ export default function WarRoomLobby() {
   }
 
   if (!room && error) {
+    const title = error === 'Room expired.' ? 'Room Expired' : error === 'Cannot connect to Strategic Command.' ? 'Cannot Connect' : 'Tactical Breach';
     return (
       <div className="pt-24 min-h-screen flex flex-col items-center justify-center p-6">
          <div className="glass-dark border border-rose-500/20 p-12 rounded-[3rem] max-w-md w-full text-center space-y-8">
@@ -407,15 +431,29 @@ export default function WarRoomLobby() {
                <ShieldAlert size={40} />
             </div>
             <div className="space-y-2">
-               <h2 className="text-white text-2xl font-serif font-black uppercase tracking-widest">Tactical Breach</h2>
+               <h2 className="text-white text-2xl font-serif font-black uppercase tracking-widest">{title}</h2>
                <p className="text-zinc-500 text-xs font-serif italic leading-relaxed">{error}</p>
             </div>
-            <Link 
-              to="/rooms" 
-              className="block w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
-            >
-               Return to Council
-            </Link>
+            <div className="grid grid-cols-1 gap-3">
+              <Link 
+                to="/rooms" 
+                className="block w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
+              >
+                 Return to Council
+              </Link>
+              <Link 
+                to="/rooms/create?mode=classic"
+                className="block w-full bg-gold/10 hover:bg-gold text-gold hover:text-black py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-gold/20 transition-all"
+              >
+                 Create New Room
+              </Link>
+              <Link 
+                to="/"
+                className="block w-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
+              >
+                 Return Home
+              </Link>
+            </div>
          </div>
       </div>
     );
@@ -455,6 +493,9 @@ export default function WarRoomLobby() {
                    <p className="text-white text-xs font-serif font-bold italic">{room.hostName}</p>
                    <p className="text-[8px] text-zinc-600 uppercase tracking-widest">Lord Commander</p>
                 </div>
+            </div>
+            <div className={cn("mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em]", connectionStatusClassName)}>
+              <span>{connectionStatus}</span>
             </div>
         </div>
       </div>

@@ -65,6 +65,8 @@ export function useClassicOnlineSync({
 
     const wsUrl = (import.meta as any).env.VITE_WS_URL;
     if (!wsUrl) {
+      setIsReconnecting(false);
+      setLastSyncEvent('CANNOT_CONNECT');
       setStatus('Tactical Breach: WebSocket server not configured. Online synchrony unavailable.');
       return;
     }
@@ -74,8 +76,8 @@ export function useClassicOnlineSync({
         return;
       }
       setIsReconnecting(true);
+      setLastSyncEvent('REQUESTING_SNAPSHOT');
       setStatus('Reconnecting... recovering live match state from Strategic Command.');
-      onlineRoomClient.joinRoom({ roomCode, playerName: commanderName });
       onlineRoomClient.requestMatchSnapshot({ roomCode, playerName: commanderName });
     };
 
@@ -159,6 +161,13 @@ export function useClassicOnlineSync({
         setAppliedMoveIds((prev) => new Set(prev).add(payload.move.id));
         applyRemoteMove(piece, payload.move.to.x, payload.move.to.y, payload.move.id.startsWith('bot-'), payload.move.id);
         hydrateServerState(payload.serverState);
+        return;
+      }
+
+      hydrateServerState(payload.serverState);
+      setLastSyncEvent('MOVE_RESYNC');
+      if (roomCode) {
+        onlineRoomClient.requestMatchSnapshot({ roomCode, playerName: commanderName });
       }
     });
 
@@ -171,6 +180,14 @@ export function useClassicOnlineSync({
         return;
       }
 
+      if (error === 'CANNOT_CONNECT') {
+        setIsReconnecting(false);
+        setLastSyncEvent('CANNOT_CONNECT');
+        setStatus('Cannot connect to Strategic Command. Check the server and retry.');
+        return;
+      }
+
+      setLastSyncEvent('ERROR');
       setStatus(`Strategic Failure: ${error}`);
     });
 

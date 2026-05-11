@@ -533,6 +533,24 @@ function ClassicPracticeBoard() {
       return check.attackers.map((piece) => piece.id);
     })
   );
+  const connectionStatus = roomMode !== 'online'
+    ? 'Local'
+    : roomExpired
+      ? 'Room expired'
+      : isReconnecting
+        ? 'Reconnecting...'
+        : lastSyncEvent === 'CANNOT_CONNECT'
+          ? 'Cannot connect'
+          : 'Connected';
+  const connectionStatusClassName = roomMode !== 'online'
+    ? 'border-white/10 bg-white/5 text-zinc-300'
+    : roomExpired
+      ? 'border-rose-500/20 bg-rose-500/10 text-rose-400'
+      : isReconnecting
+        ? 'border-gold/20 bg-gold/10 text-gold'
+        : lastSyncEvent === 'CANNOT_CONNECT'
+          ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+          : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400';
 
   if (roomExpired) {
     return (
@@ -550,6 +568,18 @@ function ClassicPracticeBoard() {
             className="block w-full bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
           >
             Return to Council
+          </button>
+          <button
+            onClick={() => navigate('/rooms/create?mode=classic')}
+            className="block w-full bg-gold/10 hover:bg-gold text-gold hover:text-black py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-gold/20 transition-all"
+          >
+            Create New Room
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="block w-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
+          >
+            Return Home
           </button>
         </div>
       </div>
@@ -1226,9 +1256,9 @@ function ClassicPracticeBoard() {
                 <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
                 <div className="relative z-10 flex flex-col gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
                     <span>Synchrony Protocol</span>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
-                       <span className="text-gold">Active</span>
+                    <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]", connectionStatusClassName)}>
+                      <span className={cn("h-1.5 w-1.5 rounded-full", roomExpired ? "bg-rose-400" : isReconnecting ? "bg-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.8)]" : lastSyncEvent === 'CANNOT_CONNECT' ? "bg-amber-300" : "bg-emerald-400")} />
+                      <span>{connectionStatus}</span>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 relative z-10 mt-2">
