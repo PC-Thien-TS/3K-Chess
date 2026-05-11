@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sword, Shield, Zap, User, Cpu, ChevronRight, RotateCcw } from 'lucide-react';
-import { Faction, PlayerType, BotDifficulty, MatchConfig } from '../rules/classicThreeKingdomRules';
+import { Sword, Shield, Zap, User, Cpu, ChevronRight } from 'lucide-react';
+import { Faction, PlayerType, BotDifficulty } from '../rules/classicThreeKingdomRules';
 import { useMatchContext } from '../context/MatchContext';
 import { cn } from '../lib/utils';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, normalizeGameMode } from '@/shared/gameModes';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const AUTHENTIC_PREVIEW_MESSAGE =
-  'Modern Three Kingdoms Xiangqi is available as a local-only board. Online rooms, bots, archive, and replay remain Classic-only.';
+  'Modern Three Kingdoms Xiangqi supports local Human/Bot command only. Online rooms remain Classic-only.';
+const AUTHENTIC_DEFAULT_CONTROLS = {
+  Shu: 'Bot' as const,
+  Wei: 'Bot' as const,
+  Wu: 'Human' as const,
+};
 
 const FACTION_DETAILS = {
   Shu: {
@@ -49,22 +54,25 @@ export default function MatchSetup() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { config, updateConfig } = useMatchContext();
   const initialGameMode = normalizeGameMode(searchParams.get('mode'), DEFAULT_GAME_MODE);
+
+  const buildAuthenticFactions = (source: typeof config.factions) => ({
+    ...source,
+    Shu: { ...source.Shu, control: AUTHENTIC_DEFAULT_CONTROLS.Shu },
+    Wei: { ...source.Wei, control: AUTHENTIC_DEFAULT_CONTROLS.Wei },
+    Wu: { ...source.Wu, control: AUTHENTIC_DEFAULT_CONTROLS.Wu },
+  });
   
-  const [localFactions, setLocalFactions] = useState(config.factions);
-  const [localPrimary, setLocalPrimary] = useState(config.primaryKingdom);
+  const [classicFactions, setClassicFactions] = useState(config.factions);
+  const [authenticFactions, setAuthenticFactions] = useState(buildAuthenticFactions(config.factions));
+  const [localPrimary, setLocalPrimary] = useState<Faction>(initialGameMode === 'authentic' ? 'Wu' : config.primaryKingdom);
   const [localGameMode, setLocalGameMode] = useState<GameMode>(initialGameMode);
   const [modeNotice, setModeNotice] = useState<string | null>(initialGameMode === 'authentic' ? AUTHENTIC_PREVIEW_MESSAGE : null);
   const isAuthenticMode = localGameMode === 'authentic';
-
-  const getAuthenticHumanFactions = () => ({
-    ...localFactions,
-    Shu: { ...localFactions.Shu, control: 'Human' as const },
-    Wei: { ...localFactions.Wei, control: 'Human' as const },
-    Wu: { ...localFactions.Wu, control: 'Human' as const },
-  });
+  const activeFactions = isAuthenticMode ? authenticFactions : classicFactions;
 
   const handleControlToggle = (faction: Faction) => {
-    setLocalFactions(prev => {
+    const updateFactions = isAuthenticMode ? setAuthenticFactions : setClassicFactions;
+    updateFactions(prev => {
       const next: PlayerType = prev[faction].control === 'Human' ? 'Bot' : 'Human';
       return {
         ...prev,
@@ -75,7 +83,7 @@ export default function MatchSetup() {
 
   const handleDifficultyChange = (faction: Faction, diff: BotDifficulty) => {
     if (diff === 'hard') return; // Only easy and normal are active for now
-    setLocalFactions(prev => ({
+    setClassicFactions(prev => ({
       ...prev,
       [faction]: { ...prev[faction], difficulty: diff }
     }));
@@ -83,15 +91,15 @@ export default function MatchSetup() {
 
   const handleSelectPrimary = (faction: Faction) => {
     setLocalPrimary(faction);
-    setLocalFactions(prev => ({
+    const updateFactions = isAuthenticMode ? setAuthenticFactions : setClassicFactions;
+    updateFactions(prev => ({
       ...prev,
       [faction]: { ...prev[faction], control: 'Human' }
     }));
   };
 
   const handleStart = () => {
-    const authenticHumanFactions = getAuthenticHumanFactions();
-    const nextFactions = localGameMode === 'authentic' ? authenticHumanFactions : localFactions;
+    const nextFactions = localGameMode === 'authentic' ? authenticFactions : classicFactions;
 
     updateConfig({
       gameMode: localGameMode,
@@ -105,9 +113,9 @@ export default function MatchSetup() {
             roomMode: 'local',
             mode: 'local',
             controlModes: {
-              Shu: 'Human',
-              Wei: 'Human',
-              Wu: 'Human',
+              Shu: authenticFactions.Shu.control,
+              Wei: authenticFactions.Wei.control,
+              Wu: authenticFactions.Wu.control,
             },
           }
         : {
@@ -121,6 +129,10 @@ export default function MatchSetup() {
     setLocalGameMode(mode);
     setSearchParams({ mode });
     setModeNotice(mode === 'authentic' ? AUTHENTIC_PREVIEW_MESSAGE : null);
+    if (mode === 'authentic') {
+      setAuthenticFactions((prev) => buildAuthenticFactions(prev));
+      setLocalPrimary('Wu');
+    }
   };
 
   return (
@@ -226,11 +238,40 @@ export default function MatchSetup() {
             <div className="flex flex-col gap-6 mt-4 relative z-10">
               {/* Command Mode */}
                     {isAuthenticMode ? (
-                      <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/10 px-6 py-5 text-amber-100">
-                        <span className="text-[9px] font-black uppercase tracking-[0.35em]">Local Only</span>
-                        <p className="mt-2 text-xs font-serif italic leading-relaxed text-amber-100/85">
-                          Authentic v1 is human-only local play. Bots, online chambers, and tactical difficulty are disabled in this mode.
-                        </p>
+                      <div className="flex flex-col gap-3">
+                        <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Local Command</span>
+                        <div className="flex gap-3 bg-black/40 p-2 rounded-2xl border border-white/5 shadow-inner">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
+                            className={cn(
+                              "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
+                              activeFactions[f].control === 'Human'
+                                ? "bg-white text-black border-white"
+                                : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
+                            )}
+                          >
+                            <User size={14} className={cn(activeFactions[f].control === 'Human' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
+                            Human
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
+                            className={cn(
+                              "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
+                              activeFactions[f].control === 'Bot'
+                                ? "bg-gold text-black border-gold shadow-gold/20"
+                                : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
+                            )}
+                          >
+                            <Cpu size={14} className={cn(activeFactions[f].control === 'Bot' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
+                            Bot
+                          </button>
+                        </div>
+                        <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/10 px-6 py-4 text-amber-100">
+                          <span className="text-[9px] font-black uppercase tracking-[0.35em]">Han Court</span>
+                          <p className="mt-2 text-xs font-serif italic leading-relaxed text-amber-100/85">
+                            Han is never directly controlled. Authentic remains local-only.
+                          </p>
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -241,31 +282,31 @@ export default function MatchSetup() {
                               onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
                               className={cn(
                                 "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
-                                localFactions[f].control === 'Human' 
+                                activeFactions[f].control === 'Human' 
                                   ? "bg-white text-black border-white" 
                                   : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
                               )}
                             >
-                              <User size={14} className={cn(localFactions[f].control === 'Human' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
+                              <User size={14} className={cn(activeFactions[f].control === 'Human' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
                               Human
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleControlToggle(f); }}
                               className={cn(
                                 "flex-1 flex items-center justify-center gap-3 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg group/btn",
-                                localFactions[f].control === 'Bot' 
+                                activeFactions[f].control === 'Bot' 
                                   ? "bg-gold text-black border-gold shadow-gold/20" 
                                   : "bg-transparent text-zinc-600 border-transparent hover:bg-white/5 hover:text-white"
                               )}
                             >
-                              <Cpu size={14} className={cn(localFactions[f].control === 'Bot' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
+                              <Cpu size={14} className={cn(activeFactions[f].control === 'Bot' ? "text-black" : "text-zinc-700 group-hover/btn:text-gold")} />
                               Bot
                             </button>
                           </div>
                         </div>
 
                         <AnimatePresence>
-                          {localFactions[f].control === 'Bot' && (
+                          {activeFactions[f].control === 'Bot' && (
                             <motion.div 
                               initial={{ opacity: 0, height: 0, y: -10 }}
                               animate={{ opacity: 1, height: 'auto', y: 0 }}
@@ -278,23 +319,23 @@ export default function MatchSetup() {
                                    onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'easy'); }}
                                    className={cn(
                                      "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
-                                     localFactions[f].difficulty === 'easy' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                                     activeFactions[f].difficulty === 'easy' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
                                    )}
                                  >
                                    {DIFFICULTY_LABELS.easy}
-                                   <Zap size={12} className={cn(localFactions[f].difficulty === 'easy' ? "opacity-100" : "opacity-0 group-hover/diff:opacity-20")} />
+                                   <Zap size={12} className={cn(activeFactions[f].difficulty === 'easy' ? "opacity-100" : "opacity-0 group-hover/diff:opacity-20")} />
                                  </button>
                                  <button
                                    onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'normal'); }}
                                    className={cn(
                                      "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
-                                     localFactions[f].difficulty === 'normal' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                                     activeFactions[f].difficulty === 'normal' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
                                    )}
                                  >
                                    {DIFFICULTY_LABELS.normal}
                                    <div className="flex gap-1">
-                                      <Zap size={12} className={cn(localFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
-                                      <Zap size={12} className={cn(localFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
+                                      <Zap size={12} className={cn(activeFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
+                                      <Zap size={12} className={cn(activeFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
                                    </div>
                                  </button>
                                  <div className="px-6 py-4 rounded-2xl bg-white/[0.01] border border-white/[0.03] text-zinc-800 text-[9px] font-black uppercase tracking-widest flex justify-between items-center cursor-not-allowed grayscale">

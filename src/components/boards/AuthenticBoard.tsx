@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, RotateCcw, ScrollText, ShieldAlert, Trophy, Wrench } from 'lucide-react';
+import { Cpu, Crown, RotateCcw, ScrollText, ShieldAlert, Trophy, User, Wrench } from 'lucide-react';
 import { GAME_MODE_META } from '@/shared/gameModes';
 import { cn } from '@/src/lib/utils';
+import { useMatchContext } from '@/src/context/MatchContext';
+import { type AuthenticBotDecision } from '@/src/ai/authenticBotAI';
+import { useAuthenticBotTurns } from '@/src/hooks/useAuthenticBotTurns';
 import {
   applyAuthenticMove,
   AUTHENTIC_BOARD_NOTE,
@@ -13,7 +16,6 @@ import {
   AUTHENTIC_LOCAL_ONLY_MESSAGE,
   AUTHENTIC_MODE_STATUS,
   AUTHENTIC_MOVE_BLOCKED_MESSAGE,
-  AUTHENTIC_PLAYER_FACTIONS,
   AUTHENTIC_POINT_ACCENTS,
   AUTHENTIC_ROWS,
   createInitialAuthenticState,
@@ -31,6 +33,7 @@ import {
   type AuthenticPiece,
   type AuthenticSpecialMove,
 } from '@/src/rules/authenticThreeKingdomRules';
+import type { PlayerType } from '@/src/rules/classicThreeKingdomRules';
 
 interface AuthenticBoardProps {
   roomCode?: string;
@@ -92,6 +95,17 @@ const SPECIAL_EVENT_LABELS: Record<AuthenticSpecialMove, string> = {
   ABSORB_ARMY: 'Absorb Army',
   CHECK: 'Check',
   CHECKMATE: 'Checkmate',
+};
+
+const CONTROL_BADGE_THEME: Record<PlayerType, string> = {
+  Human: 'border-stone-300/60 bg-white/75 text-stone-800',
+  Bot: 'border-amber-300/60 bg-amber-100/80 text-amber-950',
+};
+
+const DEFAULT_AUTHENTIC_CONTROLS: Record<AuthenticFaction, PlayerType> = {
+  Wu: 'Human',
+  Wei: 'Bot',
+  Shu: 'Bot',
 };
 
 const BOARD_MIN = 8.75;
@@ -216,11 +230,26 @@ function formatPriorityStatus(queue: AuthenticFaction[]) {
   return `${queue.join(' -> ')} has check priority.`;
 }
 
+function ControlBadge({ control }: { control: PlayerType }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em]',
+        CONTROL_BADGE_THEME[control]
+      )}
+    >
+      {control === 'Bot' ? <Cpu size={12} /> : <User size={12} />}
+      {control}
+    </span>
+  );
+}
+
 export default function AuthenticBoard({
   roomCode,
   roomMode = 'local',
   context = 'practice',
 }: AuthenticBoardProps) {
+  const { config } = useMatchContext();
   const modeMeta = GAME_MODE_META.authentic;
   const returnHref = context === 'replay' ? '/archive' : roomCode ? `/rooms/${roomCode}` : '/setup?mode=authentic';
   const returnLabel = context === 'replay' ? 'Return to Archive' : roomCode ? 'Return to Lobby' : 'Return to Setup';
@@ -250,9 +279,22 @@ export default function AuthenticBoard({
     [selectedPiece, gameState]
   );
 
+  const controlModes = useMemo<Record<AuthenticFaction, PlayerType>>(
+    () =>
+      config.gameMode === 'authentic'
+        ? {
+            Wu: config.factions.Wu.control,
+            Wei: config.factions.Wei.control,
+            Shu: config.factions.Shu.control,
+          }
+        : DEFAULT_AUTHENTIC_CONTROLS,
+    [config]
+  );
   const isInteractive = context === 'practice' && roomMode === 'local';
   const checkedPriorityText = formatPriorityStatus(gameState.checkedPriorityQueue);
   const selectedPieceText = formatSelectedPiece(selectedPiece);
+  const currentTurnControl = controlModes[gameState.currentTurn];
+  const isBotTurn = isInteractive && !gameState.winner && currentTurnControl === 'Bot';
   const devLog = (...args: unknown[]) => {
     if ((import.meta as any).env.DEV) {
       console.log(...args);
@@ -265,6 +307,67 @@ export default function AuthenticBoard({
     setLastValidationReason(null);
     setStatus('Wu / Green opens the match. The first move cannot capture.');
   };
+
+  const commitResolution = React.useCallback(
+    (
+      selectedActingPiece: AuthenticPiece,
+      resolution: NonNullable<ReturnType<typeof applyAuthenticMove>>,
+      nextStatus?: string
+    ) => {
+      setLastValidationReason(null);
+      setGameState((prev) => ({
+        pieces: resolution.pieces,
+        currentTurn: resolution.nextTurn || prev.currentTurn,
+        moveNumber: prev.moveNumber + 1,
+        factionMoveCounts: resolution.factionMoveCounts,
+        hanController: resolution.hanController,
+        allianceState: resolution.allianceState,
+        checkedPriorityQueue: resolution.checkedPriorityQueue,
+        eliminated: resolution.eliminated,
+        history: [resolution.moveRecord, ...prev.history],
+        captured: [...resolution.capturedPieces, ...prev.captured],
+        winner: resolution.winner,
+        lastMove: resolution.lastMove,
+      }));
+      setSelectedId(null);
+      setStatus(nextStatus || resolution.status);
+      devLog('[Authentic Move Commit]', {
+        actor: selectedActingPiece.id,
+        to: resolution.lastMove.to,
+        nextTurn: resolution.nextTurn,
+      });
+    },
+    []
+  );
+
+  const executeBotMove = React.useCallback(
+    (decision: AuthenticBotDecision) => {
+      const actingPiece = gameState.pieces.find((piece) => piece.id === decision.pieceId);
+      if (!actingPiece) {
+        setStatus(`${gameState.currentTurn} Bot lost track of ${decision.pieceId}.`);
+        return false;
+      }
+
+      const resolution = applyAuthenticMove(gameState, actingPiece, decision.to);
+      if (!resolution) {
+        setLastValidationReason(AUTHENTIC_MOVE_BLOCKED_MESSAGE);
+        setStatus(`${gameState.currentTurn} Bot attempted an illegal move.`);
+        return false;
+      }
+
+      commitResolution(actingPiece, resolution, `${gameState.currentTurn} Bot: ${decision.reason}.`);
+      return true;
+    },
+    [commitResolution, gameState]
+  );
+
+  const { isBotThinking } = useAuthenticBotTurns({
+    enabled: isInteractive,
+    gameState,
+    controlModes,
+    executeBotMove,
+    setStatus,
+  });
 
   const handlePointClick = (x: number, y: number) => {
     const point = { x, y };
@@ -288,6 +391,11 @@ export default function AuthenticBoard({
 
     if (!isInteractive) {
       setStatus(AUTHENTIC_LOCAL_ONLY_MESSAGE);
+      return;
+    }
+
+    if (isBotTurn || isBotThinking) {
+      setStatus(`${gameState.currentTurn} Bot thinking...`);
       return;
     }
 
@@ -366,22 +474,7 @@ export default function AuthenticBoard({
     });
 
     setLastValidationReason(null);
-    setGameState((prev) => ({
-      pieces: resolution.pieces,
-      currentTurn: resolution.nextTurn || prev.currentTurn,
-      moveNumber: prev.moveNumber + 1,
-      factionMoveCounts: resolution.factionMoveCounts,
-      hanController: resolution.hanController,
-      allianceState: resolution.allianceState,
-      checkedPriorityQueue: resolution.checkedPriorityQueue,
-      eliminated: resolution.eliminated,
-      history: [resolution.moveRecord, ...prev.history],
-      captured: [...resolution.capturedPieces, ...prev.captured],
-      winner: resolution.winner,
-      lastMove: resolution.lastMove,
-    }));
-    setSelectedId(null);
-    setStatus(resolution.status);
+    commitResolution(selectedPiece, resolution);
   };
 
   return (
@@ -390,8 +483,8 @@ export default function AuthenticBoard({
         <div className="space-y-8">
           <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.35em] text-[#6b4a26]">
             <span className="rounded-full border border-[#8c6331]/25 bg-[#f3e4be] px-4 py-2">{modeMeta.shortLabel}</span>
-            <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">{roomMode} mode</span>
-            <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Local Only</span>
+            <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Tabletop Local</span>
+            <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Human + Bot</span>
           </div>
 
           <div className="rounded-[3rem] border border-[#8c6331]/22 bg-[#ead7b0] p-4 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:p-6 md:p-8">
@@ -582,7 +675,10 @@ export default function AuthenticBoard({
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Current Turn</p>
-                <p className="mt-1 text-base font-serif font-black uppercase text-[#35210f]">{gameState.currentTurn}</p>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <p className="text-base font-serif font-black uppercase text-[#35210f]">{gameState.currentTurn}</p>
+                  <ControlBadge control={currentTurnControl} />
+                </div>
               </div>
               <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Selected Piece</p>
@@ -610,6 +706,11 @@ export default function AuthenticBoard({
             <div className="mt-4 rounded-[1.4rem] border border-[#8b6433]/15 bg-[#f2e6ce] px-4 py-4">
               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Field Note</p>
               <p className="mt-2 text-sm font-serif italic leading-relaxed text-[#6d5334]">{status}</p>
+              {isBotThinking && (
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#8b5d17]">
+                  Bot thinking...
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -644,10 +745,15 @@ export default function AuthenticBoard({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-1">
             {AUTHENTIC_FACTIONS.map((faction) => (
               <div key={faction} className={cn('rounded-[2rem] border p-5 shadow-sm', FACTION_CARD_THEME[faction])}>
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">{getAuthenticFactionLabel(faction)}</p>
                     <h3 className="text-lg font-serif font-black uppercase">{faction}</h3>
+                    {faction !== 'Han' && (
+                      <div className="mt-3">
+                        <ControlBadge control={controlModes[faction]} />
+                      </div>
+                    )}
                   </div>
                   <div className="flex h-11 w-11 items-center justify-center rounded-full border border-current/25 bg-white/35 font-serif text-xl font-black">
                     {faction[0]}
