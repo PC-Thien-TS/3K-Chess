@@ -59,6 +59,7 @@ export function useClassicOnlineSync({
   hydrateSnapshotState,
 }: UseClassicOnlineSyncParams) {
   React.useEffect(() => {
+    const recoveryTimeoutMs = 8000;
     if (roomMode !== 'online') {
       return;
     }
@@ -71,9 +72,25 @@ export function useClassicOnlineSync({
       return;
     }
 
+    let recoveryTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const clearRecoveryTimeout = () => {
+      if (recoveryTimeout) {
+        clearTimeout(recoveryTimeout);
+        recoveryTimeout = null;
+      }
+    };
+
     const requestRecovery = () => {
       if (!roomCode) {
         return;
+      }
+      if (!recoveryTimeout) {
+        recoveryTimeout = setTimeout(() => {
+          setIsReconnecting(false);
+          setLastSyncEvent('CANNOT_CONNECT');
+          setStatus('Cannot connect. Check the backend and retry.');
+        }, recoveryTimeoutMs);
       }
       setIsReconnecting(true);
       setLastSyncEvent('REQUESTING_SNAPSHOT');
@@ -82,15 +99,30 @@ export function useClassicOnlineSync({
     };
 
     onlineRoomClient.connect();
+    if (!recoveryTimeout) {
+      recoveryTimeout = setTimeout(() => {
+        setIsReconnecting(false);
+        setLastSyncEvent('CANNOT_CONNECT');
+        setStatus('Cannot connect. Check the backend and retry.');
+      }, recoveryTimeoutMs);
+    }
 
     const unsubConnection = onlineRoomClient.subscribeToConnectionState((connected) => {
       if (!connected) {
         setIsReconnecting(true);
         setLastSyncEvent('DISCONNECTED');
         setStatus('Reconnecting... restoring the live Classic match.');
+        if (!recoveryTimeout) {
+          recoveryTimeout = setTimeout(() => {
+            setIsReconnecting(false);
+            setLastSyncEvent('CANNOT_CONNECT');
+            setStatus('Cannot connect. Check the backend and retry.');
+          }, recoveryTimeoutMs);
+        }
         return;
       }
 
+      clearRecoveryTimeout();
       setLastSyncEvent('CONNECTED');
       requestRecovery();
     });
@@ -127,6 +159,7 @@ export function useClassicOnlineSync({
       saveOnlineMatchSession(recoveredSession);
 
       clearSelection();
+      clearRecoveryTimeout();
       setIsReconnecting(false);
       setRoomExpired(null);
       setLastSyncEvent('MATCH_SNAPSHOT');
@@ -172,6 +205,7 @@ export function useClassicOnlineSync({
     });
 
     const unsubError = onlineRoomClient.subscribeToErrors((error) => {
+      clearRecoveryTimeout();
       if (error === 'ROOM_NOT_FOUND') {
         clearAllOnlineSessions();
         setRoomExpired('Room expired.');
@@ -196,6 +230,7 @@ export function useClassicOnlineSync({
     }
 
     return () => {
+      clearRecoveryTimeout();
       unsubConnection();
       unsubSnapshot();
       unsubMove();

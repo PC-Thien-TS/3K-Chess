@@ -39,6 +39,7 @@ const FACTION_COLORS = {
 };
 
 export default function WarRoomLobby() {
+  const recoveryTimeoutMs = 8000;
   const { roomCode: rawCode } = useParams<{ roomCode: string }>();
   const roomCode = rawCode ? normalizeRoomCode(rawCode) : undefined;
   const navigate = useNavigate();
@@ -92,13 +93,38 @@ export default function WarRoomLobby() {
       onlineRoomClient.connect();
       setIsConnected(onlineRoomClient.isConnected);
       setIsReconnecting(true);
+      let recoveryTimeout: ReturnType<typeof setTimeout> | null = null;
+
+      const clearRecoveryTimeout = () => {
+        if (recoveryTimeout) {
+          clearTimeout(recoveryTimeout);
+          recoveryTimeout = null;
+        }
+      };
+
+      const armRecoveryTimeout = () => {
+        if (recoveryTimeout) {
+          return;
+        }
+        recoveryTimeout = setTimeout(() => {
+          setError('Cannot connect to Strategic Command.');
+          setIsConnected(false);
+          setIsReconnecting(false);
+          setIsLoading(false);
+          setDiagnostics(prev => ({ ...prev, lastEvent: 'TIMEOUT' }));
+        }, recoveryTimeoutMs);
+      };
 
       const recoverRoom = () => {
+        armRecoveryTimeout();
         onlineRoomClient.requestRoomSnapshot({ roomCode, playerName: commanderName });
       };
 
+      armRecoveryTimeout();
+
       const unsubState = onlineRoomClient.subscribeToRoomState((newRoom) => {
         if (newRoom.roomCode === roomCode) {
+          clearRecoveryTimeout();
           setRoom(newRoom);
           setIsConnected(true);
           setIsReconnecting(false);
@@ -119,6 +145,7 @@ export default function WarRoomLobby() {
           return;
         }
 
+        clearRecoveryTimeout();
         setRoom(snapshot.room);
         setRoomMode('online');
         setIsConnected(true);
@@ -145,6 +172,7 @@ export default function WarRoomLobby() {
       });
 
       const unsubError = onlineRoomClient.subscribeToErrors((err) => {
+        clearRecoveryTimeout();
         if (err === 'ROOM_NOT_FOUND') {
           clearAllOnlineSessions();
           setRoom(null);
@@ -195,10 +223,12 @@ export default function WarRoomLobby() {
         setIsConnected(connected);
         if (!connected) {
           setIsReconnecting(true);
+          armRecoveryTimeout();
           setDiagnostics(prev => ({ ...prev, lastEvent: 'DISCONNECTED' }));
           return;
         }
 
+        clearRecoveryTimeout();
         setDiagnostics(prev => ({ ...prev, socketId: onlineRoomClient.socketId, lastEvent: 'CONNECTED' }));
         recoverRoom();
       });
@@ -212,6 +242,7 @@ export default function WarRoomLobby() {
       }
 
       return () => {
+        clearRecoveryTimeout();
         unsubState();
         unsubSnapshot();
         unsubError();
