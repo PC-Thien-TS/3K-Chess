@@ -1,17 +1,36 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import PracticeBoard from './pages/PracticeBoard';
-import MatchSetup from './pages/MatchSetup';
-import MatchArchive from './pages/MatchArchive';
-import ReplayBoard from './pages/ReplayBoard';
-import WarCouncil from './pages/WarCouncil';
-import CreateRoom from './pages/CreateRoom';
-import JoinRoom from './pages/JoinRoom';
-import WarRoomLobby from './pages/WarRoomLobby';
-import NotFound from './pages/NotFound';
 import { MatchProvider } from './context/MatchContext';
+
+const Home = lazy(() => import('./pages/Home'));
+const MatchSetup = lazy(() => import('./pages/MatchSetup'));
+const PracticeBoard = lazy(() => import('./pages/PracticeBoard'));
+const MatchArchive = lazy(() => import('./pages/MatchArchive'));
+const ReplayBoard = lazy(() => import('./pages/ReplayBoard'));
+const WarCouncil = lazy(() => import('./pages/WarCouncil'));
+const CreateRoom = lazy(() => import('./pages/CreateRoom'));
+const JoinRoom = lazy(() => import('./pages/JoinRoom'));
+const WarRoomLobby = lazy(() => import('./pages/WarRoomLobby'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="flex min-h-[calc(100vh-12rem)] items-center justify-center px-4 py-20">
+      <div className="glass-dark w-full max-w-md rounded-[2.5rem] border border-gold/20 p-10 text-center shadow-2xl">
+        <div className="mx-auto mb-5 h-14 w-14 rounded-full border-2 border-gold/20 border-t-gold animate-spin" />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gold">Deploying Route</p>
+        <h2 className="mt-4 text-2xl font-serif font-black uppercase tracking-[0.12em] text-white">
+          Loading battlefield...
+        </h2>
+        <p className="mt-3 text-sm font-serif italic text-zinc-400">
+          Summoning the campaign map and command interface.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -30,18 +49,20 @@ function Layout({ children }: { children: React.ReactNode }) {
       
       <Navbar />
       <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/setup" element={<MatchSetup />} />
-          <Route path="/practice" element={<PracticeBoard />} />
-          <Route path="/archive" element={<MatchArchive />} />
-          <Route path="/replay/:matchId" element={<ReplayBoard />} />
-          <Route path="/rooms" element={<WarCouncil />} />
-          <Route path="/rooms/create" element={<CreateRoom />} />
-          <Route path="/rooms/join" element={<JoinRoom />} />
-          <Route path="/rooms/:roomCode" element={<WarRoomLobby />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/setup" element={<MatchSetup />} />
+            <Route path="/practice" element={<PracticeBoard />} />
+            <Route path="/archive" element={<MatchArchive />} />
+            <Route path="/replay/:matchId" element={<ReplayBoard />} />
+            <Route path="/rooms" element={<WarCouncil />} />
+            <Route path="/rooms/create" element={<CreateRoom />} />
+            <Route path="/rooms/join" element={<JoinRoom />} />
+            <Route path="/rooms/:roomCode" element={<WarRoomLobby />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       <Footer />
 
