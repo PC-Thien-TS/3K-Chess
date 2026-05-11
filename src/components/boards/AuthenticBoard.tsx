@@ -478,7 +478,7 @@ export default function AuthenticBoard({
   };
 
   return (
-    <div className="min-h-screen container mx-auto px-4 pb-12 pt-24 sm:px-6">
+    <div data-testid="authentic-board" className="min-h-screen container mx-auto px-4 pb-12 pt-24 sm:px-6">
       <div className="grid grid-cols-1 items-start gap-6 lg:gap-8 2xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-6 sm:space-y-8">
           <div className="flex flex-wrap items-center gap-2 text-[9px] font-black uppercase tracking-[0.28em] text-[#6b4a26] sm:gap-3 sm:text-[10px] sm:tracking-[0.35em]">

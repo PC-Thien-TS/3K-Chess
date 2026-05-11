@@ -157,6 +157,7 @@ export default function MatchSetup() {
           <button
             key={mode}
             type="button"
+            data-testid={mode === 'classic' ? 'classic-mode-card' : 'modern-3k-mode-card'}
             onClick={() => handleModeSelect(mode)}
             className={cn(
               "text-left glass-dark border rounded-[2rem] p-5 transition-all shadow-2xl sm:rounded-[2.5rem] sm:p-8",
@@ -269,7 +270,7 @@ export default function MatchSetup() {
                             Bot
                           </button>
                         </div>
-                        <div className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-amber-100 sm:rounded-[2rem] sm:px-6">
+                        <div data-testid="han-court-status" className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-amber-100 sm:rounded-[2rem] sm:px-6">
                           <span className="text-[9px] font-black uppercase tracking-[0.35em]">Han Court</span>
                           <p className="mt-2 text-xs font-serif italic leading-relaxed text-amber-100/85">
                             Local only. Han is never directly controlled, and Modern 3K does not use online rooms.

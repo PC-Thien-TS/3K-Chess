@@ -124,7 +124,7 @@ export default function MatchArchive() {
   });
 
   return (
-    <div className="pt-24 min-h-screen max-w-7xl mx-auto px-4 pb-12 sm:px-6">
+    <div data-testid="match-archive-page" className="pt-24 min-h-screen max-w-7xl mx-auto px-4 pb-12 sm:px-6">
       <div className="mb-12 flex flex-col gap-8 px-0 sm:px-4 lg:mb-16 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
         <div className="space-y-4">
           <Link to="/" className="inline-flex items-center gap-3 text-gold hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.4em] mb-4 bg-gold/10 px-6 py-2.5 rounded-full border border-gold/20 hover:scale-105 active:scale-95">
@@ -177,6 +177,7 @@ export default function MatchArchive() {
           <Search className="text-gold group-focus-within:scale-125 transition-transform" size={24} />
         </div>
         <input 
+          data-testid="archive-search-input"
           type="text" 
           placeholder="SEARCH CHRONICLES (WINNER, ID, OR ROOM CODE)..."
           value={searchTerm}
@@ -188,7 +189,7 @@ export default function MatchArchive() {
       <div className="mb-8 flex flex-col gap-4 px-0 sm:px-4 sm:mb-10">
         <div className="flex flex-col gap-2">
           <span className="text-[9px] font-black uppercase tracking-[0.28em] text-zinc-500">Mode Filter</span>
-          <div className="flex flex-wrap gap-2">
+          <div data-testid="archive-mode-filter" className="flex flex-wrap gap-2">
             {([
               ['all', 'All'],
               ['classic', 'Classic'],
@@ -213,7 +214,7 @@ export default function MatchArchive() {
 
         <div className="flex flex-col gap-2">
           <span className="text-[9px] font-black uppercase tracking-[0.28em] text-zinc-500">Source Filter</span>
-          <div className="flex flex-wrap gap-2">
+          <div data-testid="archive-source-filter" className="flex flex-wrap gap-2">
             {([
               ['all', 'All'],
               ['local', 'Local'],
