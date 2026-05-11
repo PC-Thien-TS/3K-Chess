@@ -1,6 +1,7 @@
 import './classicOnlineAuthority.test';
 import './authenticRules.test';
 import './classicMoveReducer.test';
+import './classicReplayReducer.test';
 import { runTests } from './testHarness';
 
 runTests().catch((error) => {

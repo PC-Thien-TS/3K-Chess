@@ -33,11 +33,28 @@ const FACTION_COLORS = {
   None: 'text-zinc-500'
 };
 
+type ArchiveModeFilter = 'all' | 'classic' | 'authentic';
+type ArchiveSourceFilter = 'all' | 'local' | 'war-room';
+
+function getArchiveMode(match: MatchRecord) {
+  return normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE);
+}
+
+function getArchiveSource(match: MatchRecord): Exclude<ArchiveSourceFilter, 'all'> {
+  return match.source?.mode === 'war-room-sim' ? 'war-room' : 'local';
+}
+
+function getArchiveSourceLabel(match: MatchRecord) {
+  return getArchiveSource(match) === 'war-room' ? 'War Room' : 'Local';
+}
+
 export default function MatchArchive() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
+  const [modeFilter, setModeFilter] = useState<ArchiveModeFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<ArchiveSourceFilter>('all');
 
   useEffect(() => {
     setMatches(getSavedMatchRecords());
@@ -79,10 +96,32 @@ export default function MatchArchive() {
     reader.readAsText(file);
   };
 
-  const filteredMatches = matches.filter(m => 
-    m.winner?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMatches = matches.filter((match) => {
+    const mode = getArchiveMode(match);
+    const source = getArchiveSource(match);
+
+    if (modeFilter !== 'all' && mode !== modeFilter) {
+      return false;
+    }
+
+    if (sourceFilter !== 'all' && source !== sourceFilter) {
+      return false;
+    }
+
+    if (!searchTerm.trim()) {
+      return true;
+    }
+
+    const query = searchTerm.trim().toLowerCase();
+    const roomCode = match.source?.roomCode?.toLowerCase() ?? '';
+    const winner = match.winner?.toLowerCase() ?? '';
+    const modeLabel = GAME_MODE_META[mode].shortLabel.toLowerCase();
+    const sourceLabel = getArchiveSourceLabel(match).toLowerCase();
+
+    return [winner, match.id.toLowerCase(), roomCode, modeLabel, sourceLabel].some((value) =>
+      value.includes(query)
+    );
+  });
 
   return (
     <div className="pt-24 min-h-screen max-w-7xl mx-auto px-4 pb-12 sm:px-6">
@@ -139,16 +178,73 @@ export default function MatchArchive() {
         </div>
         <input 
           type="text" 
-          placeholder="SEARCH CHRONICLES (WINNER, ID, OR LOCATION)..."
+          placeholder="SEARCH CHRONICLES (WINNER, ID, OR ROOM CODE)..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full rounded-[1.75rem] border-2 border-white/5 bg-white/[0.02] py-5 pl-16 pr-6 text-[11px] tracking-[0.16em] text-white placeholder:text-zinc-800 shadow-inner transition-all focus:outline-none focus:border-gold/40 focus:bg-white/[0.04] font-mono font-black sm:rounded-[2.5rem] sm:py-8 sm:pl-24 sm:pr-10 sm:text-xs sm:tracking-[0.2em]"
         />
       </div>
 
+      <div className="mb-8 flex flex-col gap-4 px-0 sm:px-4 sm:mb-10">
+        <div className="flex flex-col gap-2">
+          <span className="text-[9px] font-black uppercase tracking-[0.28em] text-zinc-500">Mode Filter</span>
+          <div className="flex flex-wrap gap-2">
+            {([
+              ['all', 'All'],
+              ['classic', 'Classic'],
+              ['authentic', 'Modern 3K'],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setModeFilter(value)}
+                className={cn(
+                  'rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] transition-all',
+                  modeFilter === value
+                    ? 'border-gold bg-gold/10 text-gold'
+                    : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-[9px] font-black uppercase tracking-[0.28em] text-zinc-500">Source Filter</span>
+          <div className="flex flex-wrap gap-2">
+            {([
+              ['all', 'All'],
+              ['local', 'Local'],
+              ['war-room', 'Online / War Room'],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSourceFilter(value)}
+                className={cn(
+                  'rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] transition-all',
+                  sourceFilter === value
+                    ? 'border-gold bg-gold/10 text-gold'
+                    : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {filteredMatches.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 px-0 sm:px-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-          {filteredMatches.map((match, idx) => (
+          {filteredMatches.map((match, idx) => {
+            const mode = getArchiveMode(match);
+            const sourceLabel = getArchiveSourceLabel(match);
+            const winnerLabel = match.winner || 'Armistice';
+
+            return (
             <motion.div
               layout
               initial={{ opacity: 0, y: 40 }}
@@ -171,16 +267,19 @@ export default function MatchArchive() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <div className="inline-flex items-center gap-2 text-[8px] font-black text-white uppercase tracking-[0.2em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
-                      {GAME_MODE_META[normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE)].shortLabel}
+                      {GAME_MODE_META[mode].shortLabel}
                     </div>
                     <div className="inline-flex items-center gap-2 text-[8px] font-black text-zinc-200 uppercase tracking-[0.2em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
-                      {match.source?.mode === 'war-room-sim' ? 'War Room' : 'Local'}
+                      {sourceLabel}
                     </div>
                     {match.source?.mode === 'war-room-sim' && match.source.roomCode && (
                       <div className="inline-flex items-center gap-2 text-[8px] font-black text-gold uppercase tracking-[0.2em] bg-gold/10 border border-gold/20 px-4 py-1.5 rounded-full">
                         {match.source.roomCode}
                       </div>
                     )}
+                    <div className="inline-flex items-center gap-2 text-[8px] font-black text-zinc-200 uppercase tracking-[0.2em] bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
+                      Winner {winnerLabel}
+                    </div>
                   </div>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-black group-hover:rotate-12 group-hover:scale-110 transition-all shadow-xl">
@@ -243,7 +342,8 @@ export default function MatchArchive() {
                 </button>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-40 text-center px-4 relative">

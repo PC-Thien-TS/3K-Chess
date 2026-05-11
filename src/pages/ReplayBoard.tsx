@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
@@ -24,7 +24,6 @@ import {
   PieceType,
   Piece, 
   MatchRecord, 
-  RecordedMove, 
   getPieceName,
   validateBoardIntegrity,
   isFactionInCheck
@@ -32,6 +31,7 @@ import {
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
+import { isClassicReplayRecord, reconstructClassicReplayState } from '@/src/rules/classicReplayReducer';
 
 const FACTION_COLORS = {
   Shu: 'text-rose-500 bg-black border-rose-500/50 shadow-rose-900/40',
@@ -72,35 +72,6 @@ export default function ReplayBoard() {
     }
   }, [matchId, location.state]);
 
-  const currentPieces = useCallback((): Piece[] => {
-    if (!match) return [];
-    let pieces = [...match.initialPieces];
-    for (let i = 0; i < currentStep; i++) {
-      const move = match.moves[i];
-      // Apply move correctly
-      const movedPiece = pieces.find(p => p.id === move.pieceId);
-      if (movedPiece) {
-        // Remove captured piece if any
-        if (move.capturedPiece) {
-            pieces = pieces.filter(p => !(p.x === move.to.x && p.y === move.to.y));
-        }
-        // If a move causes checkmate, some pieces might be cleared (eliminated factions)
-        // However, RecordedMove usually tracks state at that point. 
-        // A simpler way is to just follow the recorded piece positions if possible, 
-        // but here we just update the specific moved piece.
-        pieces = pieces.map(p => p.id === move.pieceId ? { ...p, x: move.to.x, y: move.to.y } : p);
-        
-        // Handle elimination: if this move eliminated a faction, remove all their pieces
-        if (move.eliminatedAfterMove && move.eliminatedAfterMove.length > 0) {
-            pieces = pieces.filter(p => !move.eliminatedAfterMove?.includes(p.faction));
-        }
-      }
-    }
-    return pieces;
-  }, [match, currentStep]);
-
-  const lastMove = currentStep > 0 ? match?.moves[currentStep - 1] : null;
-
   const nextStep = useCallback(() => {
     if (match && currentStep < match.moves.length) {
       setCurrentStep(prev => prev + 1);
@@ -128,10 +99,19 @@ export default function ReplayBoard() {
     };
   }, [isPlaying, nextStep]);
 
+  const replayMode = normalizeGameMode(match?.setup?.gameMode, DEFAULT_GAME_MODE);
+  const classicReplaySupported = match ? isClassicReplayRecord(match) : true;
+  const replaySnapshot = useMemo(
+    () =>
+      match
+        ? reconstructClassicReplayState(match.initialPieces, match.moves, currentStep)
+        : { pieces: [] as Piece[], lastMove: null, moveIndex: 0 },
+    [currentStep, match]
+  );
+
   if (!match) return null;
 
-  const replayMode = normalizeGameMode(match.setup?.gameMode, DEFAULT_GAME_MODE);
-  if (replayMode === 'authentic') {
+  if (!classicReplaySupported) {
     return (
       <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
         <div className="flex flex-col gap-6 px-0 sm:px-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
@@ -175,7 +155,8 @@ export default function ReplayBoard() {
     );
   }
 
-  const boardPieces = currentPieces();
+  const boardPieces = replaySnapshot.pieces;
+  const lastMove = replaySnapshot.lastMove;
 
   return (
     <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
