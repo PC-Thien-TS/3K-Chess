@@ -1,4 +1,4 @@
-import type { PieceType, Point } from '@/src/rules/classicThreeKingdomRules';
+import type { BotDifficulty, PieceType, Point } from '@/src/rules/classicThreeKingdomRules';
 import {
   applyAuthenticMove,
   getAuthenticLegalMoves,
@@ -33,6 +33,20 @@ export interface AuthenticBotDecision {
 type AuthenticBotCandidate = {
   piece: AuthenticPiece;
   to: Point;
+};
+
+type AuthenticMoveAnalysis = {
+  piece: AuthenticPiece;
+  to: Point;
+  resolution: NonNullable<ReturnType<typeof applyAuthenticMove>>;
+  specials: Set<AuthenticSpecialMove>;
+  capturedValue: number;
+  capturedGeneral: boolean;
+  resolvesCheck: boolean;
+  stillInCheck: boolean;
+  givesCheck: boolean;
+  exposedToAttack: boolean;
+  positionScore: number;
 };
 
 function getForwardProgress(piece: AuthenticPiece, to: Point) {
@@ -93,81 +107,264 @@ function getCandidates(state: AuthenticBoardState, faction: AuthenticFaction): A
     );
 }
 
+function analyzeAuthenticMove(
+  state: AuthenticBoardState,
+  faction: AuthenticFaction,
+  candidate: AuthenticBotCandidate
+): AuthenticMoveAnalysis | null {
+  const resolution = applyAuthenticMove(state, candidate.piece, candidate.to);
+  if (!resolution) return null;
+
+  const specials = getSpecialsForResolution(resolution);
+  const captured = resolution.moveRecord.captured;
+
+  return {
+    piece: candidate.piece,
+    to: candidate.to,
+    resolution,
+    specials,
+    capturedValue: captured ? PIECE_VALUES[captured.type] || 0 : 0,
+    capturedGeneral: captured?.type === 'G' && captured.owner !== 'Han',
+    resolvesCheck:
+      isFactionInCheck(faction, state.pieces, state.allianceState) &&
+      !isFactionInCheck(faction, resolution.pieces, resolution.allianceState),
+    stillInCheck: isFactionInCheck(faction, resolution.pieces, resolution.allianceState),
+    givesCheck: specials.has('CHECK') || resolution.checkedPriorityQueue.length > 0,
+    exposedToAttack: isFactionInCheck(faction, resolution.pieces, resolution.allianceState)
+      ? true
+      : isThreatenedByOpponent(faction, candidate.to, resolution.pieces, resolution.allianceState),
+    positionScore: getPositionScore(candidate.piece, candidate.to),
+  };
+}
+
+function isThreatenedByOpponent(
+  faction: AuthenticFaction,
+  point: Point,
+  pieces: AuthenticBoardState['pieces'],
+  allianceState: AuthenticBoardState['allianceState']
+) {
+  return pieces.some((piece) => {
+    if (!isAuthenticPlayerFaction(piece.owner) || piece.owner === faction) {
+      return false;
+    }
+
+    return getAuthenticLegalMoves(
+      piece,
+      pieces,
+      piece.owner,
+      1,
+      null,
+      allianceState
+    ).some((candidate) => candidate.x === point.x && candidate.y === point.y);
+  });
+}
+
+function scoreEasyMove(analysis: AuthenticMoveAnalysis) {
+  let score = 0;
+  let reason = { rank: 0, text: 'Casual legal move' };
+
+  if (analysis.resolution.winner) {
+    const result = pushReason(score, reason, 12000, 5, 'Closing the campaign');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.resolvesCheck) {
+    const result = pushReason(score, reason, 9000, 4, 'Resolving danger around the General');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.capturedValue > 0) {
+    const result = pushReason(score, reason, analysis.capturedValue * 900, 3, `Capturing ${analysis.resolution.moveRecord.captured?.visualFaction} ${analysis.resolution.moveRecord.captured?.type}`);
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.givesCheck) {
+    const result = pushReason(score, reason, 1200, 2, 'Giving check');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  score += analysis.positionScore;
+  if (analysis.exposedToAttack) {
+    score -= (PIECE_VALUES[analysis.piece.type] || 0) * 60;
+  }
+  score += Math.random() * 160;
+
+  return { score, reason: reason.text };
+}
+
+function scoreNormalMove(analysis: AuthenticMoveAnalysis) {
+  let score = 0;
+  let reason = { rank: 0, text: 'Tactical repositioning' };
+
+  if (analysis.resolvesCheck) {
+    const result = pushReason(score, reason, 30000, 7, 'Resolving danger around the General');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.resolution.winner || analysis.capturedGeneral) {
+    const result = pushReason(score, reason, 25000, 6, 'Capturing an enemy General');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.specials.has('DEPOSE_EMPEROR')) {
+    const result = pushReason(score, reason, 18000, 5, 'Deposing the Han Emperor with a Horse');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.capturedValue > 0) {
+    const result = pushReason(
+      score,
+      reason,
+      analysis.capturedValue * 1200,
+      4,
+      `Capturing ${analysis.resolution.moveRecord.captured?.visualFaction} ${analysis.resolution.moveRecord.captured?.type}`
+    );
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.givesCheck) {
+    const result = pushReason(score, reason, 2500, 3, 'Giving check');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.specials.has('ALLIANCE')) {
+    const result = pushReason(score, reason, 800, 2, 'Forming an alliance');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  score += analysis.positionScore;
+  if (analysis.stillInCheck) {
+    score -= 9000;
+  }
+  if (analysis.exposedToAttack) {
+    score -= (PIECE_VALUES[analysis.piece.type] || 0) * 110;
+  }
+  score += Math.random() * 24;
+
+  return { score, reason: reason.text };
+}
+
+function scoreHardMove(analysis: AuthenticMoveAnalysis) {
+  let score = 0;
+  let reason = { rank: 0, text: 'Aggressive positional advance' };
+
+  if (analysis.resolution.winner) {
+    const result = pushReason(score, reason, 42000, 8, 'Closing the campaign');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.resolvesCheck) {
+    const result = pushReason(score, reason, 34000, 7, 'Resolving danger around the General');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.capturedGeneral) {
+    const result = pushReason(score, reason, 28000, 6, 'Capturing an enemy General');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.specials.has('DEPOSE_EMPEROR')) {
+    const result = pushReason(score, reason, 19000, 5, 'Deposing the Han Emperor with a Horse');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.capturedValue > 0) {
+    const result = pushReason(
+      score,
+      reason,
+      analysis.capturedValue * 1500,
+      4,
+      `Capturing ${analysis.resolution.moveRecord.captured?.visualFaction} ${analysis.resolution.moveRecord.captured?.type}`
+    );
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.givesCheck) {
+    const bonus = analysis.exposedToAttack ? 1800 : 4200;
+    const result = pushReason(score, reason, bonus, 3, 'Driving a safe check');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.specials.has('ALLIANCE')) {
+    const result = pushReason(score, reason, 1200, 2, 'Forming an alliance');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  if (analysis.specials.has('ABSORB_ARMY')) {
+    const result = pushReason(score, reason, 1800, 2, 'Absorbing a defeated army');
+    score = result.nextScore;
+    reason = result.nextReason;
+  }
+
+  score += analysis.positionScore * 1.15;
+  if (analysis.stillInCheck) {
+    score -= 12000;
+  }
+  if (analysis.exposedToAttack) {
+    const pieceValue = PIECE_VALUES[analysis.piece.type] || 0;
+    const tradePenalty = Math.max(pieceValue - analysis.capturedValue, 0) * 180;
+    score -= pieceValue * 120;
+    score -= tradePenalty;
+  }
+  score += Math.random() * 8;
+
+  return { score, reason: reason.text };
+}
+
+function scoreAuthenticMove(analysis: AuthenticMoveAnalysis, difficulty: BotDifficulty) {
+  if (difficulty === 'easy') return scoreEasyMove(analysis);
+  if (difficulty === 'hard') return scoreHardMove(analysis);
+  return scoreNormalMove(analysis);
+}
+
+function chooseEasyAuthenticMove(scoredMoves: AuthenticBotDecision[]) {
+  const sorted = [...scoredMoves].sort((a, b) => b.score - a.score);
+  const pool = sorted.slice(0, Math.min(sorted.length, 4));
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export function chooseAuthenticBotMove(
   state: AuthenticBoardState,
-  faction: AuthenticFaction
+  faction: AuthenticFaction,
+  difficulty: BotDifficulty = 'normal'
 ): AuthenticBotDecision | null {
   const candidates = getCandidates(state, faction);
   if (candidates.length === 0) return null;
 
-  const currentInCheck = isFactionInCheck(faction, state.pieces, state.allianceState);
   const scoredMoves = candidates.flatMap((candidate) => {
-    const resolution = applyAuthenticMove(state, candidate.piece, candidate.to);
-    if (!resolution) return [];
+    const analysis = analyzeAuthenticMove(state, faction, candidate);
+    if (!analysis) return [];
 
-    let score = 0;
-    let reason = { rank: 0, text: 'Random legal fallback' };
-    const specials = getSpecialsForResolution(resolution);
-    const captured = resolution.moveRecord.captured;
-
-    if (currentInCheck && !isFactionInCheck(faction, resolution.pieces, resolution.allianceState)) {
-      const result = pushReason(score, reason, 30000, 7, 'Resolving danger around the General');
-      score = result.nextScore;
-      reason = result.nextReason;
-    }
-
-    if (resolution.winner === faction || (captured?.type === 'G' && captured.owner !== 'Han')) {
-      const result = pushReason(score, reason, 25000, 6, 'Capturing an enemy General');
-      score = result.nextScore;
-      reason = result.nextReason;
-    }
-
-    if (specials.has('DEPOSE_EMPEROR')) {
-      const result = pushReason(score, reason, 18000, 5, 'Deposing the Han Emperor with a Horse');
-      score = result.nextScore;
-      reason = result.nextReason;
-    }
-
-    if (captured) {
-      const captureValue = PIECE_VALUES[captured.type] || 0;
-      const result = pushReason(
-        score,
-        reason,
-        captureValue * 1200,
-        4,
-        `Capturing ${captured.visualFaction} ${captured.type}`
-      );
-      score = result.nextScore;
-      reason = result.nextReason;
-    }
-
-    if (specials.has('CHECK') || resolution.checkedPriorityQueue.length > 0) {
-      const result = pushReason(score, reason, 2500, 3, 'Giving check');
-      score = result.nextScore;
-      reason = result.nextReason;
-    }
-
-    if (specials.has('ALLIANCE')) {
-      const result = pushReason(score, reason, 800, 2, 'Forming an alliance');
-      score = result.nextScore;
-      reason = result.nextReason;
-    }
-
-    score += getPositionScore(candidate.piece, candidate.to);
-    score += Math.random() * 24;
-
+    const scored = scoreAuthenticMove(analysis, difficulty);
     return [{
       pieceId: candidate.piece.id,
       pieceType: candidate.piece.type,
       from: { x: candidate.piece.x, y: candidate.piece.y },
       to: candidate.to,
-      score,
-      reason: reason.text,
+      score: scored.score,
+      reason: scored.reason,
     }];
   });
 
   if (scoredMoves.length === 0) return null;
 
   scoredMoves.sort((a, b) => b.score - a.score);
-  return scoredMoves[0];
+  return difficulty === 'easy' ? chooseEasyAuthenticMove(scoredMoves) : scoredMoves[0];
 }

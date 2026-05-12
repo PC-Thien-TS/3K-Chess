@@ -310,6 +310,14 @@ export default function AuthenticBoard({
         : DEFAULT_AUTHENTIC_CONTROLS,
     [config]
   );
+  const difficultyModes = useMemo(
+    () => ({
+      Wu: config.factions.Wu.difficulty,
+      Wei: config.factions.Wei.difficulty,
+      Shu: config.factions.Shu.difficulty,
+    }),
+    [config]
+  );
   const isInteractive = context === 'practice' && roomMode === 'local';
   const checkedPriorityText = formatPriorityStatus(gameState.checkedPriorityQueue);
   const selectedPieceText = formatSelectedPiece(selectedPiece);
@@ -446,6 +454,7 @@ export default function AuthenticBoard({
     enabled: isInteractive,
     gameState,
     controlModes,
+    difficultyModes,
     executeBotMove,
     setStatus,
   });

@@ -44,9 +44,15 @@ const FACTION_DETAILS = {
 };
 
 const DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
-  easy: 'Subtle strategist (Easy)',
-  normal: 'Grand Strategist (Normal)',
-  hard: 'Divine Tactician (Hard)'
+  easy: 'Casual (Easy)',
+  normal: 'Tactical (Normal)',
+  hard: 'Aggressive (Hard)'
+};
+
+const DIFFICULTY_NOTES: Record<BotDifficulty, string> = {
+  easy: 'Light scoring with extra randomness.',
+  normal: 'Balanced tactical pressure and safer exchanges.',
+  hard: 'Aggressive heuristic with stronger king-safety weighting.',
 };
 
 export default function MatchSetup() {
@@ -82,8 +88,8 @@ export default function MatchSetup() {
   };
 
   const handleDifficultyChange = (faction: Faction, diff: BotDifficulty) => {
-    if (diff === 'hard') return; // Only easy and normal are active for now
-    setClassicFactions(prev => ({
+    const updateFactions = isAuthenticMode ? setAuthenticFactions : setClassicFactions;
+    updateFactions(prev => ({
       ...prev,
       [faction]: { ...prev[faction], difficulty: diff }
     }));
@@ -276,6 +282,44 @@ export default function MatchSetup() {
                             Local only. Wu, Wei, and Shu can each be Human or Bot, Han remains neutral, and Modern 3K does not use online rooms.
                           </p>
                         </div>
+                        <AnimatePresence>
+                          {activeFactions[f].control === 'Bot' && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0, y: -10 }}
+                              animate={{ opacity: 1, height: 'auto', y: 0 }}
+                              exit={{ opacity: 0, height: 0, y: -10 }}
+                              className="flex flex-col gap-3 overflow-hidden pt-2"
+                            >
+                              <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Bot Pressure</span>
+                              <div className="grid grid-cols-1 gap-2">
+                                {(['easy', 'normal', 'hard'] as BotDifficulty[]).map((difficulty) => (
+                                  <button
+                                    key={`auth-${difficulty}`}
+                                    onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, difficulty); }}
+                                    className={cn(
+                                      "flex items-center justify-between gap-3 px-6 py-4 rounded-2xl border text-left transition-all shadow-md group/diff",
+                                      activeFactions[f].difficulty === difficulty
+                                        ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5"
+                                        : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                                    )}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className="text-[9px] font-black uppercase tracking-widest">{DIFFICULTY_LABELS[difficulty]}</span>
+                                      <span className="mt-1 text-[10px] font-serif italic tracking-normal normal-case opacity-70">
+                                        {DIFFICULTY_NOTES[difficulty]}
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      {Array.from({ length: difficulty === 'easy' ? 1 : difficulty === 'normal' ? 2 : 3 }).map((_, index) => (
+                                        <Zap key={`auth-${difficulty}-${index}`} size={12} className={cn(activeFactions[f].difficulty === difficulty ? "opacity-100" : "opacity-30 group-hover/diff:opacity-60")} />
+                                      ))}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     ) : (
                       <>
@@ -319,33 +363,30 @@ export default function MatchSetup() {
                             >
                               <span className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black text-white">Strategic Intent</span>
                               <div className="grid grid-cols-1 gap-2">
-                                 <button
-                                   onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'easy'); }}
-                                   className={cn(
-                                     "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
-                                     activeFactions[f].difficulty === 'easy' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
-                                   )}
-                                 >
-                                   {DIFFICULTY_LABELS.easy}
-                                   <Zap size={12} className={cn(activeFactions[f].difficulty === 'easy' ? "opacity-100" : "opacity-0 group-hover/diff:opacity-20")} />
-                                 </button>
-                                 <button
-                                   onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, 'normal'); }}
-                                   className={cn(
-                                     "flex items-center justify-between px-6 py-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest transition-all shadow-md group/diff",
-                                     activeFactions[f].difficulty === 'normal' ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5" : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
-                                   )}
-                                 >
-                                   {DIFFICULTY_LABELS.normal}
-                                   <div className="flex gap-1">
-                                      <Zap size={12} className={cn(activeFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
-                                      <Zap size={12} className={cn(activeFactions[f].difficulty === 'normal' ? "opacity-100" : "opacity-0")} />
-                                   </div>
-                                 </button>
-                                 <div className="px-6 py-4 rounded-2xl bg-white/[0.01] border border-white/[0.03] text-zinc-800 text-[9px] font-black uppercase tracking-widest flex justify-between items-center cursor-not-allowed grayscale">
-                                   Divine Tactician (Hard)
-                                   <span className="text-[8px] bg-zinc-900 px-2 py-0.5 rounded-full text-zinc-600 border border-white/5">Dormant</span>
-                                 </div>
+                                 {(['easy', 'normal', 'hard'] as BotDifficulty[]).map((difficulty) => (
+                                   <button
+                                     key={difficulty}
+                                     onClick={(e) => { e.stopPropagation(); handleDifficultyChange(f, difficulty); }}
+                                     className={cn(
+                                       "flex items-center justify-between gap-3 px-6 py-4 rounded-2xl border text-left transition-all shadow-md group/diff",
+                                       activeFactions[f].difficulty === difficulty
+                                         ? "bg-gold/10 border-gold/40 text-gold shadow-gold/5"
+                                         : "bg-white/[0.02] border-white/5 text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
+                                     )}
+                                   >
+                                     <div className="flex flex-col">
+                                       <span className="text-[9px] font-black uppercase tracking-widest">{DIFFICULTY_LABELS[difficulty]}</span>
+                                       <span className="mt-1 text-[10px] font-serif italic tracking-normal normal-case opacity-70">
+                                         {DIFFICULTY_NOTES[difficulty]}
+                                       </span>
+                                     </div>
+                                     <div className="flex gap-1">
+                                       {Array.from({ length: difficulty === 'easy' ? 1 : difficulty === 'normal' ? 2 : 3 }).map((_, index) => (
+                                         <Zap key={`${difficulty}-${index}`} size={12} className={cn(activeFactions[f].difficulty === difficulty ? "opacity-100" : "opacity-30 group-hover/diff:opacity-60")} />
+                                       ))}
+                                     </div>
+                                   </button>
+                                 ))}
                               </div>
                             </motion.div>
                           )}

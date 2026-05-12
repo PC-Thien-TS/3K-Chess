@@ -9,6 +9,16 @@ import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
 const AUTHENTIC_DISABLED_MESSAGE =
   'Modern 3K is local-only. Start it from /setup?mode=authentic.';
+const BOT_DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
+  easy: 'Casual',
+  normal: 'Tactical',
+  hard: 'Aggressive',
+};
+const BOT_DIFFICULTY_NOTES: Record<BotDifficulty, string> = {
+  easy: 'Lighter scoring and more variance.',
+  normal: 'Balanced pressure and safer trades.',
+  hard: 'Sharper heuristics and stronger king safety.',
+};
 
 export default function CreateRoom() {
   const navigate = useNavigate();
@@ -365,17 +375,20 @@ export default function CreateRoom() {
                     <button
                       key={d}
                       type="button"
-                      disabled={d === 'hard'}
                       onClick={() => setDefaultDifficulty(d)}
                       className={cn(
-                        "flex-1 py-3 rounded-xl text-[9px] font-bold uppercase tracking-widest border transition-all",
-                        d === 'hard' ? "opacity-20 cursor-not-allowed border-white/5" :
+                        "flex-1 rounded-xl border px-3 py-3 text-left transition-all",
                         defaultDifficulty === d 
                           ? "bg-gold/10 border-gold text-gold" 
-                          : "bg-white/5 border-white/5 text-zinc-500"
+                          : "bg-white/5 border-white/5 text-zinc-500 hover:bg-white/10 hover:text-zinc-300"
                       )}
                     >
-                      {d} {d === 'hard' && "(Early Access)"}
+                      <span className="block text-[9px] font-bold uppercase tracking-widest">
+                        {BOT_DIFFICULTY_LABELS[d]} ({d})
+                      </span>
+                      <span className="mt-1 block text-[10px] font-serif italic normal-case tracking-normal opacity-75">
+                        {BOT_DIFFICULTY_NOTES[d]}
+                      </span>
                     </button>
                   ))}
                 </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { chooseAuthenticBotMove, type AuthenticBotDecision } from '@/src/ai/authenticBotAI';
-import type { PlayerType } from '@/src/rules/classicThreeKingdomRules';
+import type { BotDifficulty, PlayerType } from '@/src/rules/classicThreeKingdomRules';
 import type {
   AuthenticBoardState,
   AuthenticFaction,
@@ -10,6 +10,7 @@ type UseAuthenticBotTurnsParams = {
   enabled: boolean;
   gameState: AuthenticBoardState;
   controlModes: Record<AuthenticFaction, PlayerType>;
+  difficultyModes: Record<AuthenticFaction, BotDifficulty>;
   executeBotMove: (decision: AuthenticBotDecision) => boolean;
   setStatus: React.Dispatch<React.SetStateAction<string>>;
 };
@@ -32,6 +33,7 @@ export function useAuthenticBotTurns({
   enabled,
   gameState,
   controlModes,
+  difficultyModes,
   executeBotMove,
   setStatus,
 }: UseAuthenticBotTurnsParams) {
@@ -62,7 +64,7 @@ export function useAuthenticBotTurns({
 
     timerRef.current = setTimeout(() => {
       try {
-        const decision = chooseAuthenticBotMove(gameState, activeTurn);
+        const decision = chooseAuthenticBotMove(gameState, activeTurn, difficultyModes[activeTurn]);
         if (!decision) {
           setStatus(`${activeTurn} Bot has no legal moves.`);
           return;
@@ -81,7 +83,7 @@ export function useAuthenticBotTurns({
         timerRef.current = null;
       }
     };
-  }, [enabled, gameState, controlModes, executeBotMove, setStatus]);
+  }, [enabled, gameState, controlModes, difficultyModes, executeBotMove, setStatus]);
 
   return { isBotThinking };
 }
