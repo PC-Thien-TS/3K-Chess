@@ -43,9 +43,10 @@ export default function ClassicBoard({
     turn !== playerFaction &&
     controlModes[turn] !== 'Bot' &&
     !winner;
+  const isLockedTurn = isRemoteWaiting || controlModes[turn] === 'Bot' || !!winner;
 
   return (
-    <div data-testid="classic-board" className="relative mx-auto w-full max-w-[820px] min-w-0 aspect-square overflow-hidden rounded-[1.8rem] border border-[#5d4926]/40 bg-[#100d09] p-2 sm:rounded-[2.25rem] sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
+    <div data-testid="classic-board" className="relative mx-auto aspect-square w-full max-w-[820px] min-w-0 overflow-hidden rounded-[1.8rem] border border-[#5d4926]/40 bg-[#100d09] p-2 sm:rounded-[2.25rem] sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
       <div className="absolute inset-[1.25%] rounded-[2rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
       <div className="absolute inset-[2.2%] rounded-[1.8rem] border border-black/35 shadow-[inset_0_0_80px_rgba(0,0,0,0.72)]" />
@@ -131,21 +132,25 @@ export default function ClassicBoard({
           [...Array(COLS)].map((_, x) => {
             const piece = pieces.find((entry) => entry.x === x && entry.y === y);
             const isSelected = selectedId === piece?.id;
-            const isLegalMove = legalMoves.some((move) => move.to.x === x && move.to.y === y);
-            const isLastMoveFrom = !!latestMove && latestMove.from.x === x && latestMove.from.y === y;
-            const isLastMoveTo = !!latestMove && latestMove.to.x === x && latestMove.to.y === y;
-            const isCheckedGeneral = !!piece && checkedGeneralIds.has(piece.id);
-            const isAttacker = !!piece && attackerIds.has(piece.id);
+              const isLegalMove = legalMoves.some((move) => move.to.x === x && move.to.y === y);
+              const isLastMoveFrom = !!latestMove && latestMove.from.x === x && latestMove.from.y === y;
+              const isLastMoveTo = !!latestMove && latestMove.to.x === x && latestMove.to.y === y;
+              const isCheckedGeneral = !!piece && checkedGeneralIds.has(piece.id);
+              const isAttacker = !!piece && attackerIds.has(piece.id);
+              const isTurnOwnedPiece = !!piece && piece.faction === turn;
+              const isSelectablePiece = !!piece && isTurnOwnedPiece && !isLockedTurn;
+              const showCaptureMarker = isLegalMove && !!piece;
+              const showQuietMarker = isLegalMove && !piece;
 
-            return (
-              <div
-                key={`${x}-${y}`}
-                onClick={() => onPointClick(x, y)}
-                className={cn(
-                  'group relative flex min-h-0 items-center justify-center',
-                  isRemoteWaiting ? 'cursor-not-allowed' : 'cursor-pointer',
-                )}
-              >
+              return (
+                <div
+                  key={`${x}-${y}`}
+                  onClick={() => onPointClick(x, y)}
+                  className={cn(
+                    'group relative flex min-h-0 items-center justify-center overflow-hidden rounded-[0.7rem] transition-transform duration-150 active:scale-[0.97] sm:rounded-[0.9rem]',
+                    isLockedTurn ? 'cursor-not-allowed' : 'cursor-pointer active:bg-gold/[0.05]',
+                  )}
+                >
                 {(isLastMoveFrom || isLastMoveTo) && (
                   <div
                     className={cn(
@@ -157,22 +162,31 @@ export default function ClassicBoard({
                   />
                 )}
 
-                <div className="absolute h-[2px] w-3 rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55" />
-                <div className="absolute h-3 w-[2px] rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55" />
+                <div className="absolute h-[2px] w-3 rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55 group-active:bg-gold/70" />
+                <div className="absolute h-3 w-[2px] rounded-full bg-[#6f5b3d]/45 transition-colors group-hover:bg-gold/55 group-active:bg-gold/70" />
                 <div className="absolute h-[4px] w-[4px] rounded-full bg-[#8a734b]/65 shadow-[0_0_6px_rgba(212,175,55,0.18)]" />
 
-                {isLegalMove && (
+                {showQuietMarker && (
                   <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className={cn(
-                      'absolute z-40 transition-all',
-                      piece
-                        ? 'h-8 w-8 rounded-full border-2 border-rose-400/80 bg-rose-500/[0.16] shadow-[0_0_20px_rgba(244,63,94,0.42)] sm:h-7 sm:w-7'
-                        : 'h-6 w-6 rounded-full border border-gold/80 bg-gold/55 shadow-[0_0_18px_rgba(212,175,55,0.42)] sm:h-5 sm:w-5',
-                    )}
+                    data-testid="legal-move-marker"
+                    className="absolute z-40 h-6 w-6 rounded-full border border-gold/75 bg-[radial-gradient(circle,rgba(244,211,94,0.82)_0,rgba(244,211,94,0.36)_32%,rgba(244,211,94,0.08)_70%,transparent_100%)] shadow-[0_0_18px_rgba(212,175,55,0.35)] sm:h-5 sm:w-5"
                   >
-                    {piece && <div className="absolute inset-[22%] rotate-45 border border-rose-200/70" />}
+                    <div className="absolute inset-[32%] rounded-full bg-black/30" />
+                  </motion.div>
+                )}
+
+                {showCaptureMarker && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    data-testid="capture-marker"
+                    className="absolute z-40 h-8 w-8 rounded-full border-2 border-rose-300/85 bg-rose-500/[0.18] shadow-[0_0_22px_rgba(244,63,94,0.42)] sm:h-7 sm:w-7"
+                  >
+                    <div className="absolute inset-[22%] rotate-45 border border-rose-100/80" />
+                    <div className="absolute inset-x-[46%] top-[14%] h-[72%] w-px bg-rose-100/65" />
+                    <div className="absolute inset-y-[46%] left-[14%] h-px w-[72%] bg-rose-100/65" />
                   </motion.div>
                 )}
 
@@ -181,7 +195,10 @@ export default function ClassicBoard({
                     layoutId={piece.id}
                     onMouseEnter={() => onHoverPoint({ x, y })}
                     onMouseLeave={() => onHoverPoint(null)}
-                    className="absolute z-20 h-[94%] w-[94%] cursor-grab transition-all active:cursor-grabbing sm:h-[90%] sm:w-[90%]"
+                    className={cn(
+                      'absolute z-20 h-[94%] w-[94%] transition-all sm:h-[90%] sm:w-[90%]',
+                      isSelectablePiece ? 'cursor-grab active:cursor-grabbing active:scale-[0.97]' : 'cursor-default',
+                    )}
                   >
                     <BoardPieceToken
                       faction={piece.faction}
@@ -189,8 +206,9 @@ export default function ClassicBoard({
                       selected={isSelected}
                       inCheck={isCheckedGeneral}
                       attacker={isAttacker}
-                      dimmed={isRemoteWaiting && piece.faction === playerFaction}
-                      interactive
+                      dimmed={!isTurnOwnedPiece || (isRemoteWaiting && piece.faction === playerFaction)}
+                      interactive={isSelectablePiece}
+                      turnOwned={isTurnOwnedPiece}
                     />
                   </motion.div>
                 )}

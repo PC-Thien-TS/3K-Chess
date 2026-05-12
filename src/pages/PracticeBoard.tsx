@@ -54,6 +54,23 @@ const FACTION_NAMES = {
   None: 'Unaligned'
 };
 
+const FACTION_ACCENTS: Record<Faction, string> = {
+  Shu: 'border-rose-500/20 bg-rose-500/10 text-rose-300',
+  Wei: 'border-blue-500/20 bg-blue-500/10 text-blue-300',
+  Wu: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
+  None: 'border-white/10 bg-white/5 text-zinc-300',
+};
+
+const CLASSIC_PIECE_HELP: Record<PieceType, string> = {
+  G: 'Moves one point orthogonally inside the palace.',
+  A: 'Moves one point diagonally inside the palace.',
+  E: 'Moves diagonally with its territory restriction intact.',
+  H: 'Moves in an L-shape.',
+  R: 'Moves any distance in a straight line.',
+  P: 'Moves straight and captures by leaping one screen.',
+  S: 'Advances forward and gains new lanes after crossing the line.',
+};
+
 const getInitialPieces = (): Piece[] => {
   const piecesList: Piece[] = [];
 
@@ -550,7 +567,23 @@ function ClassicPracticeBoard() {
         ? 'border-gold/20 bg-gold/10 text-gold'
         : lastSyncEvent === 'CANNOT_CONNECT'
           ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-          : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400';
+      : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400';
+  const currentTurnControl = controlModes[turn];
+  const isOnlineWaiting = roomMode === 'online' && !!playerFaction && turn !== playerFaction && currentTurnControl !== 'Bot' && !winner;
+  const classicTurnTitle = winner
+    ? `${winner} wins`
+    : isBotThinking && currentTurnControl === 'Bot'
+      ? 'Bot thinking...'
+      : `${turn} to move`;
+  const classicTurnDetail = winner
+    ? `${FACTION_NAMES[winner]} controls the field.`
+    : currentTurnControl === 'Bot'
+      ? `${turn} Bot is evaluating the next maneuver.`
+    : roomMode === 'online' && playerFaction
+      ? `You command ${playerFaction}. ${isOnlineWaiting ? 'Waiting for opponent.' : 'Your move.'}`
+      : `${FACTION_NAMES[turn]} has initiative.`;
+  const selectedPieceControlLabel = selectedPiece ? controlModes[selectedPiece.faction] : null;
+  const classicSetupHref = '/setup?mode=classic';
 
   if (roomExpired) {
     return (
@@ -593,7 +626,7 @@ function ClassicPracticeBoard() {
   }
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 relative">
+    <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 relative overflow-x-hidden">
       {/* Match Summary Modal */}
       <AnimatePresence>
         {showSummary && winner && (
@@ -993,13 +1026,57 @@ function ClassicPracticeBoard() {
           >
             <Settings size={16} className="text-gold" /> {roomCode ? "To Lobby" : "Change Setup"}
           </button>
+        </div>
+      </div>
 
-          <button 
-            onClick={resetGame}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-gold/10 bg-gold/10 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-gold transition-all shadow-[0_0_20px_rgba(212,175,55,0.1)] hover:bg-gold hover:text-black sm:w-auto"
-          >
-            <RotateCcw size={16} /> Restore Armies
-          </button>
+      <div
+        data-testid="current-turn-banner"
+        className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-[linear-gradient(135deg,rgba(212,175,55,0.08),rgba(255,255,255,0.02)_42%,rgba(17,24,39,0.22))] px-5 py-5 shadow-2xl sm:px-8 sm:py-6"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.12),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.08),transparent_28%)] pointer-events-none" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.35em] text-zinc-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+              Battle Tempo
+            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-serif font-black uppercase tracking-[0.12em] text-white sm:text-3xl">
+                {classicTurnTitle}
+              </h2>
+              {!winner && (
+                <span className={cn('rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em]', FACTION_ACCENTS[turn])}>
+                  {currentTurnControl}
+                </span>
+              )}
+            </div>
+            <p className="max-w-3xl text-sm font-serif italic leading-relaxed text-zinc-300">
+              {classicTurnDetail}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase tracking-[0.22em]">
+            {roomMode === 'online' && playerFaction && !winner && (
+              <span className={cn('rounded-full border px-4 py-2', FACTION_ACCENTS[playerFaction])}>
+                Assigned: {playerFaction}
+              </span>
+            )}
+            {roomMode === 'online' && !winner && (
+              <span className={cn('rounded-full border px-4 py-2', isOnlineWaiting ? 'border-white/10 bg-white/5 text-zinc-300' : 'border-gold/20 bg-gold/10 text-gold')}>
+                {isOnlineWaiting ? 'Waiting for opponent' : 'Your move'}
+              </span>
+            )}
+            {isBotThinking && !winner && (
+              <span className="rounded-full border border-gold/20 bg-gold/10 px-4 py-2 text-gold">
+                Bot thinking...
+              </span>
+            )}
+            {winner && (
+              <span className={cn('rounded-full border px-4 py-2', FACTION_ACCENTS[winner])}>
+                Victor: {winner}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1175,6 +1252,49 @@ function ClassicPracticeBoard() {
             onHoverPoint={setHoveredPoint}
             onPointClick={handlePointClick}
           />
+
+          <div
+            data-testid="selected-piece-info"
+            className="relative mt-6 w-full max-w-[820px] overflow-hidden rounded-[1.75rem] border border-white/6 bg-white/[0.03] px-4 py-4 shadow-xl sm:mt-8 sm:rounded-3xl sm:px-8 sm:py-6"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,213,141,0.08),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_60%)] pointer-events-none" />
+            <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.35em] text-zinc-500">Selected Piece</span>
+                {selectedPiece ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-xl font-serif font-black text-white">{getPieceName(selectedPiece.type)}</h3>
+                      <span className={cn('rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]', FACTION_ACCENTS[selectedPiece.faction])}>
+                        {selectedPiece.faction}
+                      </span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300">
+                        {selectedPieceControlLabel}
+                      </span>
+                    </div>
+                    <p className="text-sm font-serif italic leading-relaxed text-zinc-300">
+                      {CLASSIC_PIECE_HELP[selectedPiece.type]}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm font-serif italic leading-relaxed text-zinc-400">
+                    Select a unit to review its faction, control, and movement pattern.
+                  </p>
+                )}
+              </div>
+              {selectedPiece && (
+                <div className="rounded-[1.4rem] border border-white/6 bg-black/20 px-4 py-4 text-sm text-zinc-300">
+                  <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500">Field Note</p>
+                  <p className="mt-2 font-serif italic">
+                    {getPieceDescription(selectedPiece.type)}
+                  </p>
+                  <p className="mt-3 text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500">
+                    Position ({selectedPiece.x}, {selectedPiece.y})
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
           
           <div className="group relative mt-6 flex w-full max-w-[820px] flex-col gap-4 overflow-hidden rounded-[1.75rem] border border-white/5 px-4 py-4 shadow-2xl sm:mt-8 sm:flex-row sm:items-center sm:gap-6 sm:rounded-3xl sm:px-8 sm:py-6">
             <div className="absolute inset-0 bg-gold/[0.02] pointer-events-none" />
@@ -1184,6 +1304,43 @@ function ClassicPracticeBoard() {
             <p className="text-white text-sm font-serif italic leading-relaxed tracking-wide">
               {status}
             </p>
+          </div>
+
+          <div
+            data-testid="quick-actions"
+            className="mt-6 grid w-full max-w-[820px] grid-cols-1 gap-3 sm:mt-8 md:grid-cols-3"
+          >
+            {roomMode === 'local' ? (
+              <button
+                onClick={resetGame}
+                className="flex items-center justify-center gap-3 rounded-2xl border border-gold/15 bg-gold/10 px-5 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-gold transition-all hover:bg-gold hover:text-black active:scale-[0.98]"
+              >
+                <RotateCcw size={16} />
+                Restart
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate(roomCode ? `/rooms/${roomCode}` : '/rooms')}
+                className="flex items-center justify-center gap-3 rounded-2xl border border-white/8 bg-white/5 px-5 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+              >
+                <ChevronLeft size={16} />
+                Return to Lobby
+              </button>
+            )}
+            <button
+              onClick={handleSaveLocally}
+              className="flex items-center justify-center gap-3 rounded-2xl border border-white/8 bg-white/5 px-5 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+            >
+              <Save size={16} className="text-gold" />
+              Save Match
+            </button>
+            <button
+              onClick={() => navigate(classicSetupHref)}
+              className="flex items-center justify-center gap-3 rounded-2xl border border-white/8 bg-white/5 px-5 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-300 transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
+            >
+              <Settings size={16} className="text-gold" />
+              Return to Setup
+            </button>
           </div>
               {/* Right Panel: History */}
         <div className="mt-6 w-full space-y-6 sm:mt-8 sm:space-y-8">

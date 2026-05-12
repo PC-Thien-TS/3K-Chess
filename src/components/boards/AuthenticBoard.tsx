@@ -110,6 +110,16 @@ const DEFAULT_AUTHENTIC_CONTROLS: Record<AuthenticFaction, PlayerType> = {
   Shu: 'Bot',
 };
 
+const AUTHENTIC_PIECE_HELP: Record<AuthenticPiece['type'], string> = {
+  G: 'General moves one point orthogonally inside its palace.',
+  A: 'Advisor moves one point diagonally inside its palace.',
+  E: 'Elephant moves two points diagonally and ignores eye-blocks.',
+  H: 'Horse moves in an L-shape and ignores leg-blocks in Modern 3K.',
+  R: 'Chariot moves any distance orthogonally.',
+  P: 'Cannon moves straight and captures by jumping one screen.',
+  S: 'Soldier moves one orthogonal point with Authentic territory rules.',
+};
+
 const BOARD_MIN = 8.75;
 const BOARD_MAX = 91.25;
 const BOARD_SPAN = BOARD_MAX - BOARD_MIN;
@@ -155,10 +165,14 @@ function PieceToken({
   piece,
   selected,
   ownedByCurrentTurn,
+  selectable,
+  muted,
 }: {
   piece: AuthenticPiece;
   selected: boolean;
   ownedByCurrentTurn: boolean;
+  selectable: boolean;
+  muted: boolean;
 }) {
   const theme = PIECE_THEME[piece.visualFaction];
   const showOwnerBadge = piece.owner !== piece.visualFaction && piece.owner !== 'Han';
@@ -169,8 +183,10 @@ function PieceToken({
         'relative flex h-full w-full items-center justify-center rounded-full border-[2px] bg-[radial-gradient(circle_at_35%_32%,rgba(255,255,255,0.95),rgba(248,239,220,0.98)_58%,rgba(219,196,161,0.98)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-2px_5px_rgba(120,90,52,0.10)] transition-all',
         theme.rim,
         theme.shadow,
-        selected && 'scale-[1.04] shadow-[0_0_0_2px_rgba(250,204,21,0.24),0_4px_10px_rgba(120,90,52,0.14)]',
-        ownedByCurrentTurn && !selected && 'shadow-[0_0_0_1px_rgba(255,255,255,0.28),0_4px_10px_rgba(120,90,52,0.14)]'
+        selected && 'scale-[1.06] shadow-[0_0_0_2px_rgba(250,204,21,0.3),0_0_0_6px_rgba(250,204,21,0.12),0_6px_14px_rgba(120,90,52,0.18)]',
+        ownedByCurrentTurn && !selected && 'shadow-[0_0_0_1px_rgba(255,255,255,0.28),0_0_0_4px_rgba(255,248,220,0.08),0_4px_10px_rgba(120,90,52,0.14)]',
+        selectable && !selected && 'group-hover:scale-[1.03]',
+        muted && !selected && 'opacity-72 saturate-90'
       )}
     >
       <div className="absolute inset-[8%] rounded-full border border-black/10" />
@@ -199,6 +215,7 @@ function PieceToken({
           {piece.type}
         </span>
       </div>
+      {selected && <div className="pointer-events-none absolute inset-[-8%] rounded-full border-2 border-amber-500/55" />}
     </div>
   );
 }
@@ -297,6 +314,34 @@ export default function AuthenticBoard({
   const selectedPieceText = formatSelectedPiece(selectedPiece);
   const currentTurnControl = controlModes[gameState.currentTurn];
   const isBotTurn = isInteractive && !gameState.winner && currentTurnControl === 'Bot';
+  const legalMoveMeta = useMemo(() => {
+    const meta = new Map<string, { capture: boolean; special?: AuthenticSpecialMove }>();
+    if (!selectedPiece) {
+      return meta;
+    }
+
+    legalMoves.forEach((point) => {
+      const validation = validateAuthenticMove(
+        selectedPiece,
+        point,
+        gameState.pieces,
+        gameState.currentTurn,
+        gameState.moveNumber,
+        gameState.hanController,
+        gameState.allianceState
+      );
+
+      if (validation.legal) {
+        meta.set(`${point.x},${point.y}`, {
+          capture: !!validation.isCapture,
+          special: validation.special,
+        });
+      }
+    });
+
+    return meta;
+  }, [gameState.allianceState, gameState.currentTurn, gameState.hanController, gameState.moveNumber, gameState.pieces, legalMoves, selectedPiece]);
+  const authenticSetupHref = '/setup?mode=authentic';
   const devLog = (...args: unknown[]) => {
     if ((import.meta as any).env.DEV) {
       console.log(...args);
@@ -394,6 +439,14 @@ export default function AuthenticBoard({
     executeBotMove,
     setStatus,
   });
+  const authenticTurnTitle = gameState.winner
+    ? `${gameState.winner} wins`
+    : isBotThinking && isBotTurn
+      ? 'Bot thinking...'
+      : `${gameState.currentTurn} to move`;
+  const authenticTurnDetail = gameState.winner
+    ? `${gameState.winner} controls the last surviving command.`
+    : `${getAuthenticFactionLabel(gameState.currentTurn)} is active under ${currentTurnControl} control.`;
 
   const handlePointClick = (x: number, y: number) => {
     const point = { x, y };
@@ -504,13 +557,52 @@ export default function AuthenticBoard({
   };
 
   return (
-    <div data-testid="authentic-board" className="min-h-screen container mx-auto px-4 pb-12 pt-24 sm:px-6">
+    <div data-testid="authentic-board" className="min-h-screen container mx-auto overflow-x-hidden px-4 pb-12 pt-24 sm:px-6">
       <div className="grid grid-cols-1 items-start gap-6 lg:gap-8 2xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-6 sm:space-y-8">
           <div className="flex flex-wrap items-center gap-2 text-[9px] font-black uppercase tracking-[0.28em] text-[#6b4a26] sm:gap-3 sm:text-[10px] sm:tracking-[0.35em]">
             <span className="rounded-full border border-[#8c6331]/25 bg-[#f3e4be] px-4 py-2">{modeMeta.shortLabel}</span>
             <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Tabletop Local</span>
             <span className="rounded-full border border-[#8c6331]/20 bg-[#efe2c6] px-4 py-2 text-[#8b7755]">Human + Bot</span>
+          </div>
+
+          <div
+            data-testid="current-turn-banner"
+            className="overflow-hidden rounded-[2rem] border border-[#8c6331]/18 bg-[linear-gradient(135deg,rgba(244,234,211,0.96),rgba(234,215,176,0.92))] px-5 py-5 shadow-[0_18px_44px_rgba(66,45,20,0.12)] sm:px-8 sm:py-6"
+          >
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.35em] text-[#8d7048]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#8b6433]" />
+                  Table Command
+                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-2xl font-serif font-black uppercase tracking-[0.12em] text-[#35210f] sm:text-3xl">
+                    {authenticTurnTitle}
+                  </h2>
+                  {!gameState.winner && <ControlBadge control={currentTurnControl} />}
+                </div>
+                <p className="max-w-3xl text-sm font-serif italic leading-relaxed text-[#6d5334]">
+                  {authenticTurnDetail}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase tracking-[0.2em]">
+                <span className="rounded-full border border-[#8b6433]/18 bg-white/45 px-4 py-2 text-[#6f4c28]">
+                  Han Court: {getHanStatus(gameState.hanController)}
+                </span>
+                {gameState.checkedPriorityQueue.length > 0 && (
+                  <span className="rounded-full border border-amber-500/20 bg-amber-100/70 px-4 py-2 text-[#8b5d17]">
+                    Priority: {gameState.checkedPriorityQueue.join(' -> ')}
+                  </span>
+                )}
+                {isBotThinking && !gameState.winner && (
+                  <span className="rounded-full border border-amber-500/20 bg-amber-100/70 px-4 py-2 text-[#8b5d17]">
+                    Bot thinking...
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="mx-auto w-full max-w-[820px] rounded-[2rem] border border-[#8c6331]/22 bg-[#ead7b0] p-3 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:rounded-[3rem] sm:p-6 md:p-8">
@@ -602,11 +694,14 @@ export default function AuthenticBoard({
                   const point = { x, y };
                   const piece = findAuthenticPieceAt(gameState.pieces, point);
                   const allianceFaction = getAlliancePointFaction(point);
-                  const isLegalMove = legalMoves.some((move) => move.x === x && move.y === y);
+                  const moveMeta = legalMoveMeta.get(`${x},${y}`);
+                  const isLegalMove = !!moveMeta;
                   const isLastMoveFrom = !!gameState.lastMove && samePoint(gameState.lastMove.from, point);
                   const isLastMoveTo = !!gameState.lastMove && samePoint(gameState.lastMove.to, point);
                   const isAccent = AUTHENTIC_POINT_ACCENTS.some((accent) => samePoint(accent, point));
-                  const markerOnPiece = isLegalMove && !!piece;
+                  const markerOnPiece = !!moveMeta?.capture;
+                  const showAllianceHint = moveMeta?.special === 'ALLIANCE';
+                  const showDeposeHint = moveMeta?.special === 'DEPOSE_EMPEROR';
 
                   return (
                     <React.Fragment key={`${x}-${y}`}>
@@ -614,8 +709,10 @@ export default function AuthenticBoard({
                         type="button"
                         onClick={() => handlePointClick(x, y)}
                         className={cn(
-                          'absolute z-10 h-[6.8%] w-[6.8%] rounded-full bg-transparent touch-manipulation sm:h-[5.8%] sm:w-[5.8%] lg:h-[4.8%] lg:w-[4.8%]',
-                          isInteractive ? 'cursor-pointer' : 'cursor-default'
+                          'absolute z-10 h-[6.8%] w-[6.8%] rounded-full bg-transparent touch-manipulation transition-transform sm:h-[5.8%] sm:w-[5.8%] lg:h-[4.8%] lg:w-[4.8%]',
+                          isInteractive && !isBotTurn && !gameState.winner
+                            ? 'cursor-pointer active:scale-[1.1] active:bg-[#7a5730]/10 active:ring-2 active:ring-[#8b6433]/20'
+                            : 'cursor-default'
                         )}
                         style={{
                           ...coordinateToStyle(x, y),
@@ -657,10 +754,37 @@ export default function AuthenticBoard({
                             />
                           )}
                           {isLegalMove && !markerOnPiece && (
-                            <div className="absolute left-1/2 top-1/2 h-[0.92rem] w-[0.92rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/45 bg-amber-100/20 sm:h-[0.78rem] sm:w-[0.78rem]" />
+                            <div
+                              data-testid="legal-move-marker"
+                              className={cn(
+                                'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border sm:h-[0.82rem] sm:w-[0.82rem]',
+                                showAllianceHint
+                                  ? 'h-[1.02rem] w-[1.02rem] border-emerald-700/45 bg-emerald-100/28 shadow-[0_0_16px_rgba(16,185,129,0.18)]'
+                                  : showDeposeHint
+                                    ? 'h-[1.08rem] w-[1.08rem] border-amber-700/50 bg-amber-100/28 shadow-[0_0_18px_rgba(217,119,6,0.16)]'
+                                    : 'h-[0.98rem] w-[0.98rem] border-amber-700/45 bg-amber-100/24 shadow-[0_0_14px_rgba(120,86,46,0.14)]'
+                              )}
+                            >
+                              <div className="absolute inset-[32%] rounded-full bg-[#7a521f]/22" />
+                              {showAllianceHint && <div className="absolute inset-[22%] rotate-45 rounded-[0.16rem] border border-emerald-800/45" />}
+                              {showDeposeHint && (
+                                <>
+                                  <div className="absolute inset-x-[48%] top-[18%] h-[64%] w-px bg-amber-900/35" />
+                                  <div className="absolute inset-y-[48%] left-[18%] h-px w-[64%] bg-amber-900/35" />
+                                </>
+                              )}
+                            </div>
                           )}
                           {markerOnPiece && (
-                            <div className="absolute left-1/2 top-1/2 h-[2.45rem] w-[2.45rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-rose-500/70 bg-rose-100/6 sm:h-[2.25rem] sm:w-[2.25rem]" />
+                            <div
+                              data-testid="capture-marker"
+                              className={cn(
+                                'absolute left-1/2 top-1/2 h-[2.45rem] w-[2.45rem] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] bg-rose-100/8 sm:h-[2.25rem] sm:w-[2.25rem]',
+                                showDeposeHint ? 'border-amber-600/70 shadow-[0_0_18px_rgba(217,119,6,0.18)]' : 'border-rose-500/70 shadow-[0_0_18px_rgba(225,29,72,0.18)]'
+                              )}
+                            >
+                              <div className={cn('absolute inset-[18%] rotate-45 border', showDeposeHint ? 'border-amber-700/55' : 'border-rose-400/60')} />
+                            </div>
                           )}
                         </div>
                       )}
@@ -670,10 +794,18 @@ export default function AuthenticBoard({
 
                 {gameState.pieces.map((piece) => {
                   const isSelected = piece.id === selectedId;
+                  const isSelectablePiece = piece.owner === gameState.currentTurn && isInteractive && !isBotTurn && !gameState.winner;
+                  const isMuted =
+                    piece.owner !== 'Han' &&
+                    piece.owner !== gameState.currentTurn &&
+                    !isSelected;
                   return (
                     <div
                       key={piece.id}
-                      className="pointer-events-none absolute z-30 h-[8.1%] w-[8.1%] sm:h-[6.8%] sm:w-[6.8%] lg:h-[6.1%] lg:w-[6.1%]"
+                      className={cn(
+                        'pointer-events-none absolute z-30 h-[8.1%] w-[8.1%] transition-transform sm:h-[6.8%] sm:w-[6.8%] lg:h-[6.1%] lg:w-[6.1%]',
+                        isSelectablePiece && 'group-hover:scale-[1.02]'
+                      )}
                       style={{
                         ...coordinateToStyle(piece.x, piece.y),
                         transform: 'translate(-50%, -50%)',
@@ -683,6 +815,8 @@ export default function AuthenticBoard({
                         piece={piece}
                         selected={isSelected}
                         ownedByCurrentTurn={piece.owner === gameState.currentTurn}
+                        selectable={isSelectablePiece}
+                        muted={isMuted}
                       />
                     </div>
                   );
@@ -736,6 +870,43 @@ export default function AuthenticBoard({
                 </p>
               )}
             </div>
+          </div>
+
+          <div
+            data-testid="selected-piece-info"
+            className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+          >
+            <div className="mb-3 flex items-center gap-3 text-[#6f4c28]">
+              <Crown size={18} />
+              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Selected Piece</span>
+            </div>
+            {selectedPiece ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={cn('rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em]', FACTION_CARD_THEME[selectedPiece.visualFaction])}>
+                    {selectedPiece.visualFaction}
+                  </span>
+                  <span className="rounded-full border border-[#8b6433]/15 bg-white/50 px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#35210f]">
+                    {AUTHENTIC_LABELS[selectedPiece.type]}
+                  </span>
+                  <span className="rounded-full border border-[#8b6433]/15 bg-white/50 px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-[#6d5334]">
+                    Owner: {selectedPiece.owner}
+                  </span>
+                </div>
+                <p className="text-sm font-serif italic leading-relaxed text-[#6d5334]">
+                  {AUTHENTIC_PIECE_HELP[selectedPiece.type]}
+                </p>
+                <p className="text-xs font-serif text-[#6d5334]">
+                  {selectedPiece.owner === 'Han'
+                    ? 'Neutral Han objective piece.'
+                    : `${selectedPiece.owner} currently commands this piece.`}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm font-serif italic leading-relaxed text-[#6d5334]">
+                Select a piece to review its faction, current owner, and movement rule.
+              </p>
+            )}
           </div>
         </div>
 
@@ -881,45 +1052,51 @@ export default function AuthenticBoard({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:gap-4">
+          <div data-testid="quick-actions" className="flex flex-col gap-3 sm:gap-4">
+            {context === 'practice' && (
+              <button
+                type="button"
+                onClick={resetBoard}
+                className="flex items-center justify-center gap-3 rounded-2xl bg-[#5f4021] px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#f8edd6] transition-all hover:bg-[#4d341b] active:scale-[0.98] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+              >
+                <RotateCcw size={16} />
+                Restart Match
+              </button>
+            )}
             <button
               type="button"
               onClick={handleSaveLocally}
               data-testid="authentic-save-archive-button"
-              className="flex items-center justify-center gap-3 rounded-2xl bg-[#7b5325] px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#f8edd6] transition-all hover:bg-[#69461f] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+              className="flex items-center justify-center gap-3 rounded-2xl bg-[#7b5325] px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#f8edd6] transition-all hover:bg-[#69461f] active:scale-[0.98] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
             >
               <Save size={16} />
-              Save to Archive
+              Save Match
             </button>
+            {context === 'practice' ? (
+              <Link
+                to={authenticSetupHref}
+                className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 active:scale-[0.98] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+              >
+                <Wrench size={16} />
+                Return to Setup
+              </Link>
+            ) : (
+              <Link
+                to={returnHref}
+                className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 active:scale-[0.98] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+              >
+                <Wrench size={16} />
+                {returnLabel}
+              </Link>
+            )}
             <button
               type="button"
               onClick={handleExportMatch}
-              className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+              className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 active:scale-[0.98] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
             >
               <Download size={16} />
               Export Record
             </button>
-            <button
-              type="button"
-              onClick={resetBoard}
-              className="flex items-center justify-center gap-3 rounded-2xl bg-[#5f4021] px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#f8edd6] transition-all hover:bg-[#4d341b] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
-            >
-              <RotateCcw size={16} />
-              Reset Board
-            </button>
-            <Link
-              to="/setup?mode=classic"
-              className="rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
-            >
-              Launch Classic
-            </Link>
-            <Link
-              to={returnHref}
-              className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
-            >
-              <Wrench size={16} />
-              {returnLabel}
-            </Link>
           </div>
         </div>
       </div>
