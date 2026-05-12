@@ -41,9 +41,16 @@ This document provides instructions for deploying the standalone Socket.io backe
 On your Vercel (or other frontend) deployment, set the following environment variable:
 `VITE_WS_URL`: `https://your-backend-url.com`
 
+For local development:
+
+```env
+VITE_WS_URL=http://localhost:8787
+```
+
 ## Limitations & Scope
 
 - **In-memory storage:** All room data is stored in memory. Rooms will be reset if the server restarts or sleeps (on free tiers).
-- **No Authentication:** Identity is derived from Socket IDs.
+- **No strong authentication:** reconnect restoration is based on player name and session state, not accounts or secure identity.
 - **Prototype Mode:** This is a v1 implementation for testing online tactical maneuvers.
-- **Rules:** Chess rules are currently validated on the client side. Server-side validation is planned for Backend v2.
+- **Classic move authority:** the server validates room state, membership, faction ownership, turn order, duplicate move ids, and Classic move legality before broadcasting.
+- **Scope:** there is still no database, ranking, chat, or account system in this backend.

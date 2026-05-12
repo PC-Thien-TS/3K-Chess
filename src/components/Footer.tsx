@@ -35,10 +35,10 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-serif font-bold mb-6 tracking-wider">SUPPORT</h4>
           <ul className="space-y-4 text-sm uppercase tracking-widest text-xs">
-            <li><a href="#" className="hover:text-white">FAQ</a></li>
-            <li><a href="#" className="hover:text-white">Terms of Honor</a></li>
-            <li><a href="#" className="hover:text-white">Privacy Seal</a></li>
-            <li><a href="#" className="hover:text-white">Contact Us</a></li>
+            <li><Link to="/how-to-play" className="hover:text-white">Guide & FAQ</Link></li>
+            <li><Link to="/rooms" className="hover:text-white">Classic Rooms</Link></li>
+            <li><Link to="/archive" className="hover:text-white">Battle Archive</Link></li>
+            <li><Link to="/setup?mode=authentic" className="hover:text-white">Modern 3K Local</Link></li>
           </ul>
         </div>
 
@@ -46,9 +46,9 @@ export default function Footer() {
           <h4 className="text-white font-serif font-bold mb-6 tracking-wider">STRATEGY DIGEST</h4>
           <p className="text-sm mb-4">Join 50,000+ tacticians for weekly strategy breakdowns.</p>
           <div className="flex gap-2">
-            <input 
-              type="email" 
-              placeholder="Your email" 
+            <input
+              type="email"
+              placeholder="Your email"
               className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm w-full focus:outline-none focus:border-gold"
             />
             <button className="bg-gold text-ink font-bold px-4 py-2 rounded-lg text-sm transition-transform hover:scale-105">
@@ -57,7 +57,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      
+
       <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] uppercase tracking-[0.2em] opacity-40">
         <p>© 2026 THREE KINGDOMS CHESS. ALL RIGHTS RESERVED.</p>
         <p>NOT FOR USE BY PEASANTS OR COWARDS.</p>

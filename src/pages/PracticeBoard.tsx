@@ -10,6 +10,7 @@ import {
   Piece, 
   Point,
   MOVE_ERRORS, 
+  createClassicInitialPieces,
   isFactionInCheck,
   isCheckmate,
   Move,
@@ -71,40 +72,13 @@ const CLASSIC_PIECE_HELP: Record<PieceType, string> = {
   S: 'Advances forward and gains new lanes after crossing the line.',
 };
 
-const getInitialPieces = (): Piece[] => {
-  const piecesList: Piece[] = [];
-
-  // SHU (Top - Facing Down)
-  const shuBack = ['R', 'H', 'E', 'A', 'G', 'A', 'E', 'H', 'R'] as PieceType[];
-  shuBack.forEach((type, i) => piecesList.push({ id: `shu-${type}-${i}`, type, faction: 'Shu', x: 4 + i, y: 0 }));
-  piecesList.push({ id: 'shu-P-1', type: 'P', faction: 'Shu', x: 5, y: 2 });
-  piecesList.push({ id: 'shu-P-2', type: 'P', faction: 'Shu', x: 11, y: 2 });
-  [4, 6, 8, 10, 12].forEach((x, i) => piecesList.push({ id: `shu-S-${i}`, type: 'S', faction: 'Shu', x, y: 3 }));
-
-  // WU (Left - Facing Right)
-  const wuBack = ['R', 'H', 'E', 'A', 'G', 'A', 'E', 'H', 'R'] as PieceType[];
-  wuBack.forEach((type, i) => piecesList.push({ id: `wu-${type}-${i}`, type, faction: 'Wu', x: 0, y: 4 + i }));
-  piecesList.push({ id: 'wu-P-1', type: 'P', faction: 'Wu', x: 2, y: 5 });
-  piecesList.push({ id: 'wu-P-2', type: 'P', faction: 'Wu', x: 2, y: 11 });
-  [4, 6, 8, 10, 12].forEach((y, i) => piecesList.push({ id: `wu-S-${i}`, type: 'S', faction: 'Wu', x: 3, y }));
-
-  // WEI (Bottom - Facing Up)
-  const weiBack = ['R', 'H', 'E', 'A', 'G', 'A', 'E', 'H', 'R'] as PieceType[];
-  weiBack.forEach((type, i) => piecesList.push({ id: `wei-${type}-${i}`, type, faction: 'Wei', x: 4 + i, y: 16 }));
-  piecesList.push({ id: 'wei-P-1', type: 'P', faction: 'Wei', x: 5, y: 14 });
-  piecesList.push({ id: 'wei-P-2', type: 'P', faction: 'Wei', x: 11, y: 14 });
-  [4, 6, 8, 10, 12].forEach((x, i) => piecesList.push({ id: `wei-S-${i}`, type: 'S', faction: 'Wei', x, y: 13 }));
-
-  return piecesList;
-};
-
 function ClassicPracticeBoard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { config, updateConfig } = useMatchContext();
   const persistedOnlineMatchSession = readOnlineMatchSession();
 
-  const [pieces, setPieces] = useState<Piece[]>(getInitialPieces());
+  const [pieces, setPieces] = useState<Piece[]>(() => createClassicInitialPieces());
   const [turn, setTurn] = useState<Faction>('Shu');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [legalMoves, setLegalMoves] = useState<Move[]>([]);
@@ -124,7 +98,7 @@ function ClassicPracticeBoard() {
     None: config.factions.None.control
   });
   const [lastBotDecision, setLastBotDecision] = useState<(BotDecision & { difficulty: BotDifficulty }) | null>(null);
-  const [initialPieces] = useState<Piece[]>(getInitialPieces());
+  const [initialPieces] = useState<Piece[]>(() => createClassicInitialPieces());
   const [appliedMoveIds, setAppliedMoveIds] = useState<Set<string>>(new Set());
   const [lastSyncEvent, setLastSyncEvent] = useState<string | null>(null);
   const [onlineSession, setOnlineSession] = useState<PersistedOnlineMatchSession | null>(() => {
@@ -496,7 +470,7 @@ function ClassicPracticeBoard() {
       setShowResetConfirm(true);
       return;
     }
-    setPieces(getInitialPieces());
+    setPieces(createClassicInitialPieces());
     setTurn('Shu');
     setSelectedId(null);
     setLegalMoves([]);

@@ -16,6 +16,7 @@ npm run test:e2e
 ```
 
 This will:
+- Start the backend on port 8787
 - Start the local dev server on port 5173
 - Run all E2E tests in headless mode
 - Generate an HTML report
@@ -104,11 +105,11 @@ npx playwright test e2e/classic-online.spec.ts
 
 ## Known Limitations
 
-1. **Selector Stability**: Some tests use generic selectors (canvas, text). These may need refinement as the UI evolves.
+1. **Selector Stability**: Some tests still rely on broad text or grid-cell selectors. Add `data-testid` coverage if the board UI changes significantly.
 
-2. **No Move Verification**: Current tests verify board loading but do not make actual piece moves due to canvas-based rendering complexity.
+2. **Move Verification Scope**: The online suite covers room creation, join, slot claim, ready/start, board entry, and a best-effort synced move. It is not a full long-match multiplayer suite.
 
-3. **Online Coverage Scope**: The automated online test covers room creation, join, slot claim, ready/start, board entry, and one synced move. It is not yet a full long-match multiplayer suite.
+3. **Replay Coverage Scope**: The archive suite verifies Modern 3K local replay entry and step navigation. It is not yet an exhaustive replay regression suite across every record variant.
 
 4. **Single Browser**: Tests currently run only on Chromium. Firefox and WebKit can be added to playwright.config.ts if needed.
 

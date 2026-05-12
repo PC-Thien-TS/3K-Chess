@@ -99,12 +99,12 @@ export default function ClassicBoard({
       </div>
 
       <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-20 select-none overflow-hidden opacity-0">
-        <div className="text-[180px] font-serif text-rose-900/10 -mt-16 blur-[1px]">èœ€</div>
+        <div className="text-[180px] font-serif text-rose-900/10 -mt-16 blur-[1px]">SHU</div>
         <div className="flex justify-between w-full">
-          <div className="text-[180px] font-serif text-emerald-900/10 -ml-20 blur-[1px]">å´</div>
-          <div className="text-[180px] font-serif text-blue-900/10 -mr-20 blur-[1px] invisible">é­</div>
+          <div className="text-[180px] font-serif text-emerald-900/10 -ml-20 blur-[1px]">WU</div>
+          <div className="text-[180px] font-serif text-blue-900/10 -mr-20 blur-[1px] invisible">WEI</div>
         </div>
-        <div className="text-[180px] font-serif text-blue-900/10 -mb-16 blur-[1px]">é­</div>
+        <div className="text-[180px] font-serif text-blue-900/10 -mb-16 blur-[1px]">WEI</div>
       </div>
 
       <div className="absolute inset-0 pointer-events-none flex flex-col justify-between items-center p-6 sm:p-14 md:p-20 select-none overflow-hidden">
@@ -228,3 +228,4 @@ export default function ClassicBoard({
     </div>
   );
 }
+

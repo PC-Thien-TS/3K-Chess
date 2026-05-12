@@ -9,7 +9,7 @@ import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, normalizeGameMode } from '
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const AUTHENTIC_PREVIEW_MESSAGE =
-  'Modern 3K is local-only. Start local matches here with authentic rules, local bots, Han court control, and alliance mechanics.';
+  'Modern 3K is local-only. Wu, Wei, and Shu can each be Human or Bot, while Han remains a neutral court objective under the authentic ruleset.';
 const AUTHENTIC_DEFAULT_CONTROLS = {
   Shu: 'Bot' as const,
   Wei: 'Bot' as const,
@@ -273,7 +273,7 @@ export default function MatchSetup() {
                         <div data-testid="han-court-status" className="rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-amber-100 sm:rounded-[2rem] sm:px-6">
                           <span className="text-[9px] font-black uppercase tracking-[0.35em]">Han Court</span>
                           <p className="mt-2 text-xs font-serif italic leading-relaxed text-amber-100/85">
-                            Local only. Han is never directly controlled, and Modern 3K does not use online rooms.
+                            Local only. Wu, Wei, and Shu can each be Human or Bot, Han remains neutral, and Modern 3K does not use online rooms.
                           </p>
                         </div>
                       </div>

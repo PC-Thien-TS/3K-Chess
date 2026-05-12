@@ -206,7 +206,7 @@ export default function ReplayBoard() {
               <ChevronLeft size={16} /> Return to Archives
             </Link>
             <h1 className="text-4xl md:text-7xl font-serif font-black text-white tracking-[0.05em] uppercase leading-none">
-              AUTHENTIC <span className="text-gold italic block md:inline">REPLAY</span>
+              REPLAY <span className="text-gold italic block md:inline">NOTICE</span>
             </h1>
           </div>
 
@@ -230,10 +230,10 @@ export default function ReplayBoard() {
           <div className="glass-dark border border-white/10 rounded-[3rem] p-10 md:p-14 shadow-3xl">
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gold">Archive Notice</span>
             <h2 className="mt-4 text-3xl md:text-5xl font-serif font-black uppercase text-white tracking-tight">
-              Authentic replay is not available in v1.
+              This archive record cannot be replayed by the current viewer.
             </h2>
             <p className="mt-6 max-w-2xl text-zinc-400 font-serif italic leading-relaxed">
-              This record can still be exported for reference, but the Authentic local ruleset does not yet support archive playback.
+              The record can still be exported for reference, but it is missing the replay data expected by the current archive flow.
             </p>
           </div>
         </div>

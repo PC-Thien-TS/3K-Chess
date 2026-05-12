@@ -107,6 +107,7 @@ Run the current verification suite with:
 npm run test
 npm run lint
 npm run build
+npm run test:e2e
 ```
 
 What these cover:
@@ -114,6 +115,7 @@ What these cover:
 - reducer and replay tests
 - Authentic rules tests
 - Classic online authority and reconnect tests
+- Playwright route, local, archive, and Classic online room flows
 - TypeScript typecheck
 - production build verification
 
@@ -130,6 +132,12 @@ What these cover:
 ```bash
 npm run server
 ```
+
+Current backend scope:
+
+- server-authoritative validation for Classic online move submission
+- reconnect and snapshot recovery
+- no database persistence or strong authentication yet
 
 ### Health Endpoint
 

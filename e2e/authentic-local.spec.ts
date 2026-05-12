@@ -16,15 +16,11 @@ test.describe('Modern 3K Local Gameplay', () => {
     // Wait for navigation to practice board
     await page.waitForURL('/practice');
     
-    // Verify board loaded
-    await expect(page.getByText('Shu')).toBeVisible();
-    
-    // Verify Wu starts (Authentic rule)
-    await expect(page.getByText('Wu')).toBeVisible();
-    
-    // Verify board is interactive
     const boardArea = page.getByTestId('authentic-board');
     await expect(boardArea).toBeVisible();
+    
+    // Verify Wu starts (Authentic rule)
+    await expect(page.getByTestId('current-turn-banner')).toContainText('Wu');
   });
 
   test('Authentic mode shows correct features', async ({ page }) => {

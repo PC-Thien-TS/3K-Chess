@@ -24,8 +24,10 @@ import {
 } from '../src/rules/classicThreeKingdomRules';
 
 /**
- * TODO: Backend v2 - Implement server-authoritative chess rule validation.
- * Currently, moves are validated by the client and broadcasted by the server.
+ * Classic online authority is enforced here before any move broadcast.
+ * The server validates room state, membership, faction ownership, turn order,
+ * duplicate move ids, and Classic move legality against its authoritative
+ * board snapshot. Authentication and persistence are still out of scope for v1.
  */
 
 interface AuthoritativeClassicMatchState extends OnlineRoomGameState {

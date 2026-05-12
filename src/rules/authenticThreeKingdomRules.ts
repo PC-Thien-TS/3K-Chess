@@ -112,7 +112,7 @@ export const AUTHENTIC_MOVE_BLOCKED_MESSAGE =
   'Move rejected under Sanguo Yanyi Qi rules.';
 
 export const AUTHENTIC_LOCAL_ONLY_MESSAGE =
-  'Authentic Modern Three Kingdoms Xiangqi currently supports local human-only play. Online support and bots are disabled.';
+  'Authentic Modern Three Kingdoms Xiangqi is local-only. Wu, Wei, and Shu support Human or Bot control, while Han remains a neutral court objective.';
 
 export const AUTHENTIC_GLYPHS: Record<PieceType, string> = {
   G: '\u5c07',
