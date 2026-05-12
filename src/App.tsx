@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 import { MatchProvider } from './context/MatchContext';
 
 const Home = lazy(() => import('./pages/Home'));
+const HowToPlay = lazy(() => import('./pages/HowToPlay'));
 const MatchSetup = lazy(() => import('./pages/MatchSetup'));
 const PracticeBoard = lazy(() => import('./pages/PracticeBoard'));
 const MatchArchive = lazy(() => import('./pages/MatchArchive'));
@@ -52,6 +53,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/how-to-play" element={<HowToPlay />} />
             <Route path="/setup" element={<MatchSetup />} />
             <Route path="/practice" element={<PracticeBoard />} />
             <Route path="/archive" element={<MatchArchive />} />

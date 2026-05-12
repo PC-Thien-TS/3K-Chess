@@ -31,6 +31,11 @@ test.describe('Basic Routes', () => {
     await expect(page.locator('h1')).toContainText('IMPERIAL ARCHIVES');
   });
 
+  test('how to play page loads', async ({ page }) => {
+    await page.goto('/how-to-play');
+    await expect(page.locator('h1')).toContainText(/COMMAND GUIDE/i);
+  });
+
   test('unknown route shows NotFound', async ({ page }) => {
     await page.goto('/not-real-route');
     await expect(page.locator('h1')).toContainText('Route Not Found');

@@ -82,6 +82,21 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            transition={{ delay: 0.95, duration: 0.8 }}
+            className="flex justify-center pt-2"
+          >
+            <Link
+              to="/how-to-play"
+              className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-[10px] font-black uppercase tracking-[0.28em] text-zinc-300 transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
+            >
+              Study the Guide
+              <ArrowRight size={14} className="text-gold" />
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 2 }}
             className="flex flex-wrap justify-center gap-8 pt-12 sm:gap-10 md:gap-20 md:pt-16"
           >
@@ -188,9 +203,9 @@ export default function Home() {
                 <span className="text-xs uppercase tracking-widest font-medium text-white">{faction.trait}</span>
               </div>
 
-              <a href="#how-to-play" className="text-xs font-bold uppercase tracking-widest text-gold flex items-center gap-2 group-hover:gap-4 transition-all">
+              <Link to="/how-to-play" className="text-xs font-bold uppercase tracking-widest text-gold flex items-center gap-2 group-hover:gap-4 transition-all">
                 LEARN TACTICS <ArrowRight size={14} />
-              </a>
+              </Link>
             </motion.div>
           ))}
         </div>
@@ -342,6 +357,9 @@ export default function Home() {
         <div className="relative z-10 max-w-3xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8">ARE YOU READY TO <br className="hidden md:block" /> UNITE THE LAND?</h2>
           <div className="flex flex-col gap-4 justify-center md:flex-row">
+            <Link to="/how-to-play" className="w-full rounded-full border border-white/10 bg-white/5 px-8 py-4 font-bold uppercase tracking-widest text-white transition-colors hover:bg-white/10 md:w-auto md:px-12 md:py-5">
+              How to Play
+            </Link>
             <Link to="/rooms/create?mode=classic" className="w-full rounded-full bg-gold px-8 py-4 font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 md:w-auto md:px-12 md:py-5">
               Play Classic Online
             </Link>

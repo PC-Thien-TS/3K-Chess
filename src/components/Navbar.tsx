@@ -1,9 +1,10 @@
 import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { Sword, Book, Trophy, ShoppingBag, Shield, Users } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
 const navItems = [
-  { name: 'How to Play', path: '/#how-to-play', icon: Book },
+  { name: 'How to Play', path: '/how-to-play', icon: Book },
   { name: 'Classic Rooms', path: '/rooms', icon: Users },
   { name: 'Modern 3K Local', path: '/setup?mode=authentic', icon: Shield },
   { name: 'Community', path: '/#community', icon: Trophy },
@@ -17,21 +18,21 @@ export default function Navbar() {
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="glass-dark px-8 py-3 rounded-full flex items-center gap-8 shadow-2xl pointer-events-auto"
+        className="glass-dark flex items-center gap-4 rounded-full px-5 py-3 shadow-2xl pointer-events-auto sm:gap-8 sm:px-8"
       >
-        <a href="/" className="flex items-center gap-2 group">
+        <Link to="/" className="flex items-center gap-2 group">
           <Sword className="text-gold transition-transform group-hover:rotate-12" size={24} />
-          <span className="font-serif font-bold text-xl tracking-wider text-gold">3K CHESS</span>
-        </a>
+          <span className="font-serif font-bold text-lg tracking-wider text-gold sm:text-xl">3K CHESS</span>
+        </Link>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           {navItems.map((item) => {
             const Icon = item.icon;
             
             return (
-              <a 
+              <Link 
                 key={item.path}
-                href={item.path}
+                to={item.path}
                 aria-label={item.name}
                 title={item.name}
                 className={cn(
@@ -40,17 +41,17 @@ export default function Navbar() {
               >
                 <Icon size={14} />
                 <span className="hidden md:inline">{item.name}</span>
-              </a>
+              </Link>
             );
           })}
         </div>
 
-        <a 
-          href="/rooms" 
-          className="bg-gold text-ink text-[10px] font-bold px-5 py-2 rounded-full uppercase tracking-widest hover:scale-105 transition-transform"
+        <Link 
+          to="/rooms" 
+          className="hidden rounded-full bg-gold px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 sm:block"
         >
           Classic Rooms
-        </a>
+        </Link>
       </motion.div>
     </nav>
   );

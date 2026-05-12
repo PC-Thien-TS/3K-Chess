@@ -23,12 +23,12 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-serif font-bold mb-6 tracking-wider">GAME</h4>
           <ul className="space-y-4 text-sm uppercase tracking-widest text-xs">
-            <li><a href="/rooms" className="hover:text-white">Classic Rooms</a></li>
-            <li><a href="/setup?mode=classic" className="hover:text-white">Practice Classic</a></li>
-            <li><a href="/setup?mode=authentic" className="hover:text-white">Modern 3K Local</a></li>
-            <li><a href="/#how-to-play" className="hover:text-white">How to Play</a></li>
+            <li><Link to="/rooms" className="hover:text-white">Classic Rooms</Link></li>
+            <li><Link to="/setup?mode=classic" className="hover:text-white">Practice Classic</Link></li>
+            <li><Link to="/setup?mode=authentic" className="hover:text-white">Modern 3K Local</Link></li>
+            <li><Link to="/how-to-play" className="hover:text-white">How to Play</Link></li>
             <li><a href="/#community" className="hover:text-white">Leaderboard</a></li>
-            <li><a href="/archive" className="hover:text-white">Battle Archive</a></li>
+            <li><Link to="/archive" className="hover:text-white">Battle Archive</Link></li>
           </ul>
         </div>
 
