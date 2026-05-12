@@ -1,15 +1,14 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Sword, Book, Trophy, ShoppingBag, Shield, Users } from 'lucide-react';
+import { Archive, Book, Play, Shield, Sword, Users } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
 const navItems = [
-  { name: 'How to Play', path: '/how-to-play', icon: Book },
+  { name: 'Play', path: '/#play-now', icon: Play },
   { name: 'Classic Rooms', path: '/rooms', icon: Users },
   { name: 'Modern 3K Local', path: '/setup?mode=authentic', icon: Shield },
-  { name: 'Community', path: '/#community', icon: Trophy },
-  { name: 'Lore', path: '/#lore', icon: Sword },
-  { name: 'Shop', path: '/#shop', icon: ShoppingBag },
+  { name: 'Archive', path: '/archive', icon: Archive },
+  { name: 'How to Play', path: '/how-to-play', icon: Book },
 ];
 
 export default function Navbar() {
@@ -47,10 +46,10 @@ export default function Navbar() {
         </div>
 
         <Link 
-          to="/rooms" 
+          to="/rooms/create?mode=classic" 
           className="hidden rounded-full bg-gold px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 sm:block"
         >
-          Classic Rooms
+          Play Classic Online
         </Link>
       </motion.div>
     </nav>

@@ -71,7 +71,7 @@ export default function WarCouncil() {
         <div>
           <h4 className="text-gold text-xs font-bold uppercase tracking-widest mb-1">Strategist's Advisory</h4>
           <p className="text-zinc-400 text-sm italic">
-            Online Synchronization v1 is active. You can now establish cloud-linked chambers or continue with local tactical simulations.
+            Classic online WebSocket rooms are available when the backend is reachable. You can also continue with local tactical simulations on this device.
           </p>
         </div>
       </div>

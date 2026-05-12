@@ -186,7 +186,7 @@ export default function JoinRoom() {
               Enter a Classic room code or paste a full invite link. <br/>
               Modern 3K is local-only and does not use room codes. <br/>
               Local simulation chambers remain client-side. <br/>
-              Access is restricted to the device of origin unless cloud synced.
+              Classic online joining requires a reachable backend.
             </p>
           </div>
         </form>

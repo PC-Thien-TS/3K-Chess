@@ -1,81 +1,97 @@
 import { motion } from 'motion/react';
-import { cn } from '@/src/lib/utils';
+import { Archive, Bot, LayoutGrid, ShieldAlert, Users } from 'lucide-react';
+
+const modeCards = [
+  {
+    title: 'Classic Board',
+    accent: 'border-gold/20 bg-white/[0.03]',
+    icon: LayoutGrid,
+    body:
+      'Classic is the main competitive mode. It supports local play, online WebSocket rooms, bot factions, replay, and archive.',
+    bullets: [
+      'Cinematic tactical board presentation',
+      'Server-authoritative move validation online',
+      'Invite links and room codes',
+    ],
+  },
+  {
+    title: 'Modern 3K Board',
+    accent: 'border-[#8c6331]/20 bg-[linear-gradient(180deg,#f4ead3_0%,#ead7b0_100%)]',
+    icon: ShieldAlert,
+    body:
+      'Modern 3K is the local-only authentic ruleset. It supports Han court mechanics, alliance pressure, local bots, and local replay.',
+    bullets: [
+      'Physical tabletop-style board identity',
+      'Han court and alliance systems',
+      'Local-only in the current build',
+    ],
+  },
+];
 
 export default function BattlefieldPreview() {
   return (
-    <section id="battlefield-preview" className="py-32 px-6 max-w-7xl mx-auto scroll-mt-20 overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-        <div>
-          <h2 className="text-4xl md:text-6xl font-serif font-bold text-white mb-8 tracking-[0.05em] leading-tight">
-            BATTLEFIELD <span className="text-gold font-normal italic block md:inline">PREVIEW</span>
-          </h2>
-          <p className="text-zinc-400 text-lg leading-relaxed mb-10">
-            A three-sided battlefield where every move can create a new alliance or betrayal. 
-            The hexagonal design uniquely bridges the kingdoms of Wei, Shu, and Wu in a circular flow of destiny.
-          </p>
-          
-          <div className="space-y-8">
-            <div className="flex gap-6 p-6 rounded-3xl bg-wei/5 border border-wei/20">
-               <div className="w-1 h-auto bg-wei rounded-full" />
-               <div>
-                  <h4 className="text-white font-bold uppercase tracking-widest mb-1">Wei Territory</h4>
-                  <p className="text-zinc-500 text-xs">The Northern Hegemony sits atop the mountain terrain, ready to conquer.</p>
-               </div>
-            </div>
-            <div className="flex gap-6 p-6 rounded-3xl bg-shu/5 border border-shu/20">
-               <div className="w-1 h-auto bg-shu rounded-full" />
-               <div>
-                  <h4 className="text-white font-bold uppercase tracking-widest mb-1">Shu Territory</h4>
-                  <p className="text-zinc-500 text-xs">The Brave Loyalists defend their river valleys in the Southwest.</p>
-               </div>
-            </div>
-            <div className="flex gap-6 p-6 rounded-3xl bg-wu/5 border border-wu/20">
-               <div className="w-1 h-auto bg-wu rounded-full" />
-               <div>
-                  <h4 className="text-white font-bold uppercase tracking-widest mb-1">Wu Territory</h4>
-                  <p className="text-zinc-500 text-xs">The Southern Lords command the coastlines and the Eastern ports.</p>
-               </div>
-            </div>
-          </div>
+    <section id="battlefield-preview" className="max-w-7xl mx-auto scroll-mt-20 overflow-hidden px-6 py-32">
+      <div className="mb-16 text-center">
+        <h2 className="mb-6 text-4xl font-serif font-bold tracking-[0.05em] text-white md:text-6xl">
+          Two Modes. <span className="text-gold italic font-normal">One Real Build.</span>
+        </h2>
+        <p className="mx-auto max-w-3xl text-lg leading-relaxed text-zinc-400">
+          Three Kingdoms Chess is not a board mockup or marketing shell. Classic and Modern 3K both ship as playable routes with different goals, rules emphasis, and board presentation.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:gap-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {modeCards.map((card) => (
+            <motion.div
+              key={card.title}
+              whileHover={{ y: -6 }}
+              className={`rounded-[2.5rem] border p-8 shadow-2xl ${card.accent}`}
+            >
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
+                <card.icon size={24} className="text-gold" />
+              </div>
+              <h3 className="text-3xl font-serif font-black text-white">{card.title}</h3>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-300">{card.body}</p>
+              <div className="mt-6 space-y-3">
+                {card.bullets.map((bullet) => (
+                  <div key={bullet} className="rounded-[1.4rem] border border-white/8 bg-black/15 px-4 py-4 text-sm text-zinc-300">
+                    {bullet}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        <div className="relative flex items-center justify-center py-20 lg:py-0">
-          {/* Animated Glow Rings */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-[500px] h-[500px] border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
-            <div className="w-[400px] h-[400px] border border-white/5 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
-          </div>
-
-          <div className="relative w-full aspect-square max-w-[500px] bg-ink border border-white/10 rounded-[60px] p-8 shadow-2xl flex items-center justify-center overflow-hidden">
-             {/* Simple Hex/Triangle Pattern Mockup */}
-             <svg viewBox="0 0 400 400" className="w-full h-full drop-shadow-2xl">
-                {/* Wei (Top) */}
-                <path d="M200 40 L360 130 L40 130 Z" fill="rgba(153, 27, 27, 0.1)" stroke="#991b1b" strokeWidth="1" strokeDasharray="4 2" />
-                {/* Wu (Right) */}
-                <path d="M370 145 L370 330 L205 235 Z" fill="rgba(30, 58, 138, 0.1)" stroke="#1e3a8a" strokeWidth="1" strokeDasharray="4 2" />
-                {/* Shu (Left) */}
-                <path d="M30 145 L30 330 L195 235 Z" fill="rgba(6, 95, 70, 0.1)" stroke="#065f46" strokeWidth="1" strokeDasharray="4 2" />
-                
-                {/* Center Mask */}
-                <circle cx="200" cy="200" r="100" fill="transparent" stroke="rgba(212, 175, 55, 0.1)" strokeWidth="2" strokeDasharray="8 4" />
-                
-                {/* Army Indicators (Dots) */}
-                <motion.circle animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} cx="200" cy="80" r="6" fill="#991b1b" className="shadow-lg" />
-                <motion.circle animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2, delay: 0.5 }} cx="320" cy="260" r="6" fill="#1e3a8a" />
-                <motion.circle animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2, delay: 1 }} cx="80" cy="260" r="6" fill="#065f46" />
-                
-                {/* Grid Dots */}
-                {[...Array(8)].map((_, x) => [...Array(8)].map((_, y) => (
-                  <circle key={`${x}-${y}`} cx={50 + x * 40} cy={50 + y * 40} r="1" fill="rgba(255,255,255,0.05)" />
-                )))}
-             </svg>
-             
-             {/* Center Label */}
-             <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-ink border border-gold/40 px-6 py-3 rounded-full text-[10px] font-bold text-gold uppercase tracking-[0.4em] shadow-[0_0_20px_rgba(212,175,55,0.2)] glass-dark">
-                  Central Battlefield
+        <div className="glass-dark rounded-[2.5rem] border border-white/6 p-8 shadow-2xl">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.35em] text-gold">What This Build Proves</h3>
+          <div className="mt-6 space-y-4">
+            {[
+              {
+                title: 'Playable Routes',
+                detail: 'Home, setup, lobby, live boards, replay, and archive all route into working game states.',
+                icon: Users,
+              },
+              {
+                title: 'Bots',
+                detail: 'Classic supports local and host-driven online bots. Modern 3K supports local bots only.',
+                icon: Bot,
+              },
+              {
+                title: 'Replay Archive',
+                detail: 'Saved Classic and Modern 3K matches can be reviewed from the archive without changing live gameplay rules.',
+                icon: Archive,
+              },
+            ].map((item) => (
+              <div key={item.title} className="rounded-[1.6rem] border border-white/6 bg-white/[0.03] px-5 py-5">
+                <div className="flex items-center gap-3">
+                  <item.icon size={18} className="text-gold" />
+                  <h4 className="text-base font-black uppercase tracking-[0.18em] text-white">{item.title}</h4>
                 </div>
-             </div>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-400">{item.detail}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

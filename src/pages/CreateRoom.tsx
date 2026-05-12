@@ -267,13 +267,13 @@ export default function CreateRoom() {
                     roomMode === 'online' ? "text-white" : "text-zinc-500"
                   )}>Online WebSocket</h4>
                 </div>
-                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">Cross-device synchronization via battlefield cloud. Play with friends anywhere.</p>
+                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">Classic online WebSocket room sync for cross-device play when the backend is reachable.</p>
                 {roomMode === 'online' && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />}
               </button>
             </div>
             {!wsUrlAvailable && roomMode === 'online' && (
               <p className="text-[9px] text-rose-500/80 font-serif italic text-center">
-                Battlefield Cloud is currently offline. Please use Local Simulation.
+                Classic online backend is currently unavailable. Please use Local Simulation.
               </p>
             )}
           </div>
