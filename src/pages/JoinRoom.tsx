@@ -102,6 +102,7 @@ export default function JoinRoom() {
             <input 
               type="text" 
               required
+              data-testid="player-name-input"
               placeholder="Your name..."
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
@@ -117,6 +118,7 @@ export default function JoinRoom() {
               <input 
                 type="text" 
                 required
+                data-testid="room-code-input"
                 placeholder="e.g. FJTF18"
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value)}
@@ -134,6 +136,7 @@ export default function JoinRoom() {
 
           <button 
             type="submit"
+            data-testid="join-room-button"
             disabled={isJoining}
             className={cn(
               "flex w-full items-center justify-center gap-4 rounded-[1.75rem] py-5 text-[11px] font-bold uppercase tracking-[0.3em] shadow-[0_0_40px_rgba(212,175,55,0.15)] transition-all sm:rounded-[2rem] sm:py-6 sm:text-xs sm:tracking-[0.5em]",

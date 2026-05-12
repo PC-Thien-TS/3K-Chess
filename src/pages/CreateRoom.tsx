@@ -277,6 +277,7 @@ export default function CreateRoom() {
               <input 
                 type="text" 
                 required
+                data-testid="player-name-input"
                 placeholder="Enter your name or title..."
                 value={hostName}
                 onChange={(e) => setHostName(e.target.value)}
@@ -384,6 +385,7 @@ export default function CreateRoom() {
 
             <button 
               type="submit"
+              data-testid="create-online-room-button"
               disabled={isCreating || gameMode === 'authentic' || (roomMode === 'online' && !wsUrlAvailable)}
               className="flex w-full items-center justify-center gap-3 rounded-[1.75rem] bg-gold py-5 text-[11px] font-bold uppercase tracking-[0.28em] text-black shadow-[0_0_30px_rgba(212,175,55,0.2)] transition-all hover:bg-white disabled:opacity-50 sm:rounded-[2rem] sm:py-6 sm:text-xs sm:tracking-[0.4em]"
             >

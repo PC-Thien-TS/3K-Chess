@@ -32,6 +32,12 @@ This opens the Playwright UI for interactive test debugging.
 npx playwright test e2e/routes.spec.ts
 ```
 
+Classic online 2-tab automation:
+
+```bash
+npx playwright test e2e/classic-online.spec.ts
+```
+
 ## Test Coverage
 
 ### Current E2E Tests
@@ -64,24 +70,37 @@ npx playwright test e2e/routes.spec.ts
 - Shows filter controls
 - Replays saved Modern 3K local archive records in read-only mode
 
+#### Classic Online 2-Tab (`e2e/classic-online.spec.ts`)
+- Starts the backend and frontend through Playwright `webServer`
+- Creates a Classic online room
+- Joins the room from a second browser context
+- Claims a second faction slot
+- Marks ready, fills the third slot with a bot, and starts the match
+- Verifies both tabs enter the Classic board
+- Verifies one host move syncs to the guest tab
+
 #### NotFound Page (`e2e/notfound.spec.ts`)
 - Unknown route shows NotFound
 - CTA buttons are present
 
 ## Online Tests
 
-### Manual QA Required
-Online Classic gameplay tests (room creation, joining, multiplayer) are not automated due to:
-- Complexity of multi-browser context testing
-- Backend dependency (requires running WebSocket server)
-- Potential flakiness in real-time socket connections
+### Automated Online Setup
+`npm run test:e2e` now starts:
+- `npm run server` on `http://localhost:8787`
+- `npm run dev` on `http://localhost:5173`
 
-To test online flows manually:
-1. Start backend: `npm run server`
-2. Open two browser tabs
-3. Create a room in one tab
-4. Join with the second tab using the room code
-5. Verify slot claiming, ready states, and move synchronization
+The Playwright frontend server injects:
+
+```env
+VITE_WS_URL=http://localhost:8787
+```
+
+If you prefer to run servers manually, keep the same ports and env, then run:
+
+```bash
+npx playwright test e2e/classic-online.spec.ts
+```
 
 ## Known Limitations
 
@@ -89,7 +108,7 @@ To test online flows manually:
 
 2. **No Move Verification**: Current tests verify board loading but do not make actual piece moves due to canvas-based rendering complexity.
 
-3. **No Online Automation**: Real-time WebSocket testing is not automated; requires manual QA.
+3. **Online Coverage Scope**: The automated online test covers room creation, join, slot claim, ready/start, board entry, and one synced move. It is not yet a full long-match multiplayer suite.
 
 4. **Single Browser**: Tests currently run only on Chromium. Firefox and WebKit can be added to playwright.config.ts if needed.
 

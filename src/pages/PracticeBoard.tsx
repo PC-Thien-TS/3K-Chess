@@ -1050,7 +1050,8 @@ function ClassicPracticeBoard() {
                           <span className={cn(
                             "font-black tracking-[0.15em] uppercase text-sm font-serif",
                             isEliminated && "text-zinc-700"
-                          )}>
+                          )}
+                          data-testid={isActive ? 'current-turn-label' : undefined}>
                             {f} {isEliminated && "(Fallen)"}
                           </span>
                           {inCheck && (
@@ -1191,7 +1192,7 @@ function ClassicPracticeBoard() {
             <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10 font-sans">
               <History size={16} className="text-gold" /> Chronicle of Fates
             </h3>
-            <div className="relative z-10 flex-grow space-y-4 overflow-y-auto pr-2 pb-8 sm:pr-4 scrollbar-thin scrollbar-thumb-white/5">
+            <div data-testid="move-history" className="relative z-10 flex-grow space-y-4 overflow-y-auto pr-2 pb-8 sm:pr-4 scrollbar-thin scrollbar-thumb-white/5">
               {history.map((m, idx) => (
                 <motion.div 
                   key={m.id} 

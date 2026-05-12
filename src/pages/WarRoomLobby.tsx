@@ -508,7 +508,7 @@ export default function WarRoomLobby() {
           </Link>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <h1 className="text-3xl font-serif font-black tracking-[0.14em] text-white sm:text-4xl md:text-5xl md:tracking-widest">
-                LOBBY: <span className="text-gold italic uppercase">{room.roomCode}</span>
+                LOBBY: <span data-testid="room-code-display" className="text-gold italic uppercase">{room.roomCode}</span>
             </h1>
             <button 
                 onClick={handleCopyCode}
@@ -551,7 +551,8 @@ export default function WarRoomLobby() {
             <div key={fct} className={cn(
               "group relative flex min-h-[380px] flex-col rounded-[2rem] border p-5 transition-all duration-500 hover:scale-[1.02] glass-dark sm:min-h-[420px] sm:rounded-[3rem] sm:p-8 xl:min-h-[450px] xl:rounded-[4rem] xl:p-10",
               isOccupied ? FACTION_COLORS[slot.faction] : "border-white/5 text-zinc-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100"
-            )}>
+            )}
+            data-testid={`faction-slot-${fct.toLowerCase()}`}>
               {/* Background Crest (Subtle) */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15rem] font-serif font-black opacity-[0.02] pointer-events-none select-none">
                 {fct[0]}
@@ -588,6 +589,7 @@ export default function WarRoomLobby() {
                           <div className="flex flex-col gap-3 w-full px-2 sm:px-4">
                              <button 
                                 onClick={() => claimSlot(fct)}
+                                data-testid="claim-slot-button"
                                 disabled={roomMode === 'online' && !!claimedFaction}
                                 className="w-full bg-white/5 hover:bg-white/10 text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] border border-white/5 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                              >
@@ -644,6 +646,7 @@ export default function WarRoomLobby() {
                               {slot.occupantType === 'human' && canIControl && (
                                 <button 
                                     onClick={() => toggleReady(fct)}
+                                    data-testid="ready-toggle-button"
                                     className={cn(
                                       "flex-[2] py-4 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg hover:scale-105 active:scale-95",
                                       slot.ready 
@@ -755,6 +758,7 @@ export default function WarRoomLobby() {
 
               <button 
                 onClick={startMatch}
+                data-testid="start-match-button"
                 disabled={!canStart || isStarting || activeGameMode === 'authentic'}
                 className={cn(
                   "relative flex w-full items-center justify-center gap-4 overflow-hidden rounded-[2rem] border py-6 text-[11px] font-black uppercase tracking-[0.28em] transition-all sm:rounded-[3rem] sm:py-8 sm:text-sm sm:tracking-[0.5em]",
