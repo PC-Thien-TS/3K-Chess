@@ -3,13 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   ChevronLeft, 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  ChevronRight, 
+  RotateCcw,
   History, 
   Trophy, 
-  Award,
   Sword,
   Target,
   Activity,
@@ -25,12 +21,17 @@ import {
   Piece, 
   MatchRecord, 
   getPieceName,
+  getNextClassicFaction,
   validateBoardIntegrity,
   isFactionInCheck
 } from '@/src/rules/classicThreeKingdomRules';
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
 import AuthenticReplayBoard from '@/src/components/boards/AuthenticReplayBoard';
+import ReplayPlaybackPanel, {
+  type ReplayMoveListItem,
+  type ReplayPlaybackSpeed,
+} from '@/src/components/replay/ReplayPlaybackPanel';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
 import {
   canReplayAuthenticRecord,
@@ -50,6 +51,81 @@ const ROWS = 17;
 const COLS = 17;
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 
+function clampReplayStep(step: number, totalSteps: number) {
+  if (!Number.isFinite(step)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(Math.floor(step), totalSteps));
+}
+
+function getClassicReplayEliminated(match: MatchRecord | null, moveIndex: number) {
+  const eliminated = new Set<Exclude<Faction, 'None'>>();
+
+  if (!match) {
+    return [] as Exclude<Faction, 'None'>[];
+  }
+
+  for (let index = 0; index < Math.min(moveIndex, match.moves.length); index += 1) {
+    match.moves[index]?.eliminatedAfterMove?.forEach((faction) => {
+      if (faction !== 'None') {
+        eliminated.add(faction as Exclude<Faction, 'None'>);
+      }
+    });
+  }
+
+  return [...eliminated];
+}
+
+function getClassicReplayTurn(match: MatchRecord | null, pieces: Piece[], moveIndex: number) {
+  const openingFaction =
+    match?.setup?.primaryKingdom && match.setup.primaryKingdom !== 'None'
+      ? (match.setup.primaryKingdom as Exclude<Faction, 'None'>)
+      : 'Shu';
+
+  if (!match || moveIndex === 0) {
+    return openingFaction;
+  }
+
+  const previousMove = match.moves[Math.min(moveIndex, match.moves.length) - 1];
+  if (!previousMove || previousMove.winnerAfterMove || match.winner) {
+    return null;
+  }
+
+  return getNextClassicFaction(
+    previousMove.faction as Exclude<Faction, 'None'>,
+    pieces,
+    getClassicReplayEliminated(match, moveIndex)
+  );
+}
+
+function buildClassicMoveDetail(match: MatchRecord, moveIndex: number) {
+  if (moveIndex === 0) {
+    return 'Initial deployment before the first kingdom takes the field.';
+  }
+
+  const move = match.moves[moveIndex - 1];
+  if (!move) {
+    return 'Recorded move is unavailable.';
+  }
+
+  const details: string[] = [];
+  if (move.capturedPiece) {
+    details.push(`Captured ${move.capturedPiece.faction} ${getPieceName(move.capturedPiece.type)}`);
+  }
+  if (move.givesCheck && move.checkedFactions?.length) {
+    details.push(`Check on ${move.checkedFactions.join(', ')}`);
+  }
+  if (move.checkmateHappened) {
+    details.push(`Checkmate on ${move.eliminatedAfterMove?.join(', ') || 'enemy command'}`);
+  }
+  if (move.winnerAfterMove) {
+    details.push(`${move.winnerAfterMove} wins`);
+  }
+
+  return details.join(' • ');
+}
+
 export default function ReplayBoard() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
@@ -57,6 +133,7 @@ export default function ReplayBoard() {
   const [match, setMatch] = useState<MatchRecord | null>(null);
   const [currentStep, setCurrentStep] = useState(0); // 0 is initial position
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<ReplayPlaybackSpeed>(1);
   const playTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -85,35 +162,88 @@ export default function ReplayBoard() {
       : match?.moves.length ?? 0;
 
   useEffect(() => {
-    setCurrentStep((prev) => Math.min(prev, totalSteps));
+    setCurrentStep((prev) => clampReplayStep(prev, totalSteps));
+  }, [totalSteps]);
+
+  useEffect(() => {
+    setIsPlaying(false);
+  }, [matchId]);
+
+  useEffect(() => {
+    if (isPlaying && currentStep >= totalSteps) {
+      setIsPlaying(false);
+    }
+  }, [currentStep, isPlaying, totalSteps]);
+
+  const jumpToStep = useCallback(
+    (step: number) => {
+      setIsPlaying(false);
+      setCurrentStep(clampReplayStep(step, totalSteps));
+    },
+    [totalSteps]
+  );
+
+  const prevStep = useCallback(() => {
+    setIsPlaying(false);
+    setCurrentStep((prev) => clampReplayStep(prev - 1, totalSteps));
   }, [totalSteps]);
 
   const nextStep = useCallback(() => {
-    if (match && currentStep < totalSteps) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      setIsPlaying(false);
-    }
-  }, [match, currentStep, totalSteps]);
+    setIsPlaying(false);
+    setCurrentStep((prev) => clampReplayStep(prev + 1, totalSteps));
+  }, [totalSteps]);
 
-  const prevStep = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+  const firstStep = useCallback(() => {
+    setIsPlaying(false);
+    setCurrentStep(0);
+  }, []);
+
+  const lastStep = useCallback(() => {
+    setIsPlaying(false);
+    setCurrentStep(totalSteps);
+  }, [totalSteps]);
+
+  const togglePlay = useCallback(() => {
+    if (totalSteps === 0) {
+      return;
     }
-  }, [currentStep]);
+
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (currentStep >= totalSteps) {
+      setCurrentStep(0);
+    }
+    setIsPlaying(true);
+  }, [currentStep, isPlaying, totalSteps]);
 
   useEffect(() => {
-    if (isPlaying) {
-      playTimerRef.current = setInterval(() => {
-        nextStep();
-      }, 1000);
-    } else {
-        if (playTimerRef.current) clearInterval(playTimerRef.current);
+    if (!isPlaying || totalSteps === 0 || currentStep >= totalSteps) {
+      if (playTimerRef.current) {
+        clearInterval(playTimerRef.current);
+        playTimerRef.current = null;
+      }
+      return undefined;
     }
+
+    playTimerRef.current = setInterval(() => {
+      setCurrentStep((prev) => {
+        if (prev >= totalSteps) {
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1000 / playbackSpeed);
+
     return () => {
-      if (playTimerRef.current) clearInterval(playTimerRef.current);
+      if (playTimerRef.current) {
+        clearInterval(playTimerRef.current);
+        playTimerRef.current = null;
+      }
     };
-  }, [isPlaying, nextStep]);
+  }, [currentStep, isPlaying, playbackSpeed, totalSteps]);
 
   const classicReplaySupported = match ? isClassicReplayRecord(match) : true;
   const authenticReplaySupported = match ? canReplayAuthenticRecord(match) : true;
@@ -130,6 +260,28 @@ export default function ReplayBoard() {
         ? reconstructAuthenticReplayState(match.authenticReplay.initialState, match.authenticReplay.moves, currentStep)
         : null,
     [authenticReplaySupported, currentStep, match]
+  );
+  const classicCurrentTurn = useMemo(
+    () => getClassicReplayTurn(match, classicReplaySnapshot.pieces, currentStep),
+    [classicReplaySnapshot.pieces, currentStep, match]
+  );
+  const classicMoveItems = useMemo<ReplayMoveListItem[]>(
+    () =>
+      match
+        ? [
+            {
+              step: 0,
+              label: 'Initial deployment of the three kingdoms.',
+              detail: buildClassicMoveDetail(match, 0),
+            },
+            ...match.moves.map((move, index) => ({
+              step: index + 1,
+              label: move.notationText,
+              detail: buildClassicMoveDetail(match, index + 1) || `${move.faction} advances ${getPieceName(move.pieceType)}.`,
+            })),
+          ]
+        : [],
+    [match]
   );
 
   if (!match) return null;
@@ -189,10 +341,15 @@ export default function ReplayBoard() {
         snapshot={authenticReplaySnapshot}
         currentStep={currentStep}
         totalSteps={totalSteps}
-        onFirst={() => setCurrentStep(0)}
+        isPlaying={isPlaying}
+        playbackSpeed={playbackSpeed}
+        onTogglePlay={togglePlay}
+        onFirst={firstStep}
         onPrevious={prevStep}
         onNext={nextStep}
-        onLast={() => setCurrentStep(totalSteps)}
+        onLast={lastStep}
+        onJumpToStep={jumpToStep}
+        onSpeedChange={setPlaybackSpeed}
       />
     );
   }
@@ -243,6 +400,7 @@ export default function ReplayBoard() {
 
   const boardPieces = classicReplaySnapshot.pieces;
   const lastMove = classicReplaySnapshot.lastMove;
+  const visibleClassicWinner = currentStep === totalSteps ? match.winner : lastMove?.winnerAfterMove ?? null;
 
   return (
     <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
@@ -438,75 +596,54 @@ export default function ReplayBoard() {
             </div>
           </div>
 
-          {/* Replay Controls & Progress */}
-          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3.5rem] flex flex-col gap-6 sm:gap-10 shadow-3xl">
-              <div className="flex flex-col items-stretch gap-6 sm:gap-8 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center justify-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.02] px-5 py-4 sm:rounded-3xl sm:px-8">
-                       <span className="text-3xl font-mono font-black leading-none tracking-tighter text-gold sm:text-4xl">{currentStep}</span>
-                       <div className="w-px h-8 bg-zinc-800" />
-                       <span className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] leading-none mb-1">
-                          OF {totalSteps}
-                       </span>
-                  </div>
-                  
-                  <div className="relative flex flex-col items-center gap-4 rounded-[2rem] p-2 sm:flex-row sm:gap-6">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <button 
-                          onClick={() => setCurrentStep(0)}
-                          className="rounded-[1.2rem] p-4 text-zinc-500 shadow-inner transition-all hover:bg-white/5 hover:text-white sm:rounded-[1.5rem] sm:p-5"
-                          title="Rewind to Deployment"
-                        >
-                          <RotateCcw size={24} />
-                        </button>
-                        <button 
-                          onClick={prevStep}
-                          disabled={currentStep === 0}
-                          className="rounded-[1.2rem] p-4 text-zinc-500 shadow-inner transition-all hover:bg-white/5 hover:text-white disabled:opacity-10 sm:rounded-[1.5rem] sm:p-5"
-                        >
-                          <ChevronLeft size={32} />
-                        </button>
-                      </div>
-
-                      <button 
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-gold text-black shadow-[0_15px_40px_rgba(212,175,55,0.3)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:h-20 sm:w-20 sm:rounded-[2rem]"
-                      >
-                        {isPlaying ? <Pause size={36} fill="currentColor" /> : <Play size={36} className="translate-x-1" fill="currentColor" />}
-                      </button>
-
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <button 
-                          onClick={nextStep}
-                          disabled={currentStep === totalSteps}
-                          className="rounded-[1.2rem] p-4 text-zinc-500 shadow-inner transition-all hover:bg-white/5 hover:text-white disabled:opacity-10 sm:rounded-[1.5rem] sm:p-5"
-                        >
-                          <ChevronRight size={32} />
-                        </button>
-                        <button 
-                          onClick={() => setCurrentStep(totalSteps)}
-                          className="rounded-[1.2rem] px-5 py-4 text-xs font-mono font-black uppercase tracking-widest text-gold/60 transition-all hover:bg-gold/5 hover:text-gold sm:rounded-[1.5rem] sm:px-6 sm:py-5"
-                        >
-                          FIN
-                        </button>
-                      </div>
-                  </div>
-              </div>
-              
-              {/* Cinematic Progress Bar */}
-              <div className="px-4">
-                  <div className="h-2 w-full bg-white/[0.02] rounded-full overflow-hidden relative border border-white/5 p-[1px]">
-                      <motion.div 
-                        initial={false}
-                        animate={{ width: `${(currentStep / Math.max(totalSteps, 1)) * 100}%` }}
-                        className="absolute inset-0 bg-gradient-to-r from-gold/40 to-gold rounded-full shadow-[0_0_20px_rgba(212,175,55,0.6)]"
-                      />
-                  </div>
-              </div>
-          </div>
+          <ReplayPlaybackPanel
+            theme="classic"
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            isPlaying={isPlaying}
+            playbackSpeed={playbackSpeed}
+            onTogglePlay={togglePlay}
+            onFirst={firstStep}
+            onPrevious={prevStep}
+            onNext={nextStep}
+            onLast={lastStep}
+            onJumpToStep={jumpToStep}
+            onSpeedChange={setPlaybackSpeed}
+            moveItems={classicMoveItems}
+          />
         </div>
 
         {/* Right Panel: Analysis */}
         <div className="xl:col-span-4 space-y-6 sm:space-y-8">
+            <div className="glass-dark grid grid-cols-1 gap-4 rounded-[2rem] border border-white/10 p-5 shadow-2xl sm:grid-cols-2 sm:rounded-[3rem] sm:p-8">
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] px-4 py-4">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600">Current Step</p>
+                    <p className="mt-2 text-2xl font-mono font-black text-white">
+                        {currentStep} / {totalSteps}
+                    </p>
+                </div>
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] px-4 py-4">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600">Current Turn</p>
+                    <p className="mt-2 text-xl font-serif font-black uppercase italic text-white">
+                        {visibleClassicWinner ? `${visibleClassicWinner} wins` : classicCurrentTurn ? `${classicCurrentTurn} to move` : 'Final state'}
+                    </p>
+                </div>
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] px-4 py-4">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600">Winner</p>
+                    <p className={cn('mt-2 text-xl font-serif font-black uppercase italic', visibleClassicWinner ? FACTION_COLORS[visibleClassicWinner] : 'text-white')}>
+                        {visibleClassicWinner || 'Not decided at this step'}
+                    </p>
+                </div>
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] px-4 py-4">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600">Capture Detail</p>
+                    <p className="mt-2 text-sm font-serif leading-relaxed text-zinc-300">
+                        {lastMove?.capturedPiece
+                            ? `${lastMove.faction} captured ${lastMove.capturedPiece.faction} ${getPieceName(lastMove.capturedPiece.type)}.`
+                            : 'No capture on the selected step.'}
+                    </p>
+                </div>
+            </div>
+
             {/* Tactical Intel */}
             <AnimatePresence mode="wait">
                 <motion.div

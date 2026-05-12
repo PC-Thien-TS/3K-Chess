@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Crown, RotateCcw, ScrollText, ShieldAlert, Trophy } from 'lucide-react';
+import { ChevronLeft, Crown, ScrollText, ShieldAlert, Trophy } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import ReplayPlaybackPanel, { type ReplayPlaybackSpeed } from '@/src/components/replay/ReplayPlaybackPanel';
 import type { MatchRecord } from '@/src/rules/threeKingdomRules';
 import type { AuthenticReplaySnapshot } from '@/src/rules/authenticReplayReducer';
 import {
@@ -25,10 +26,15 @@ interface AuthenticReplayBoardProps {
   snapshot: AuthenticReplaySnapshot;
   currentStep: number;
   totalSteps: number;
+  isPlaying: boolean;
+  playbackSpeed: ReplayPlaybackSpeed;
+  onTogglePlay: () => void;
   onFirst: () => void;
   onPrevious: () => void;
   onNext: () => void;
   onLast: () => void;
+  onJumpToStep: (step: number) => void;
+  onSpeedChange: (speed: ReplayPlaybackSpeed) => void;
 }
 
 const FACTION_CARD_THEME: Record<AuthenticFactionOrNeutral, string> = {
@@ -180,14 +186,34 @@ export default function AuthenticReplayBoard({
   snapshot,
   currentStep,
   totalSteps,
+  isPlaying,
+  playbackSpeed,
+  onTogglePlay,
   onFirst,
   onPrevious,
   onNext,
   onLast,
+  onJumpToStep,
+  onSpeedChange,
 }: AuthenticReplayBoardProps) {
   const currentMove = snapshot.lastMoveRecord;
   const lastMove = snapshot.lastMove;
-  const progressPercent = totalSteps === 0 ? 0 : (currentStep / totalSteps) * 100;
+  const moveItems = [
+    {
+      step: 0,
+      label: 'Initial deployment of Wu, Wei, Shu, and the Han court.',
+      detail: 'Replay starts before the first local move is applied.',
+    },
+    ...((record.authenticReplay?.moves ?? []).map((move, index) => ({
+      step: index + 1,
+      label: move.note,
+      detail: move.special?.length
+        ? move.special
+            .map((special) => SPECIAL_EVENT_LABELS[special])
+            .join(' • ')
+        : `${AUTHENTIC_LABELS[move.pieceType]} moved from ${formatPoint(move.from)} to ${formatPoint(move.to)}.`,
+    })) ?? []),
+  ];
 
   return (
     <div data-testid="authentic-replay-board" className="min-h-screen container mx-auto px-4 pb-12 pt-24 sm:px-6">
@@ -275,37 +301,23 @@ export default function AuthenticReplayBoard({
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
-            <div className="flex items-center gap-3 text-[#6f4c28]">
-              <ScrollText size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Replay Controls</span>
-            </div>
-            <div className="mt-4 flex flex-col gap-4">
-              <div data-testid="authentic-replay-step" className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-4">
-                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Current Step</p>
-                <p className="mt-2 text-2xl font-mono font-black text-[#35210f]">
-                  {currentStep} / {totalSteps}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <button type="button" onClick={onFirst} disabled={currentStep === 0} className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-[#35210f] transition-all hover:bg-white/70 disabled:opacity-40" title="First move">
-                  <span className="flex items-center justify-center gap-2"><RotateCcw size={14} /> First</span>
-                </button>
-                <button type="button" onClick={onPrevious} disabled={currentStep === 0} className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-[#35210f] transition-all hover:bg-white/70 disabled:opacity-40" title="Previous move">
-                  <span className="flex items-center justify-center gap-2"><ChevronLeft size={14} /> Prev</span>
-                </button>
-                <button data-testid="authentic-replay-next" type="button" onClick={onNext} disabled={currentStep === totalSteps} className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-[#35210f] transition-all hover:bg-white/70 disabled:opacity-40" title="Next move">
-                  <span className="flex items-center justify-center gap-2">Next <ChevronRight size={14} /></span>
-                </button>
-                <button type="button" onClick={onLast} disabled={currentStep === totalSteps} className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-4 text-[10px] font-black uppercase tracking-[0.22em] text-[#35210f] transition-all hover:bg-white/70 disabled:opacity-40" title="Last move">
-                  Last
-                </button>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full border border-[#8b6433]/10 bg-white/40 p-[1px]">
-                <div className="h-full rounded-full bg-[linear-gradient(90deg,#8b5d17_0%,#d6a84e_100%)] transition-all" style={{ width: `${progressPercent}%` }} />
-              </div>
-            </div>
-          </div>
+          <ReplayPlaybackPanel
+            theme="authentic"
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            isPlaying={isPlaying}
+            playbackSpeed={playbackSpeed}
+            onTogglePlay={onTogglePlay}
+            onFirst={onFirst}
+            onPrevious={onPrevious}
+            onNext={onNext}
+            onLast={onLast}
+            onJumpToStep={onJumpToStep}
+            onSpeedChange={onSpeedChange}
+            moveItems={moveItems}
+            currentStepTestId="authentic-replay-step"
+            nextButtonTestId="authentic-replay-next"
+          />
         </div>
 
         <div className="space-y-4 sm:space-y-6">
@@ -328,6 +340,12 @@ export default function AuthenticReplayBoard({
               <span className="text-[10px] font-black uppercase tracking-[0.35em]">Command Status</span>
             </div>
             <div className="grid gap-3">
+              <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Current Step</p>
+                <p className="mt-1 text-sm font-serif font-black text-[#35210f]">
+                  {currentStep} of {totalSteps}
+                </p>
+              </div>
               <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Current Turn</p>
                 <p className="mt-1 text-sm font-serif font-black text-[#35210f]">{snapshot.currentTurn}</p>
