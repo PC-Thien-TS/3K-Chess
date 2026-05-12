@@ -7,6 +7,25 @@ import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { cn } from '@/src/lib/utils';
 import { normalizeGameMode } from '@/shared/gameModes';
 
+function extractRoomCodeFromInput(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  try {
+    const parsedUrl = new URL(trimmed);
+    const pathMatch = parsedUrl.pathname.match(/\/rooms\/([^/?#]+)/i);
+    if (pathMatch?.[1]) {
+      return normalizeRoomCode(pathMatch[1]);
+    }
+  } catch {
+    // Not a URL; fall through to raw room code normalization.
+  }
+
+  return normalizeRoomCode(trimmed);
+}
+
 export default function JoinRoom() {
   const navigate = useNavigate();
   const [roomCode, setRoomCode] = useState("");
@@ -19,10 +38,10 @@ export default function JoinRoom() {
     if (isJoining) return;
     setError(null);
 
-    const code = normalizeRoomCode(roomCode);
+    const code = extractRoomCodeFromInput(roomCode);
 
     if (!isValidRoomCode(code)) {
-        setError("Invalid room code. Enter the code exactly as shown, for example FJTF18 or WEI-PZR9.");
+        setError("Invalid room code. Paste the Classic room code or a full invite link such as /rooms/WEI-PZR9.");
         return;
     }
 
@@ -112,20 +131,24 @@ export default function JoinRoom() {
 
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.4em] flex items-center gap-2">
-              <Key size={14} className="text-gold" /> Classic Room Code
+              <Key size={14} className="text-gold" /> Enter a Classic room code
             </label>
             <div className="relative">
               <input 
                 type="text" 
                 required
                 data-testid="room-code-input"
-                placeholder="e.g. FJTF18"
+                placeholder="Paste code or full invite link"
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value)}
                 className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 text-2xl uppercase tracking-[0.24em] text-white placeholder:text-zinc-700 transition-all focus:outline-none focus:border-gold/30 font-mono sm:px-10 sm:py-8 sm:text-4xl sm:tracking-[0.3em]"
               />
               <div className="absolute left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-gold/20 rounded-full" />
             </div>
+            <p className="text-[10px] font-serif italic leading-relaxed text-zinc-500">
+              Paste a raw code like <span className="font-mono uppercase text-zinc-400">WEI-PZR9</span> or a full invite link like{' '}
+              <span className="font-mono text-zinc-400">https://.../rooms/WEI-PZR9</span>.
+            </p>
           </div>
 
           {error && (
@@ -160,7 +183,7 @@ export default function JoinRoom() {
           <div className="flex flex-col gap-2 items-center opacity-60">
             <div className="w-12 h-[1px] bg-white/10" />
             <p className="text-[9px] text-zinc-500 font-serif italic text-center uppercase tracking-widest leading-relaxed">
-              Enter a Classic room code. <br/>
+              Enter a Classic room code or paste a full invite link. <br/>
               Modern 3K is local-only and does not use room codes. <br/>
               Local simulation chambers remain client-side. <br/>
               Access is restricted to the device of origin unless cloud synced.

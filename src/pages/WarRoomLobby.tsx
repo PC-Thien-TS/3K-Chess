@@ -38,6 +38,29 @@ const FACTION_COLORS = {
   Wu: 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5'
 };
 
+function fallbackCopyText(value: string) {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = value;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'absolute';
+  textArea.style.left = '-9999px';
+  document.body.appendChild(textArea);
+  textArea.select();
+  textArea.setSelectionRange(0, value.length);
+
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textArea);
+  }
+}
+
 export default function WarRoomLobby() {
   const recoveryTimeoutMs = 8000;
   const { roomCode: rawCode } = useParams<{ roomCode: string }>();
@@ -57,7 +80,9 @@ export default function WarRoomLobby() {
   
   const [room, setRoom] = useState<WarRoom | OnlineWarRoom | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roomMode, setRoomMode] = useState<'local' | 'online'>(
@@ -298,15 +323,60 @@ export default function WarRoomLobby() {
         : isReconnecting
           ? 'border-gold/20 bg-gold/10 text-gold'
           : isConnected
-            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
             : 'border-amber-500/20 bg-amber-500/10 text-amber-300';
+  const inviteLink = roomCode && typeof window !== 'undefined' ? `${window.location.origin}/rooms/${roomCode}` : '';
+  const inviteText = inviteLink ? `Join my Three Kingdoms Chess room: ${inviteLink}` : '';
 
-  const handleCopyCode = () => {
-    if (room?.roomCode) {
-      navigator.clipboard.writeText(room.roomCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const writeToClipboard = async (value: string) => {
+    if (!value) {
+      return false;
     }
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch {
+        // Fall through to execCommand fallback.
+      }
+    }
+
+    return fallbackCopyText(value);
+  };
+
+  const handleCopyCode = async () => {
+    if (!room?.roomCode) {
+      return;
+    }
+
+    const success = await writeToClipboard(room.roomCode);
+    if (success) {
+      setCopiedCode(true);
+      setCopiedInvite(false);
+      setCopyFeedback('Room code copied. Share it directly or send the invite link.');
+      window.setTimeout(() => setCopiedCode(false), 2000);
+      return;
+    }
+
+    setCopyFeedback('Clipboard unavailable. Copy the room code manually.');
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!inviteLink) {
+      return;
+    }
+
+    const success = await writeToClipboard(inviteLink);
+    if (success) {
+      setCopiedInvite(true);
+      setCopiedCode(false);
+      setCopyFeedback('Invite link copied. Send it to the other commanders.');
+      window.setTimeout(() => setCopiedInvite(false), 2200);
+      return;
+    }
+
+    setCopyFeedback('Clipboard unavailable. Copy the invite link manually.');
   };
 
   const updateSlot = (faction: Faction, updates: Partial<RoomFactionSlot>) => {
@@ -396,7 +466,22 @@ export default function WarRoomLobby() {
     });
   };
 
+  const currentUserIsHost = roomMode === 'online' ? !!room && (room as OnlineWarRoom).hostClientId === onlineRoomClient.socketId : true;
+  const slotEntries = room ? FACTIONS.map((faction) => room.slots[faction as Exclude<Faction, 'None'>]) : [];
+  const claimedCount = slotEntries.filter((slot) => slot.occupantType !== 'empty').length;
+  const readyCount = slotEntries.filter((slot) => slot.ready).length;
+  const emptyCount = FACTIONS.length - claimedCount;
   const canStart = room && FACTIONS.every(f => (room.slots as any)[f].occupantType !== 'empty' && (room.slots as any)[f].ready);
+  const waitingTitle = canStart
+    ? currentUserIsHost
+      ? 'All commanders ready'
+      : 'Awaiting host start'
+    : 'Waiting for commanders';
+  const waitingDetail = canStart
+    ? currentUserIsHost
+      ? 'All three kingdoms are occupied and ready. The host can begin the match.'
+      : 'All three kingdoms are occupied and ready. Waiting for the host to start.'
+    : `${claimedCount}/3 claimed, ${readyCount}/3 ready, ${emptyCount} empty. Claim a slot and declare readiness to begin.`;
 
   const startMatch = () => {
     if (!canStart || !room) return;
@@ -470,7 +555,7 @@ export default function WarRoomLobby() {
                 onClick={() => window.location.reload()}
                 className="block w-full bg-gold/10 hover:bg-gold text-gold hover:text-black py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-gold/20 transition-all"
               >
-                 Retry
+                 Try Again
               </button>
               <Link 
                 to="/rooms" 
@@ -510,15 +595,6 @@ export default function WarRoomLobby() {
             <h1 className="text-3xl font-serif font-black tracking-[0.14em] text-white sm:text-4xl md:text-5xl md:tracking-widest">
                 LOBBY: <span data-testid="room-code-display" className="text-gold italic uppercase">{room.roomCode}</span>
             </h1>
-            <button 
-                onClick={handleCopyCode}
-                aria-label="Copy Classic room code"
-                title="Copy Classic room code"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-[10px] font-bold uppercase tracking-widest text-gold transition-all hover:bg-white/10 sm:w-auto"
-            >
-                {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                {copied ? "Copied" : "Copy Code"}
-            </button>
           </div>
         </div>
 
@@ -539,13 +615,141 @@ export default function WarRoomLobby() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-8">
+        <div
+          data-testid="room-invite-card"
+          className="flex flex-col gap-5 rounded-[2rem] border border-gold/10 bg-gold/[0.04] p-5 shadow-2xl sm:rounded-[3rem] sm:p-8"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-zinc-500">Invite Commanders</span>
+              <h2 className="mt-2 text-2xl font-serif font-black uppercase tracking-[0.12em] text-white">
+                Share this Classic room
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm font-serif italic leading-relaxed text-zinc-400">
+                Send the room code or the full invite link. Opening the link does not auto-claim a faction slot.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-gold/15 bg-black/20 px-4 py-3 text-center">
+              <span className="block text-[8px] font-bold uppercase tracking-[0.3em] text-zinc-500">Room Code</span>
+              <span className="mt-1 block font-mono text-lg font-black uppercase tracking-[0.24em] text-gold">
+                {room.roomCode}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+            <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+              <span className="block text-[8px] font-bold uppercase tracking-[0.28em] text-zinc-500">Invite Helper</span>
+              <p className="mt-2 text-sm text-zinc-300">{inviteText}</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+              <span className="block text-[8px] font-bold uppercase tracking-[0.28em] text-zinc-500">Invite Link</span>
+              <p className="mt-2 break-all font-mono text-sm text-zinc-300">{inviteLink}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              data-testid="copy-room-code-button"
+              aria-label="Copy Classic room code"
+              title="Copy Classic room code"
+              className="flex flex-1 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-[10px] font-bold uppercase tracking-[0.28em] text-gold transition-all hover:bg-white/10 active:scale-[0.98]"
+            >
+              {copiedCode ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+              {copiedCode ? 'Copied!' : 'Copy Code'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyInviteLink}
+              data-testid="copy-invite-link-button"
+              aria-label="Copy full Classic room invite link"
+              title="Copy full Classic room invite link"
+              className="flex flex-1 items-center justify-center gap-3 rounded-2xl border border-gold/15 bg-gold/10 px-5 py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-gold transition-all hover:bg-gold hover:text-black active:scale-[0.98]"
+            >
+              {copiedInvite ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+              {copiedInvite ? 'Invite link copied!' : 'Copy Invite Link'}
+            </button>
+          </div>
+
+          <div className="rounded-[1.4rem] border border-white/6 bg-black/20 px-4 py-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.28em] text-zinc-500">Share Note</p>
+            <p className="mt-2 text-sm font-serif italic leading-relaxed text-zinc-400">
+              Friends can join from the Join Room page with the code or paste the full invite link directly.
+            </p>
+            {copyFeedback && (
+              <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-gold">
+                {copyFeedback}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div
+          data-testid="lobby-waiting-status"
+          className="flex flex-col gap-5 rounded-[2rem] border border-white/6 bg-white/[0.03] p-5 shadow-2xl sm:rounded-[3rem] sm:p-8"
+        >
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-zinc-500">Waiting State</span>
+            <h2 className="mt-2 text-2xl font-serif font-black uppercase tracking-[0.12em] text-white">
+              {waitingTitle}
+            </h2>
+            <p className="mt-3 text-sm font-serif italic leading-relaxed text-zinc-400">
+              {waitingDetail}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-[1.4rem] border border-white/8 bg-black/20 px-3 py-4 text-center">
+              <span className="block text-[8px] font-bold uppercase tracking-[0.24em] text-zinc-500">Claimed</span>
+              <span data-testid="claimed-slot-count" className="mt-2 block text-2xl font-black text-white">{claimedCount}</span>
+            </div>
+            <div className="rounded-[1.4rem] border border-white/8 bg-black/20 px-3 py-4 text-center">
+              <span className="block text-[8px] font-bold uppercase tracking-[0.24em] text-zinc-500">Ready</span>
+              <span data-testid="ready-player-count" className="mt-2 block text-2xl font-black text-white">{readyCount}</span>
+            </div>
+            <div className="rounded-[1.4rem] border border-white/8 bg-black/20 px-3 py-4 text-center">
+              <span className="block text-[8px] font-bold uppercase tracking-[0.24em] text-zinc-500">Empty</span>
+              <span className="mt-2 block text-2xl font-black text-white">{emptyCount}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {FACTIONS.map((faction) => {
+              const slot = room.slots[faction as Exclude<Faction, 'None'>];
+              const statusLabel =
+                slot.occupantType === 'empty'
+                  ? 'Empty'
+                  : slot.occupantType === 'bot'
+                    ? `Bot / ${slot.ready ? 'Ready' : 'Preparing'}`
+                    : `Human / ${slot.ready ? 'Ready' : 'Preparing'}`;
+
+              return (
+                <div key={`summary-${faction}`} className="flex items-center justify-between rounded-[1.25rem] border border-white/6 bg-white/[0.02] px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className={cn('h-2.5 w-2.5 rounded-full', faction === 'Shu' ? 'bg-rose-400' : faction === 'Wei' ? 'bg-blue-400' : 'bg-emerald-400')} />
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">{faction}</p>
+                      <p className="text-[10px] text-zinc-500">{slot.playerName || (slot.occupantType === 'bot' ? `Bot (${slot.botDifficulty})` : 'No commander')}</p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-400">{statusLabel}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Main Content: The Faction Slots */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         {FACTIONS.map((fct) => {
           const slot = room.slots[fct];
           const isOccupied = slot.occupantType !== 'empty';
           const canIControl = isMySlot(fct);
-          const isHost = roomMode === 'online' ? (room as OnlineWarRoom).hostClientId === onlineRoomClient.socketId : true;
+          const isHost = currentUserIsHost;
 
           return (
             <div key={fct} className={cn(

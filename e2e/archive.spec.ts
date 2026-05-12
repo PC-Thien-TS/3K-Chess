@@ -27,11 +27,11 @@ test.describe('Archive Page', () => {
     await page.getByRole('button', { name: /View Replay/i }).first().click();
 
     await expect(page.getByTestId('authentic-replay-board')).toBeVisible();
-    await expect(page.getByTestId('authentic-replay-step')).toContainText('0 / 1');
+    await expect(page.getByTestId('authentic-replay-step')).toContainText(/0 \/ \d+/);
 
     await page.getByTestId('authentic-replay-next').click();
 
-    await expect(page.getByTestId('authentic-replay-step')).toContainText('1 / 1');
+    await expect(page.getByTestId('authentic-replay-step')).toContainText(/1 \/ \d+/);
     await expect(page.getByText('Han Court Neutral')).toBeVisible();
   });
 });

@@ -33,23 +33,34 @@ test.describe('Classic Online 2-tab Flow', () => {
       await host.page.waitForURL(/\/rooms\/[A-Z0-9-]+$/);
       const roomCode = (await host.page.getByTestId('room-code-display').textContent())?.trim();
       expect(roomCode).toBeTruthy();
+      const inviteUrl = new URL(`/rooms/${roomCode}`, host.page.url()).toString();
 
+      await expect(host.page.getByTestId('room-invite-card')).toBeVisible();
+      await expect(host.page.getByTestId('copy-room-code-button')).toBeVisible();
+      await expect(host.page.getByTestId('copy-invite-link-button')).toBeVisible();
+      await expect(host.page.getByTestId('lobby-waiting-status')).toContainText(/Waiting|ready|host/i);
+      await expect(host.page.getByTestId('claimed-slot-count')).toContainText(/\d/);
+      await expect(host.page.getByTestId('ready-player-count')).toContainText(/\d/);
       await expect(host.page.getByTestId('faction-slot-shu')).toContainText('Host Alpha');
       await host.page.getByTestId('faction-slot-wei').getByRole('button').click();
       await expect(host.page.getByTestId('faction-slot-wei')).toContainText('Claim Command');
 
       await guest.page.goto('/rooms/join');
       await guest.page.getByTestId('player-name-input').fill('Guest Beta');
-      await guest.page.getByTestId('room-code-input').fill(roomCode!);
+      await guest.page.getByTestId('room-code-input').fill(inviteUrl);
       await guest.page.getByTestId('join-room-button').click();
 
       await guest.page.waitForURL(new RegExp(`/rooms/${roomCode}$`));
+      await expect(guest.page.getByTestId('room-code-display')).toContainText(roomCode!);
+      await expect(guest.page.getByTestId('copy-invite-link-button')).toBeVisible();
       await guest.page.getByTestId('faction-slot-wei').getByTestId('claim-slot-button').click();
 
       await expect(host.page.getByTestId('faction-slot-wei')).toContainText('Guest Beta');
+      await expect(host.page.getByTestId('claimed-slot-count')).toContainText(/\d/);
 
       await guest.page.getByTestId('faction-slot-wei').getByTestId('ready-toggle-button').click();
       await expect(guest.page.getByTestId('faction-slot-wei')).toContainText('SECURED');
+      await expect(host.page.getByTestId('ready-player-count')).toContainText(/\d/);
 
       await expect(host.page.getByTestId('start-match-button')).toBeEnabled();
       await host.page.getByTestId('start-match-button').click();
