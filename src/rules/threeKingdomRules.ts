@@ -1,4 +1,11 @@
 import { GameMode, GameRuleset } from '@/shared/gameModes';
+import type {
+  AllianceState,
+  AuthenticCapturedPieceRecord,
+  AuthenticFaction,
+  AuthenticMoveRecord,
+  AuthenticPiece,
+} from './authenticThreeKingdomRules';
 
 /**
  * Rule Engine v1 for 3-Player Three Kingdoms Chess
@@ -88,6 +95,30 @@ export interface RecordedMove {
   notationText: string;
 }
 
+export interface AuthenticReplayState {
+  pieces: AuthenticPiece[];
+  currentTurn: AuthenticFaction;
+  moveNumber: number;
+  factionMoveCounts: Record<AuthenticFaction, number>;
+  hanController: AuthenticFaction | null;
+  allianceState: AllianceState;
+  checkedPriorityQueue: AuthenticFaction[];
+  eliminated: AuthenticFaction[];
+  captured: AuthenticCapturedPieceRecord[];
+  winner: AuthenticFaction | null;
+  lastMove: { from: Point; to: Point } | null;
+}
+
+export interface AuthenticRecordedMove extends AuthenticMoveRecord {
+  replayState?: Partial<AuthenticReplayState>;
+}
+
+export interface AuthenticReplayData {
+  version: 1;
+  initialState: Partial<AuthenticReplayState>;
+  moves: AuthenticRecordedMove[];
+}
+
 export interface MatchRecord {
   id: string;
   createdAt: string;
@@ -99,6 +130,7 @@ export interface MatchRecord {
   initialPieces: Piece[];
   moves: RecordedMove[];
   finalPieces: Piece[];
+  authenticReplay?: AuthenticReplayData;
   source?: {
     mode: "local" | "war-room-sim";
     roomCode?: string;

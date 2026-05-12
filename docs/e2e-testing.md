@@ -61,7 +61,8 @@ npx playwright test e2e/routes.spec.ts
 
 #### Archive Page (`e2e/archive.spec.ts`)
 - Archive page loads
-- Shows empty state message
+- Shows filter controls
+- Replays saved Modern 3K local archive records in read-only mode
 
 #### NotFound Page (`e2e/notfound.spec.ts`)
 - Unknown route shows NotFound

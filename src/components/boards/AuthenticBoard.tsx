@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Cpu, Crown, RotateCcw, ScrollText, ShieldAlert, Trophy, User, Wrench } from 'lucide-react';
+import { Cpu, Crown, Download, RotateCcw, Save, ScrollText, ShieldAlert, Trophy, User, Wrench } from 'lucide-react';
 import { GAME_MODE_META } from '@/shared/gameModes';
 import { cn } from '@/src/lib/utils';
 import { useMatchContext } from '@/src/context/MatchContext';
 import { type AuthenticBotDecision } from '@/src/ai/authenticBotAI';
 import { useAuthenticBotTurns } from '@/src/hooks/useAuthenticBotTurns';
+import { createAuthenticMatchRecord } from '@/src/rules/authenticReplayReducer';
+import { exportMatchRecord, saveMatchRecord } from '@/src/storage/localMatchArchive';
 import {
   applyAuthenticMove,
   AUTHENTIC_BOARD_NOTE,
@@ -301,12 +303,36 @@ export default function AuthenticBoard({
     }
   };
 
+  const createArchiveRecord = React.useCallback(
+    () =>
+      createAuthenticMatchRecord({
+        config,
+        initialState: createInitialAuthenticState(),
+        finalState: gameState,
+      }),
+    [config, gameState]
+  );
+
   const resetBoard = () => {
     setGameState(createInitialAuthenticState());
     setSelectedId(null);
     setLastValidationReason(null);
     setStatus('Wu / Green opens the match. The first move cannot capture.');
   };
+
+  const handleSaveLocally = React.useCallback(() => {
+    const record = createArchiveRecord();
+    saveMatchRecord(record);
+    setStatus('Modern 3K chronicle saved to local archives.');
+    return record;
+  }, [createArchiveRecord]);
+
+  const handleExportMatch = React.useCallback(() => {
+    const record = createArchiveRecord();
+    exportMatchRecord(record);
+    setStatus('Modern 3K chronicle exported for external archives.');
+    return record;
+  }, [createArchiveRecord]);
 
   const commitResolution = React.useCallback(
     (
@@ -856,6 +882,23 @@ export default function AuthenticBoard({
           </div>
 
           <div className="flex flex-col gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={handleSaveLocally}
+              data-testid="authentic-save-archive-button"
+              className="flex items-center justify-center gap-3 rounded-2xl bg-[#7b5325] px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#f8edd6] transition-all hover:bg-[#69461f] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+            >
+              <Save size={16} />
+              Save to Archive
+            </button>
+            <button
+              type="button"
+              onClick={handleExportMatch}
+              className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+            >
+              <Download size={16} />
+              Export Record
+            </button>
             <button
               type="button"
               onClick={resetBoard}

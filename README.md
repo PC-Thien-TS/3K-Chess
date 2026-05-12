@@ -37,6 +37,7 @@ Three Kingdoms Chess is a two-mode strategy project built around a 3-player Xian
 - Local-only setup and play
 - Human/Bot control selection for Wu, Wei, and Shu
 - Authentic rule enforcement
+- Local replay support for saved archive records
 - Local UX support for move history, status, and rules help
 
 ## Local Setup
@@ -169,7 +170,7 @@ Use this checklist before shipping Classic online updates:
 ### Modern 3K
 - Local-only
 - Online rooms are not available yet
-- Replay playback is not available yet
+- Local replay is supported for replay-ready archive records
 - Online archive/reconnect flows are not available yet
 
 ### Classic

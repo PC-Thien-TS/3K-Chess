@@ -51,6 +51,14 @@ export function validateMatchRecord(record: any): { valid: boolean; errors: stri
   if (record.setup && record.setup.gameMode && !['classic', 'authentic'].includes(record.setup.gameMode)) {
     errors.push("Invalid game mode");
   }
+  if (record.authenticReplay) {
+    if (!record.authenticReplay.initialState || typeof record.authenticReplay.initialState !== 'object') {
+      errors.push("Invalid Authentic replay initial state");
+    }
+    if (!Array.isArray(record.authenticReplay.moves)) {
+      errors.push("Invalid Authentic replay move history");
+    }
+  }
   
   return {
     valid: errors.length === 0,

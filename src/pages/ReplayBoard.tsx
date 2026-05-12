@@ -30,7 +30,13 @@ import {
 } from '@/src/rules/classicThreeKingdomRules';
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
+import AuthenticReplayBoard from '@/src/components/boards/AuthenticReplayBoard';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, normalizeGameMode } from '@/shared/gameModes';
+import {
+  canReplayAuthenticRecord,
+  getAuthenticReplayMoveCount,
+  reconstructAuthenticReplayState,
+} from '@/src/rules/authenticReplayReducer';
 import { isClassicReplayRecord, reconstructClassicReplayState } from '@/src/rules/classicReplayReducer';
 
 const FACTION_COLORS = {
@@ -72,13 +78,23 @@ export default function ReplayBoard() {
     }
   }, [matchId, location.state]);
 
+  const replayMode = normalizeGameMode(match?.setup?.gameMode, DEFAULT_GAME_MODE);
+  const totalSteps =
+    replayMode === 'authentic'
+      ? getAuthenticReplayMoveCount(match?.authenticReplay)
+      : match?.moves.length ?? 0;
+
+  useEffect(() => {
+    setCurrentStep((prev) => Math.min(prev, totalSteps));
+  }, [totalSteps]);
+
   const nextStep = useCallback(() => {
-    if (match && currentStep < match.moves.length) {
+    if (match && currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
     } else {
       setIsPlaying(false);
     }
-  }, [match, currentStep]);
+  }, [match, currentStep, totalSteps]);
 
   const prevStep = useCallback(() => {
     if (currentStep > 0) {
@@ -99,17 +115,87 @@ export default function ReplayBoard() {
     };
   }, [isPlaying, nextStep]);
 
-  const replayMode = normalizeGameMode(match?.setup?.gameMode, DEFAULT_GAME_MODE);
   const classicReplaySupported = match ? isClassicReplayRecord(match) : true;
-  const replaySnapshot = useMemo(
+  const authenticReplaySupported = match ? canReplayAuthenticRecord(match) : true;
+  const classicReplaySnapshot = useMemo(
     () =>
       match
         ? reconstructClassicReplayState(match.initialPieces, match.moves, currentStep)
         : { pieces: [] as Piece[], lastMove: null, moveIndex: 0 },
     [currentStep, match]
   );
+  const authenticReplaySnapshot = useMemo(
+    () =>
+      authenticReplaySupported && match?.authenticReplay
+        ? reconstructAuthenticReplayState(match.authenticReplay.initialState, match.authenticReplay.moves, currentStep)
+        : null,
+    [authenticReplaySupported, currentStep, match]
+  );
 
   if (!match) return null;
+
+  if (replayMode === 'authentic') {
+    if (!authenticReplaySupported) {
+      return (
+        <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
+          <div className="flex flex-col gap-6 px-0 sm:px-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+            <div className="space-y-4">
+              <Link to="/archive" className="inline-flex items-center gap-3 text-gold hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.4em] mb-4 bg-gold/10 px-6 py-2.5 rounded-full border border-gold/20 mr-4">
+                <ChevronLeft size={16} /> Return to Archives
+              </Link>
+              <h1 className="text-4xl md:text-7xl font-serif font-black text-white tracking-[0.05em] uppercase leading-none">
+                AUTHENTIC <span className="text-gold italic block md:inline">REPLAY</span>
+              </h1>
+            </div>
+
+            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:gap-4">
+              <button
+                onClick={() => exportMatchRecord(match)}
+                className="glass-dark flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-all hover:scale-[1.02] hover:bg-white/10 active:scale-95 lg:w-auto lg:px-8 lg:py-5"
+              >
+                <Download size={18} className="text-gold" /> Export Log
+              </button>
+              <button
+                onClick={() => navigate('/setup?mode=authentic')}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gold px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-[0_15px_40px_rgba(212,175,55,0.3)] transition-all hover:scale-[1.02] hover:bg-white active:scale-95 lg:w-auto lg:px-8 lg:py-5"
+              >
+                <PlayCircle size={18} /> New Campaign
+              </button>
+            </div>
+          </div>
+
+          <div className="px-4">
+            <div className="glass-dark border border-white/10 rounded-[3rem] p-10 md:p-14 shadow-3xl">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gold">Archive Notice</span>
+              <h2 className="mt-4 text-3xl md:text-5xl font-serif font-black uppercase text-white tracking-tight">
+                This Modern 3K record cannot be replayed because it was saved before replay support.
+              </h2>
+              <p className="mt-6 max-w-2xl text-zinc-400 font-serif italic leading-relaxed">
+                The archive entry is still valid for export, but it does not contain the local replay data introduced in replay v1.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!authenticReplaySnapshot) {
+      return null;
+    }
+
+    return (
+      <AuthenticReplayBoard
+        record={match}
+        snapshot={authenticReplaySnapshot}
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        onFirst={() => setCurrentStep(0)}
+        onPrevious={prevStep}
+        onNext={nextStep}
+        onLast={() => setCurrentStep(totalSteps)}
+      />
+    );
+  }
 
   if (!classicReplaySupported) {
     return (
@@ -155,8 +241,8 @@ export default function ReplayBoard() {
     );
   }
 
-  const boardPieces = replaySnapshot.pieces;
-  const lastMove = replaySnapshot.lastMove;
+  const boardPieces = classicReplaySnapshot.pieces;
+  const lastMove = classicReplaySnapshot.lastMove;
 
   return (
     <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col gap-8 sm:gap-10">
@@ -188,7 +274,7 @@ export default function ReplayBoard() {
              <div className="flex items-center gap-3 border-l border-white/10 pl-6 h-8">
                 <Sword size={16} className="text-rose-500/60" /> 
                 <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Scale:</span>
-                <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] font-mono">{match.moves.length} Nodes</span>
+                <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] font-mono">{totalSteps} Nodes</span>
              </div>
           </div>
         </div>
@@ -359,7 +445,7 @@ export default function ReplayBoard() {
                        <span className="text-3xl font-mono font-black leading-none tracking-tighter text-gold sm:text-4xl">{currentStep}</span>
                        <div className="w-px h-8 bg-zinc-800" />
                        <span className="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] leading-none mb-1">
-                          OF {match.moves.length}
+                          OF {totalSteps}
                        </span>
                   </div>
                   
@@ -391,13 +477,13 @@ export default function ReplayBoard() {
                       <div className="flex items-center gap-2 sm:gap-3">
                         <button 
                           onClick={nextStep}
-                          disabled={currentStep === match.moves.length}
+                          disabled={currentStep === totalSteps}
                           className="rounded-[1.2rem] p-4 text-zinc-500 shadow-inner transition-all hover:bg-white/5 hover:text-white disabled:opacity-10 sm:rounded-[1.5rem] sm:p-5"
                         >
                           <ChevronRight size={32} />
                         </button>
                         <button 
-                          onClick={() => setCurrentStep(match.moves.length)}
+                          onClick={() => setCurrentStep(totalSteps)}
                           className="rounded-[1.2rem] px-5 py-4 text-xs font-mono font-black uppercase tracking-widest text-gold/60 transition-all hover:bg-gold/5 hover:text-gold sm:rounded-[1.5rem] sm:px-6 sm:py-5"
                         >
                           FIN
@@ -411,7 +497,7 @@ export default function ReplayBoard() {
                   <div className="h-2 w-full bg-white/[0.02] rounded-full overflow-hidden relative border border-white/5 p-[1px]">
                       <motion.div 
                         initial={false}
-                        animate={{ width: `${(currentStep / match.moves.length) * 100}%` }}
+                        animate={{ width: `${(currentStep / Math.max(totalSteps, 1)) * 100}%` }}
                         className="absolute inset-0 bg-gradient-to-r from-gold/40 to-gold rounded-full shadow-[0_0_20px_rgba(212,175,55,0.6)]"
                       />
                   </div>

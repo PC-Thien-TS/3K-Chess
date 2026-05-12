@@ -48,6 +48,12 @@ function getArchiveSourceLabel(match: MatchRecord) {
   return getArchiveSource(match) === 'war-room' ? 'War Room' : 'Local';
 }
 
+function getArchiveMoveCount(match: MatchRecord) {
+  return getArchiveMode(match) === 'authentic'
+    ? match.authenticReplay?.moves.length ?? match.moves.length
+    : match.moves.length;
+}
+
 export default function MatchArchive() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchRecord[]>([]);
@@ -244,6 +250,7 @@ export default function MatchArchive() {
             const mode = getArchiveMode(match);
             const sourceLabel = getArchiveSourceLabel(match);
             const winnerLabel = match.winner || 'Armistice';
+            const moveCount = getArchiveMoveCount(match);
 
             return (
             <motion.div
@@ -308,7 +315,7 @@ export default function MatchArchive() {
                   <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-700 font-black">Maneuvers</span>
                   <div className="flex items-center gap-2">
                      <div className="w-1 h-1 rounded-full bg-gold/40" />
-                     <span className="text-white font-mono text-xl font-black">{match.matchStats.totalMoves}</span>
+                     <span className="text-white font-mono text-xl font-black">{moveCount}</span>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
