@@ -28,6 +28,7 @@ import {
 import { getSavedMatchRecords, exportMatchRecord } from '@/src/storage/localMatchArchive';
 import BoardPieceToken from '@/src/components/BoardPieceToken';
 import AuthenticReplayBoard from '@/src/components/boards/AuthenticReplayBoard';
+import MobilePanelSection from '@/src/components/MobilePanelSection';
 import ReplayPlaybackPanel, {
   type ReplayMoveListItem,
   type ReplayPlaybackSpeed,
@@ -644,36 +645,41 @@ export default function ReplayBoard() {
                 </div>
             </div>
 
-            {/* Tactical Intel */}
-            <AnimatePresence mode="wait">
+            <MobilePanelSection
+                title="Tactical Log"
+                icon={<History size={18} className="text-gold" />}
+                defaultOpen={false}
+                desktopBreakpoint="xl"
+                shellClassName="glass-dark relative overflow-hidden rounded-[2rem] border border-white/10 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.4)] sm:rounded-[3rem] sm:p-10"
+                titleClassName="relative z-10 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600"
+                bodyClassName="relative z-10"
+            >
+              <AnimatePresence mode="wait">
                 <motion.div
                     key={currentStep}
                     initial={{ opacity: 0, x: 40 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -40 }}
-                    className="glass-dark relative flex h-full min-h-[420px] flex-col overflow-hidden rounded-[2rem] border border-white/10 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.4)] sm:min-h-[500px] sm:rounded-[3rem] sm:p-10"
+                    className="relative flex min-h-[320px] flex-col sm:min-h-[500px]"
                 >
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-gold/[0.02] blur-[80px] rounded-full" />
-                    <div className="flex items-center justify-between mb-10 relative z-10">
-                        <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] flex items-center gap-3">
-                            <History size={18} className="text-gold" /> Tactical Log
-                        </h3>
+                    <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-gold/[0.02] blur-[80px]" />
+                    <div className="relative z-10 mb-8 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
                         {(() => {
                             const integrity = validateBoardIntegrity(boardPieces);
                             return (
                                 <div className={cn(
-                                    "flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.1em]",
+                                    "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.1em]",
                                     integrity.valid ? "text-emerald-500 border-emerald-500/20 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.1)]" : "text-rose-500 border-rose-500/20 bg-rose-500/5 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
                                 )}>
-                                    <div className={cn("w-1.5 h-1.5 rounded-full", integrity.valid ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
+                                    <div className={cn("h-1.5 w-1.5 rounded-full", integrity.valid ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
                                     {integrity.valid ? "CONSISTENT" : "ANOMALY"}
                                 </div>
                             );
                         })()}
                     </div>
-                    
+
                     {lastMove ? (
-                        <div className="space-y-8 relative z-10 flex-grow flex flex-col">
+                        <div className="relative z-10 flex flex-grow flex-col space-y-8">
                             <div className="flex items-center gap-6">
                                <div className={cn("w-16 h-16 rounded-2xl border-2 flex items-center justify-center font-black text-2xl shadow-2xl relative", FACTION_COLORS[lastMove.faction])}>
                                  <div className="absolute inset-0 bg-black/40 rounded-2xl" />
@@ -728,7 +734,7 @@ export default function ReplayBoard() {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-grow flex flex-col items-center justify-center py-20 opacity-20 grayscale scale-90">
+                        <div className="flex flex-grow scale-90 flex-col items-center justify-center py-20 opacity-20 grayscale">
                             <RotateCcw size={80} strokeWidth={1} className="text-zinc-800 mb-8" />
                             <p className="text-zinc-400 font-serif italic text-lg uppercase tracking-[0.3em] text-center max-w-xs">
                               Awaiting the first signal from the archives.
@@ -736,11 +742,16 @@ export default function ReplayBoard() {
                         </div>
                     )}
                 </motion.div>
-            </AnimatePresence>
+              </AnimatePresence>
+            </MobilePanelSection>
 
-            {/* Performance Metrics */}
-            <div className="glass-dark border border-white/5 p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-2xl">
-                <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10">Historical Context</h3>
+            <MobilePanelSection
+                title="Historical Context"
+                defaultOpen={false}
+                desktopBreakpoint="xl"
+                shellClassName="glass-dark rounded-[2rem] border border-white/5 p-5 shadow-2xl sm:rounded-[3rem] sm:p-10"
+                titleClassName="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600"
+            >
                 <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-center justify-between p-6 bg-white/[0.02] rounded-[2rem] border border-white/5 hover:bg-white/[0.04] transition-all group">
                         <div className="flex items-center gap-4">
@@ -761,7 +772,7 @@ export default function ReplayBoard() {
                         <span className="text-white font-mono font-black text-xl tracking-tighter">{match.matchStats.totalCaptures} Units</span>
                     </div>
                 </div>
-            </div>
+            </MobilePanelSection>
 
             {/* Retreat Button */}
             <button 

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Cpu, Crown, Download, RotateCcw, Save, ScrollText, ShieldAlert, Trophy, User, Wrench } from 'lucide-react';
 import { GAME_MODE_META } from '@/shared/gameModes';
 import { cn } from '@/src/lib/utils';
+import MobilePanelSection from '@/src/components/MobilePanelSection';
 import { useMatchContext } from '@/src/context/MatchContext';
 import { type AuthenticBotDecision } from '@/src/ai/authenticBotAI';
 import { useAuthenticBotTurns } from '@/src/hooks/useAuthenticBotTurns';
@@ -641,7 +642,7 @@ export default function AuthenticBoard({
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[820px] rounded-[2rem] border border-[#8c6331]/22 bg-[#ead7b0] p-3 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:rounded-[3rem] sm:p-6 md:p-8">
+          <div className="mx-auto w-full max-w-[820px] rounded-[1.7rem] border border-[#8c6331]/22 bg-[#ead7b0] p-2.5 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:rounded-[3rem] sm:p-6 md:p-8">
             <div className="relative aspect-square w-full overflow-hidden rounded-[1.65rem] border border-[#7a5730]/28 bg-[#f4e7c9] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)] sm:rounded-[2.2rem]">
               <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(120,86,46,0.025)_0,rgba(120,86,46,0.025)_2px,transparent_2px,transparent_18px),repeating-linear-gradient(0deg,rgba(120,86,46,0.018)_0,rgba(120,86,46,0.018)_1px,transparent_1px,transparent_12px)] opacity-70" />
               <div className="absolute inset-[4.8%] rounded-[2rem] border border-[#7a5730]/18" />
@@ -960,11 +961,14 @@ export default function AuthenticBoard({
             <p className="mt-4 text-xs font-serif italic leading-relaxed text-[#826744]">{AUTHENTIC_BOARD_NOTE}</p>
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
-            <div className="mb-3 flex items-center gap-3 text-[#6f4c28]">
-              <ShieldAlert size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Rules Help</span>
-            </div>
+          <MobilePanelSection
+            title="Rules Help"
+            icon={<ShieldAlert size={18} />}
+            defaultOpen={false}
+            desktopBreakpoint="2xl"
+            shellClassName="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+            titleClassName="text-[#6f4c28] text-[10px] font-black uppercase tracking-[0.35em]"
+          >
             <ul className="grid gap-3 text-sm font-serif text-[#6d5334] sm:grid-cols-2 2xl:grid-cols-1">
               <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Wu moves first.</li>
               <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Horse ignores leg-blocks.</li>
@@ -972,37 +976,46 @@ export default function AuthenticBoard({
               <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Only a Horse can depose the Han Emperor.</li>
               <li className="rounded-[1.2rem] border border-[#8b6433]/12 bg-white/45 px-4 py-3">Authentic mode is local-only.</li>
             </ul>
-          </div>
+          </MobilePanelSection>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-1">
-            {AUTHENTIC_FACTIONS.map((faction) => (
-              <div key={faction} className={cn('rounded-[2rem] border p-5 shadow-sm', FACTION_CARD_THEME[faction])}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">{getAuthenticFactionLabel(faction)}</p>
-                    <h3 className="text-lg font-serif font-black uppercase">{faction}</h3>
-                    {faction !== 'Han' && (
-                      <div className="mt-3">
-                        <ControlBadge control={controlModes[faction]} />
-                      </div>
-                    )}
+          <MobilePanelSection
+            title="Command Rosters"
+            icon={<Crown size={18} />}
+            defaultOpen={false}
+            desktopBreakpoint="2xl"
+            shellClassName="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+            titleClassName="text-[#6f4c28] text-[10px] font-black uppercase tracking-[0.35em]"
+          >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-1">
+              {AUTHENTIC_FACTIONS.map((faction) => (
+                <div key={faction} className={cn('rounded-[2rem] border p-5 shadow-sm', FACTION_CARD_THEME[faction])}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">{getAuthenticFactionLabel(faction)}</p>
+                      <h3 className="text-lg font-serif font-black uppercase">{faction}</h3>
+                      {faction !== 'Han' && (
+                        <div className="mt-3">
+                          <ControlBadge control={controlModes[faction]} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-current/25 bg-white/35 font-serif text-xl font-black">
+                      {faction[0]}
+                    </div>
                   </div>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-current/25 bg-white/35 font-serif text-xl font-black">
-                    {faction[0]}
-                  </div>
+                  <p className="mt-3 text-xs font-serif italic opacity-80">
+                    {faction === 'Han'
+                      ? gameState.hanController
+                        ? `Military controlled by ${gameState.hanController}.`
+                        : 'Neutral court with static military until triggered.'
+                      : gameState.eliminated.includes(faction)
+                        ? 'Command eliminated from direct play.'
+                        : `Moves taken: ${gameState.factionMoveCounts[faction]}`}
+                  </p>
                 </div>
-                <p className="mt-3 text-xs font-serif italic opacity-80">
-                  {faction === 'Han'
-                    ? gameState.hanController
-                      ? `Military controlled by ${gameState.hanController}.`
-                      : 'Neutral court with static military until triggered.'
-                    : gameState.eliminated.includes(faction)
-                      ? 'Command eliminated from direct play.'
-                      : `Moves taken: ${gameState.factionMoveCounts[faction]}`}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </MobilePanelSection>
 
           <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
             <div className="mb-3 flex items-center gap-3 text-[#6f4c28]">
@@ -1039,11 +1052,14 @@ export default function AuthenticBoard({
             </div>
           )}
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
-            <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
-              <ScrollText size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Move History</span>
-            </div>
+          <MobilePanelSection
+            title="Move History"
+            icon={<ScrollText size={18} />}
+            defaultOpen={false}
+            desktopBreakpoint="2xl"
+            shellClassName="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+            titleClassName="text-[#6f4c28] text-[10px] font-black uppercase tracking-[0.35em]"
+          >
             <div className="max-h-72 space-y-3 overflow-y-auto pr-1 sm:max-h-80">
               {gameState.history.length === 0 ? (
                 <p className="text-sm font-serif italic text-[#6d5334]">No moves recorded yet.</p>
@@ -1098,13 +1114,16 @@ export default function AuthenticBoard({
                 ))
               )}
             </div>
-          </div>
+          </MobilePanelSection>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
-            <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
-              <ShieldAlert size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Captured Pieces</span>
-            </div>
+          <MobilePanelSection
+            title="Captured Pieces"
+            icon={<ShieldAlert size={18} />}
+            defaultOpen={false}
+            desktopBreakpoint="2xl"
+            shellClassName="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+            titleClassName="text-[#6f4c28] text-[10px] font-black uppercase tracking-[0.35em]"
+          >
             <div className="flex flex-wrap gap-2">
               {gameState.captured.length === 0 ? (
                 <p className="text-sm font-serif italic text-[#6d5334]">No captures yet.</p>
@@ -1112,7 +1131,7 @@ export default function AuthenticBoard({
                 gameState.captured.map((piece) => <CapturedBadge key={piece.id} piece={piece} />)
               )}
             </div>
-          </div>
+          </MobilePanelSection>
 
           <div data-testid="quick-actions" className="flex flex-col gap-3 sm:gap-4">
             {context === 'practice' && (

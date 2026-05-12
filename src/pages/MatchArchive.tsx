@@ -147,8 +147,8 @@ export default function MatchArchive() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-          <label className="group relative overflow-hidden cursor-pointer bg-gold text-black px-10 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-[11px] transition-all flex items-center justify-center gap-3 shadow-[0_15px_40px_rgba(212,175,55,0.25)] hover:bg-white hover:scale-[1.02] active:scale-95">
+        <div className="flex w-full flex-col gap-4 sm:flex-row lg:w-auto">
+          <label className="group relative flex w-full cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gold px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] text-black shadow-[0_15px_40px_rgba(212,175,55,0.25)] transition-all hover:bg-white hover:scale-[1.02] active:scale-95 sm:w-auto">
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
             <Upload size={18} className="relative z-10" /> 
             <span className="relative z-10">Import Scroll</span>

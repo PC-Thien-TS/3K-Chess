@@ -639,11 +639,11 @@ export default function WarRoomLobby() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
-            <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+            <div className="min-w-0 rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
               <span className="block text-[8px] font-bold uppercase tracking-[0.28em] text-zinc-500">Invite Helper</span>
               <p className="mt-2 text-sm text-zinc-300">{inviteText}</p>
             </div>
-            <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+            <div className="min-w-0 rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
               <span className="block text-[8px] font-bold uppercase tracking-[0.28em] text-zinc-500">Invite Link</span>
               <p className="mt-2 break-all font-mono text-sm text-zinc-300">{inviteLink}</p>
             </div>
@@ -701,7 +701,7 @@ export default function WarRoomLobby() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-[1.4rem] border border-white/8 bg-black/20 px-3 py-4 text-center">
               <span className="block text-[8px] font-bold uppercase tracking-[0.24em] text-zinc-500">Claimed</span>
               <span data-testid="claimed-slot-count" className="mt-2 block text-2xl font-black text-white">{claimedCount}</span>
@@ -727,7 +727,7 @@ export default function WarRoomLobby() {
                     : `Human / ${slot.ready ? 'Ready' : 'Preparing'}`;
 
               return (
-                <div key={`summary-${faction}`} className="flex items-center justify-between rounded-[1.25rem] border border-white/6 bg-white/[0.02] px-4 py-3">
+                <div key={`summary-${faction}`} className="flex flex-col gap-2 rounded-[1.25rem] border border-white/6 bg-white/[0.02] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <div className={cn('h-2.5 w-2.5 rounded-full', faction === 'Shu' ? 'bg-rose-400' : faction === 'Wei' ? 'bg-blue-400' : 'bg-emerald-400')} />
                     <div>
@@ -852,7 +852,7 @@ export default function WarRoomLobby() {
                                     onClick={() => toggleReady(fct)}
                                     data-testid="ready-toggle-button"
                                     className={cn(
-                                      "flex-[2] py-4 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg hover:scale-105 active:scale-95",
+                                      "w-full flex-[2] py-4 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all border shadow-lg hover:scale-105 active:scale-95",
                                       slot.ready 
                                         ? "bg-white/5 border-white/10 text-zinc-400 hover:text-white" 
                                         : "bg-gold text-black border-gold hover:bg-white"
@@ -864,7 +864,7 @@ export default function WarRoomLobby() {
                               {(canIControl || (slot.occupantType === 'bot' && isHost)) && (
                                 <button 
                                    onClick={() => removeOccupant(fct)}
-                                   className="flex-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white py-4 rounded-2xl transition-all border border-rose-500/20 flex items-center justify-center hover:scale-105 active:scale-95"
+                                   className="w-full flex-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white py-4 rounded-2xl transition-all border border-rose-500/20 flex items-center justify-center hover:scale-105 active:scale-95"
                                 >
                                    <Trash2 size={18} />
                                 </button>

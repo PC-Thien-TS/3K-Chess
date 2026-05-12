@@ -80,12 +80,12 @@ export default function ReplayPlaybackPanel({
   const progressPercent = totalSteps === 0 ? 0 : (currentStep / totalSteps) * 100;
 
   return (
-    <div data-testid="replay-controls" className={cn('rounded-[2rem] p-5 shadow-3xl sm:rounded-[3rem] sm:p-8', styles.shell)}>
+    <div data-testid="replay-controls" className={cn('w-full min-w-0 overflow-hidden rounded-[2rem] p-4 shadow-3xl sm:rounded-[3rem] sm:p-8', styles.shell)}>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div
             data-testid={currentStepTestId}
-            className={cn('rounded-[1.5rem] px-5 py-4 sm:px-6', styles.chip)}
+            className={cn('rounded-[1.5rem] px-4 py-4 sm:px-6', styles.chip)}
           >
             <p className={cn('text-[9px] font-black uppercase tracking-[0.3em]', styles.muted)}>Current Step</p>
             <p className="mt-2 text-2xl font-mono font-black tracking-tight sm:text-3xl">
@@ -93,12 +93,12 @@ export default function ReplayPlaybackPanel({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
             <button
               type="button"
               onClick={onFirst}
               disabled={currentStep === 0}
-              className={cn('rounded-[1.25rem] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] transition-all', styles.button)}
+              className={cn('rounded-[1.25rem] px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition-all active:scale-[0.98] sm:px-4 sm:tracking-[0.22em]', styles.button)}
               title="First move"
             >
               <span className="flex items-center gap-2">
@@ -110,7 +110,7 @@ export default function ReplayPlaybackPanel({
               type="button"
               onClick={onPrevious}
               disabled={currentStep === 0}
-              className={cn('rounded-[1.25rem] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] transition-all', styles.button)}
+              className={cn('rounded-[1.25rem] px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition-all active:scale-[0.98] sm:px-4 sm:tracking-[0.22em]', styles.button)}
               title="Previous move"
             >
               <span className="flex items-center gap-2">
@@ -123,7 +123,7 @@ export default function ReplayPlaybackPanel({
               type="button"
               onClick={onTogglePlay}
               disabled={totalSteps === 0}
-              className={cn('flex min-w-[8.5rem] items-center justify-center gap-3 rounded-[1.35rem] px-5 py-3 text-[10px] font-black uppercase tracking-[0.24em] shadow-[0_15px_30px_rgba(0,0,0,0.12)] transition-all disabled:opacity-40', styles.primaryButton)}
+              className={cn('col-span-2 flex min-h-12 items-center justify-center gap-3 rounded-[1.35rem] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] shadow-[0_15px_30px_rgba(0,0,0,0.12)] transition-all active:scale-[0.98] disabled:opacity-40 sm:col-auto sm:min-w-[8.5rem] sm:px-5 sm:tracking-[0.24em]', styles.primaryButton)}
               title={isPlaying ? 'Pause replay' : 'Play replay'}
             >
               {isPlaying ? <Pause size={16} /> : <Play size={16} className="translate-x-[1px]" fill="currentColor" />}
@@ -134,7 +134,7 @@ export default function ReplayPlaybackPanel({
               type="button"
               onClick={onNext}
               disabled={currentStep === totalSteps}
-              className={cn('rounded-[1.25rem] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] transition-all', styles.button)}
+              className={cn('rounded-[1.25rem] px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition-all active:scale-[0.98] sm:px-4 sm:tracking-[0.22em]', styles.button)}
               title="Next move"
             >
               <span className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function ReplayPlaybackPanel({
               type="button"
               onClick={onLast}
               disabled={currentStep === totalSteps}
-              className={cn('rounded-[1.25rem] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] transition-all', styles.button)}
+              className={cn('rounded-[1.25rem] px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition-all active:scale-[0.98] sm:px-4 sm:tracking-[0.22em]', styles.button)}
               title="Last move"
             >
               <span className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function ReplayPlaybackPanel({
                 type="button"
                 onClick={() => onSpeedChange(speed)}
                 className={cn(
-                  'rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all',
+                  'min-h-10 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98]',
                   playbackSpeed === speed ? styles.speedActive : styles.speedIdle
                 )}
               >
@@ -208,7 +208,7 @@ export default function ReplayPlaybackPanel({
               Click to jump
             </span>
           </div>
-          <div data-testid="replay-move-list" className="max-h-80 space-y-2 overflow-y-auto pr-1">
+          <div data-testid="replay-move-list" className="max-h-64 space-y-2 overflow-y-auto pr-1 sm:max-h-80">
             {moveItems.map((item) => {
               const active = item.step === currentStep;
               return (
@@ -217,7 +217,7 @@ export default function ReplayPlaybackPanel({
                   type="button"
                   onClick={() => onJumpToStep(item.step)}
                   className={cn(
-                    'w-full rounded-[1.4rem] px-4 py-3 text-left transition-all',
+                    'w-full rounded-[1.4rem] px-4 py-3 text-left transition-all active:scale-[0.99]',
                     active ? styles.moveActive : styles.moveIdle
                   )}
                 >

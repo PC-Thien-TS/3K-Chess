@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Crown, ScrollText, ShieldAlert, Trophy } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import MobilePanelSection from '@/src/components/MobilePanelSection';
 import ReplayPlaybackPanel, { type ReplayPlaybackSpeed } from '@/src/components/replay/ReplayPlaybackPanel';
 import type { MatchRecord } from '@/src/rules/threeKingdomRules';
 import type { AuthenticReplaySnapshot } from '@/src/rules/authenticReplayReducer';
@@ -227,7 +228,7 @@ export default function AuthenticReplayBoard({
             </span>
           </div>
 
-          <div className="mx-auto w-full max-w-[820px] rounded-[2rem] border border-[#8c6331]/22 bg-[#ead7b0] p-3 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:rounded-[3rem] sm:p-6 md:p-8">
+          <div className="mx-auto w-full max-w-[820px] rounded-[1.7rem] border border-[#8c6331]/22 bg-[#ead7b0] p-2.5 shadow-[0_18px_44px_rgba(66,45,20,0.16)] sm:rounded-[3rem] sm:p-6 md:p-8">
             <div className="relative aspect-square w-full overflow-hidden rounded-[1.65rem] border border-[#7a5730]/28 bg-[#f4e7c9] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)] sm:rounded-[2.2rem]">
               <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(120,86,46,0.025)_0,rgba(120,86,46,0.025)_2px,transparent_2px,transparent_18px),repeating-linear-gradient(0deg,rgba(120,86,46,0.018)_0,rgba(120,86,46,0.018)_1px,transparent_1px,transparent_12px)] opacity-70" />
               <div className="absolute inset-[4.8%] rounded-[2rem] border border-[#7a5730]/18" />
@@ -334,11 +335,14 @@ export default function AuthenticReplayBoard({
             </p>
           </div>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
-            <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
-              <ShieldAlert size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Command Status</span>
-            </div>
+          <MobilePanelSection
+            title="Command Status"
+            icon={<ShieldAlert size={18} />}
+            defaultOpen
+            desktopBreakpoint="2xl"
+            shellClassName="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+            titleClassName="text-[#6f4c28] text-[10px] font-black uppercase tracking-[0.35em]"
+          >
             <div className="grid gap-3">
               <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Current Step</p>
@@ -371,13 +375,16 @@ export default function AuthenticReplayBoard({
                 </p>
               </div>
             </div>
-          </div>
+          </MobilePanelSection>
 
-          <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
-            <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
-              <ScrollText size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.35em]">Latest Move</span>
-            </div>
+          <MobilePanelSection
+            title="Latest Move"
+            icon={<ScrollText size={18} />}
+            defaultOpen={false}
+            desktopBreakpoint="2xl"
+            shellClassName="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+            titleClassName="text-[#6f4c28] text-[10px] font-black uppercase tracking-[0.35em]"
+          >
             {currentMove ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -408,32 +415,41 @@ export default function AuthenticReplayBoard({
             ) : (
               <p className="text-sm font-serif italic text-[#6d5334]">Initial deployment. No move selected yet.</p>
             )}
-          </div>
+          </MobilePanelSection>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-1">
-            {(['Wu', 'Wei', 'Shu', 'Han'] as AuthenticFactionOrNeutral[]).map((faction) => (
-              <div key={faction} className={cn('rounded-[2rem] border p-5 shadow-sm', FACTION_CARD_THEME[faction])}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">{getAuthenticFactionLabel(faction)}</p>
-                    <h3 className="text-lg font-serif font-black uppercase">{faction}</h3>
+          <MobilePanelSection
+            title="Faction Overview"
+            icon={<Crown size={18} />}
+            defaultOpen={false}
+            desktopBreakpoint="2xl"
+            shellClassName="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6"
+            titleClassName="text-[#6f4c28] text-[10px] font-black uppercase tracking-[0.35em]"
+          >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-1">
+              {(['Wu', 'Wei', 'Shu', 'Han'] as AuthenticFactionOrNeutral[]).map((faction) => (
+                <div key={faction} className={cn('rounded-[2rem] border p-5 shadow-sm', FACTION_CARD_THEME[faction])}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">{getAuthenticFactionLabel(faction)}</p>
+                      <h3 className="text-lg font-serif font-black uppercase">{faction}</h3>
+                    </div>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-current/25 bg-white/35 font-serif text-xl font-black">
+                      {faction[0]}
+                    </div>
                   </div>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-current/25 bg-white/35 font-serif text-xl font-black">
-                    {faction[0]}
-                  </div>
+                  <p className="mt-3 text-xs font-serif italic opacity-80">
+                    {faction === 'Han'
+                      ? snapshot.hanController
+                        ? `Military controlled by ${snapshot.hanController}.`
+                        : 'Neutral court with static military.'
+                      : snapshot.eliminated.includes(faction)
+                        ? 'Command eliminated from direct play.'
+                        : `Moves taken: ${snapshot.factionMoveCounts[faction]}`}
+                  </p>
                 </div>
-                <p className="mt-3 text-xs font-serif italic opacity-80">
-                  {faction === 'Han'
-                    ? snapshot.hanController
-                      ? `Military controlled by ${snapshot.hanController}.`
-                      : 'Neutral court with static military.'
-                    : snapshot.eliminated.includes(faction)
-                      ? 'Command eliminated from direct play.'
-                      : `Moves taken: ${snapshot.factionMoveCounts[faction]}`}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </MobilePanelSection>
 
           <Link
             to="/archive"

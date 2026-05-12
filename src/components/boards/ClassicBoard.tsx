@@ -46,7 +46,7 @@ export default function ClassicBoard({
   const isLockedTurn = isRemoteWaiting || controlModes[turn] === 'Bot' || !!winner;
 
   return (
-    <div data-testid="classic-board" className="relative mx-auto aspect-square w-full max-w-[820px] min-w-0 overflow-hidden rounded-[1.8rem] border border-[#5d4926]/40 bg-[#100d09] p-2 sm:rounded-[2.25rem] sm:p-4 md:p-7 shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
+    <div data-testid="classic-board" className="relative mx-auto aspect-square w-full max-w-[820px] min-w-0 overflow-hidden rounded-[1.5rem] border border-[#5d4926]/40 bg-[#100d09] p-1.5 shadow-[0_20px_56px_rgba(0,0,0,0.72)] sm:rounded-[2.25rem] sm:p-4 md:p-7 md:shadow-[0_28px_80px_rgba(0,0,0,0.82)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(244,213,141,0.12),transparent_34%),radial-gradient(circle_at_18%_48%,rgba(20,83,45,0.14),transparent_26%),radial-gradient(circle_at_82%_82%,rgba(30,64,175,0.16),transparent_26%),linear-gradient(180deg,#2f2418_0%,#19120d_22%,#0d0a08_100%)]" />
       <div className="absolute inset-[1.25%] rounded-[2rem] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(0,0,0,0.35))]" />
       <div className="absolute inset-[2.2%] rounded-[1.8rem] border border-black/35 shadow-[inset_0_0_80px_rgba(0,0,0,0.72)]" />

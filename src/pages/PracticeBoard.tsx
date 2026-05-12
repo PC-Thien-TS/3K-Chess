@@ -35,6 +35,7 @@ import {
 } from '@/src/services/onlineSessionStorage';
 import AuthenticBoard from '@/src/components/boards/AuthenticBoard';
 import ClassicBoard from '@/src/components/boards/ClassicBoard';
+import MobilePanelSection from '@/src/components/MobilePanelSection';
 import { useClassicBotTurns } from '@/src/hooks/useClassicBotTurns';
 import { useClassicMatchRecorder } from '@/src/hooks/useClassicMatchRecorder';
 import { useClassicOnlineSync } from '@/src/hooks/useClassicOnlineSync';
@@ -1057,125 +1058,132 @@ function ClassicPracticeBoard() {
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12 xl:gap-8">
         {/* Left Panel: Faction Status */}
         <div className="order-2 space-y-6 xl:order-1 xl:col-span-3 xl:space-y-8">
-          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] shadow-2xl relative overflow-hidden">
-            {/* Subtle Texture Overlay */}
+          <MobilePanelSection
+            title="Initiative Order"
+            icon={<Sword size={16} className="text-gold" />}
+            defaultOpen
+            desktopBreakpoint="xl"
+            shellClassName="glass-dark relative overflow-hidden rounded-[2rem] border border-white/5 p-5 shadow-2xl sm:rounded-[3rem] sm:p-8"
+            titleClassName="relative z-10 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600"
+            bodyClassName="relative z-10 space-y-6"
+          >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none" />
-            
-            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10">
-              <Sword size={16} className="text-gold" /> Initiative Order
-            </h3>
-            <div className="space-y-6 relative z-10">
-              {FACTIONS.map((f) => {
-                const isEliminated = eliminated.includes(f);
-                const inCheck = !isEliminated && isFactionInCheck(f, pieces).inCheck;
-                const isActive = turn === f && !winner;
+            {FACTIONS.map((f) => {
+              const isEliminated = eliminated.includes(f);
+              const inCheck = !isEliminated && isFactionInCheck(f, pieces).inCheck;
+              const isActive = turn === f && !winner;
 
-                return (
-                  <div 
-                    key={f}
-                    className={cn(
-                      "flex flex-col gap-3 p-5 rounded-[2rem] border transition-all duration-700 relative group overflow-hidden",
-                      isActive 
-                        ? cn("shadow-2xl translate-x-2", FACTION_COLORS[f]) 
-                        : "border-white/5 bg-white/[0.02] opacity-40 hover:opacity-70",
-                      isEliminated && "grayscale opacity-10 border-dashed border-zinc-800 scale-95"
-                    )}
-                  >
-                    {/* Active Background Glow */}
-                    {isActive && (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.1 }}
-                        className="absolute inset-0 bg-white"
-                      />
-                    )}
+              return (
+                <div
+                  key={f}
+                  className={cn(
+                    "flex flex-col gap-3 p-5 rounded-[2rem] border transition-all duration-700 relative group overflow-hidden",
+                    isActive
+                      ? cn("shadow-2xl translate-x-2", FACTION_COLORS[f])
+                      : "border-white/5 bg-white/[0.02] opacity-40 hover:opacity-70",
+                    isEliminated && "grayscale opacity-10 border-dashed border-zinc-800 scale-95"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.1 }}
+                      className="absolute inset-0 bg-white"
+                    />
+                  )}
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "w-3 h-3 rounded-full transition-all duration-500",
-                          isEliminated ? "bg-zinc-800" : "bg-current",
-                          isActive && "animate-pulse shadow-[0_0_12px_currentColor]"
-                        )} />
-                        <div className="flex flex-col">
-                          <span className={cn(
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "w-3 h-3 rounded-full transition-all duration-500",
+                        isEliminated ? "bg-zinc-800" : "bg-current",
+                        isActive && "animate-pulse shadow-[0_0_12px_currentColor]"
+                      )} />
+                      <div className="flex flex-col">
+                        <span
+                          className={cn(
                             "font-black tracking-[0.15em] uppercase text-sm font-serif",
                             isEliminated && "text-zinc-700"
                           )}
-                          data-testid={isActive ? 'current-turn-label' : undefined}>
-                            {f} {isEliminated && "(Fallen)"}
-                          </span>
-                          {inCheck && (
-                            <div className="flex items-center gap-1.5 mt-1">
-                               <ShieldAlert size={10} className="text-rose-500" />
-                               <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest animate-pulse">
-                                 Under Attack
-                               </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {isActive && (
-                          <motion.div 
-                            initial={{ scale: 0, rotate: -20 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            className="bg-black/20 p-2 rounded-xl"
-                          >
-                            {isBotThinking && controlModes[f] === 'Bot' ? (
-                              <div className="flex gap-1 py-1">
-                                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-1 h-1 bg-gold rounded-full" />
-                                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-1 h-1 bg-gold rounded-full" />
-                                <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-1 h-1 bg-gold rounded-full" />
-                              </div>
-                            ) : (
-                              <Zap size={18} className="text-gold drop-shadow-[0_0_12px_rgba(212,175,55,0.8)]" fill="currentColor" />
-                            )}
-                          </motion.div>
-                        )}
-                        <span className="w-8 h-8 rounded-full border border-current/10 flex items-center justify-center font-serif font-black text-[10px] opacity-20">
-                          {f[0]}
+                          data-testid={isActive ? 'current-turn-label' : undefined}
+                        >
+                          {f} {isEliminated && "(Fallen)"}
                         </span>
+                        {inCheck && (
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <ShieldAlert size={10} className="text-rose-500" />
+                            <span className="text-[8px] font-black uppercase tracking-widest text-rose-500 animate-pulse">
+                              Under Attack
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {!isEliminated && (
-                      <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-current/10">
-                          <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] opacity-40">
-                             <span>Commander Unit</span>
-                             <span>{controlModes[f]}</span>
-                          </div>
-                          <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setControlModes(prev => ({
-                                  ...prev,
-                                  [f]: prev[f] === 'Human' ? 'Bot' : 'Human'
-                                }));
-                            }}
-                            className={cn(
-                              "w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.25em] transition-all border",
-                              controlModes[f] === 'Bot' 
-                                ? "bg-gold text-black border-gold shadow-lg" 
-                                : "bg-white/5 text-current hover:bg-white/10 border-current/10"
-                            )}
-                          >
-                            Recruit {controlModes[f] === 'Bot' ? 'Warrior' : 'Bot'}
-                          </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {isActive && (
+                        <motion.div
+                          initial={{ scale: 0, rotate: -20 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          className="rounded-xl bg-black/20 p-2"
+                        >
+                          {isBotThinking && controlModes[f] === 'Bot' ? (
+                            <div className="flex gap-1 py-1">
+                              <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="h-1 w-1 rounded-full bg-gold" />
+                              <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="h-1 w-1 rounded-full bg-gold" />
+                              <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="h-1 w-1 rounded-full bg-gold" />
+                            </div>
+                          ) : (
+                            <Zap size={18} className="text-gold drop-shadow-[0_0_12px_rgba(212,175,55,0.8)]" fill="currentColor" />
+                          )}
+                        </motion.div>
+                      )}
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-current/10 font-serif text-[10px] font-black opacity-20">
+                        {f[0]}
+                      </span>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
 
-          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] shadow-xl relative overflow-hidden">
+                  {!isEliminated && (
+                    <div className="mt-4 flex flex-col gap-3 border-t border-current/10 pt-4">
+                      <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-[0.3em] opacity-40">
+                        <span>Commander Unit</span>
+                        <span>{controlModes[f]}</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setControlModes((prev) => ({
+                            ...prev,
+                            [f]: prev[f] === 'Human' ? 'Bot' : 'Human'
+                          }));
+                        }}
+                        className={cn(
+                          "w-full rounded-xl border py-2.5 text-[9px] font-black uppercase tracking-[0.25em] transition-all active:scale-[0.98]",
+                          controlModes[f] === 'Bot'
+                            ? "bg-gold text-black border-gold shadow-lg"
+                            : "bg-white/5 text-current hover:bg-white/10 border-current/10"
+                        )}
+                      >
+                        Recruit {controlModes[f] === 'Bot' ? 'Warrior' : 'Bot'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </MobilePanelSection>
+
+          <MobilePanelSection
+            title="Fallen Warriors"
+            icon={<Skull size={16} className="text-zinc-700" />}
+            defaultOpen={false}
+            desktopBreakpoint="xl"
+            shellClassName="glass-dark relative overflow-hidden rounded-[2rem] border border-white/5 p-5 shadow-xl sm:rounded-[3rem] sm:p-8"
+            titleClassName="relative z-10 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600"
+            bodyClassName="relative z-10"
+          >
             <div className="absolute inset-0 bg-rose-500/[0.02] pointer-events-none" />
-            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10">
-              <Skull size={16} className="text-zinc-700" /> Fallen Warriors
-            </h3>
-            <div className="flex flex-wrap gap-3 min-h-[120px] relative z-10">
+            <div className="flex min-h-[120px] flex-wrap gap-3">
               <AnimatePresence>
                 {captured.map((p, idx) => (
                   <motion.div
@@ -1187,26 +1195,26 @@ function ClassicPracticeBoard() {
                       FACTION_COLORS[p.faction]
                     )}
                   >
-                     <div className="absolute inset-0 bg-black/40 rounded-2xl -z-10" />
-                     {p.type}
+                    <div className="absolute inset-0 -z-10 rounded-2xl bg-black/40" />
+                    {p.type}
                   </motion.div>
                 ))}
               </AnimatePresence>
               {captured.length === 0 && (
-                <div className="w-full flex flex-col items-center justify-center gap-4 py-6 opacity-20 filter grayscale">
-                   <Target size={32} strokeWidth={1} />
-                   <span className="text-[10px] font-black uppercase tracking-[0.4em]">The field is clean</span>
+                <div className="flex w-full flex-col items-center justify-center gap-4 py-6 opacity-20 filter grayscale">
+                  <Target size={32} strokeWidth={1} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em]">The field is clean</span>
                 </div>
               )}
             </div>
             <div className={cn(
-              "mt-8 pt-6 border-t border-white/5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest transition-opacity duration-700",
+              "mt-8 flex items-center justify-between border-t border-white/5 pt-6 text-[9px] font-black uppercase tracking-widest transition-opacity duration-700",
               captured.length > 0 ? "opacity-40" : "opacity-10"
             )}>
               <span>Casualty Count</span>
-              <span className="text-white font-mono">{captured.length} Units</span>
+              <span className="font-mono text-white">{captured.length} Units</span>
             </div>
-          </div>
+          </MobilePanelSection>
         </div>
 
         {/* Main Board Area */}
@@ -1318,12 +1326,17 @@ function ClassicPracticeBoard() {
           </div>
               {/* Right Panel: History */}
         <div className="mt-6 w-full space-y-6 sm:mt-8 sm:space-y-8">
-          <div className="glass-dark border border-white/5 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] max-h-[28rem] overflow-hidden flex flex-col shadow-2xl relative xl:max-h-[650px]">
+          <MobilePanelSection
+            title="Chronicle of Fates"
+            icon={<History size={16} className="text-gold" />}
+            defaultOpen={false}
+            desktopBreakpoint="xl"
+            shellClassName="glass-dark relative flex max-h-[28rem] flex-col overflow-hidden rounded-[2rem] border border-white/5 p-5 shadow-2xl sm:rounded-[3rem] sm:p-8 xl:max-h-[650px]"
+            titleClassName="relative z-10 font-sans text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600"
+            bodyClassName="relative z-10 flex min-h-0 flex-1 flex-col"
+          >
             <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
-            <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-10 flex items-center gap-3 relative z-10 font-sans">
-              <History size={16} className="text-gold" /> Chronicle of Fates
-            </h3>
-            <div data-testid="move-history" className="relative z-10 flex-grow space-y-4 overflow-y-auto pr-2 pb-8 sm:pr-4 scrollbar-thin scrollbar-thumb-white/5">
+            <div data-testid="move-history" className="relative z-10 flex-grow space-y-4 overflow-y-auto pr-2 pb-8 scrollbar-thin scrollbar-thumb-white/5 sm:pr-4">
               {history.map((m, idx) => (
                 <motion.div 
                   key={m.id} 
@@ -1371,7 +1384,7 @@ function ClassicPracticeBoard() {
                     ) : (
                       <span>Repositioned for tactical advantage.</span>
                     )}
-                    {m.check && <span className="text-gold font-black ml-1 block mt-1 animate-pulse uppercase tracking-[0.1em] text-[8px]">⚔️ KING IN PERIL!</span>}
+                    {m.check && <span className="text-gold font-black ml-1 block mt-1 animate-pulse uppercase tracking-[0.1em] text-[8px]">Check Threat</span>}
                     {m.checkmate && <span className="text-rose-600 font-black ml-1 block mt-2 uppercase tracking-[0.2em] text-[10px] bg-rose-500/10 p-2 rounded-lg text-center border border-rose-500/20">Kingdom Fallen</span>}
                     {m.gameWinner && <span className="text-gold font-black block mt-3 uppercase tracking-[0.3em] animate-pulse bg-gold/10 p-3 rounded-lg text-center border border-gold/30">Realm United</span>}
                   </div>
@@ -1385,50 +1398,63 @@ function ClassicPracticeBoard() {
               )}
             </div>
             
-            {/* Scroll Indicator Gradient */}
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black to-transparent pointer-events-none z-20" />
-          </div>
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-16 bg-gradient-to-t from-black to-transparent" />
+          </MobilePanelSection>
 
           {roomMode === 'online' && (
-            <div className="glass-dark border border-gold/10 p-4 sm:p-6 rounded-[2rem] flex flex-col gap-4 shadow-2xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
-                <div className="relative z-10 flex flex-col gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-                    <span>Synchrony Protocol</span>
-                    <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]", connectionStatusClassName)}>
-                      <span className={cn("h-1.5 w-1.5 rounded-full", roomExpired ? "bg-rose-400" : isReconnecting ? "bg-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.8)]" : lastSyncEvent === 'CANNOT_CONNECT' ? "bg-amber-300" : "bg-emerald-400")} />
-                      <span>{connectionStatus}</span>
-                    </div>
+            <MobilePanelSection
+              title="Synchrony Protocol"
+              defaultOpen={false}
+              desktopBreakpoint="xl"
+              shellClassName="glass-dark relative overflow-hidden rounded-[2rem] border border-gold/10 p-4 shadow-2xl sm:p-6"
+              titleClassName="relative z-10 text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600"
+              bodyClassName="relative z-10"
+            >
+              <div className="absolute inset-0 bg-gold/[0.01] pointer-events-none" />
+              <div className="flex flex-col gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
+                <span className="sr-only">Synchrony status</span>
+                <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]", connectionStatusClassName)}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", roomExpired ? "bg-rose-400" : isReconnecting ? "bg-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.8)]" : lastSyncEvent === 'CANNOT_CONNECT' ? "bg-amber-300" : "bg-emerald-400")} />
+                  <span>{connectionStatus}</span>
                 </div>
-                <div className="grid grid-cols-1 gap-3 relative z-10 mt-2">
-                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl transition-all hover:bg-white/[0.05]">
-                        <span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest block mb-2">Tactical Intelligence</span>
-                        <span className="text-[10px] text-zinc-300 font-mono tracking-tighter uppercase">{lastSyncEvent || 'Listening for Intel...'}</span>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-center items-center">
-                          <span className="text-[7px] text-zinc-600 uppercase font-black tracking-widest block mb-1">Assigned Front</span>
-                          <span className={cn("text-[10px] font-black font-mono tracking-widest uppercase", playerFaction && FACTION_COLORS[playerFaction])}>
-                            {playerFaction || 'Neutral'}
-                          </span>
-                      </div>
-                      <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-center items-center">
-                          <span className="text-[7px] text-zinc-600 uppercase font-black tracking-widest block mb-1">Archive Size</span>
-                          <span className="text-[10px] text-white font-black font-mono tracking-widest">{appliedMoveIds.size}</span>
-                      </div>
-                    </div>
+              </div>
+              <div className="mt-2 grid grid-cols-1 gap-3">
+                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05]">
+                  <span className="mb-2 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Tactical Intelligence</span>
+                  <span className="font-mono text-[10px] uppercase tracking-tighter text-zinc-300">{lastSyncEvent || 'Listening for Intel...'}</span>
                 </div>
-            </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                    <span className="mb-1 block text-[7px] font-black uppercase tracking-widest text-zinc-600">Assigned Front</span>
+                    <span className={cn("font-mono text-[10px] font-black uppercase tracking-widest", playerFaction && FACTION_COLORS[playerFaction])}>
+                      {playerFaction || 'Neutral'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                    <span className="mb-1 block text-[7px] font-black uppercase tracking-widest text-zinc-600">Archive Size</span>
+                    <span className="font-mono text-[10px] font-black tracking-widest text-white">{appliedMoveIds.size}</span>
+                  </div>
+                </div>
+              </div>
+            </MobilePanelSection>
           )}
 
-          <div className="p-6 sm:p-10 glass-dark border border-gold/10 rounded-[2rem] sm:rounded-[3rem] text-center shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gold/[0.02] group-hover:scale-110 transition-transform duration-1000" />
-            <h4 className="text-[10px] font-black text-gold uppercase tracking-[0.5em] mb-6 relative z-10">Tactical Insight</h4>
-            <div className="w-8 h-px bg-gold/30 mx-auto mb-6 relative z-10" />
-            <p className="text-zinc-500 text-xs leading-relaxed italic font-serif relative z-10 px-2">
+          <MobilePanelSection
+            title="Tactical Insight"
+            defaultOpen={false}
+            desktopBreakpoint="xl"
+            shellClassName="group glass-dark relative overflow-hidden rounded-[2rem] border border-gold/10 p-6 text-center shadow-2xl sm:rounded-[3rem] sm:p-10"
+            titleClassName="relative z-10 justify-center text-[10px] font-black uppercase tracking-[0.5em] text-gold"
+            bodyClassName="relative z-10"
+          >
+            <div className="absolute inset-0 bg-gold/[0.02] transition-transform duration-1000 group-hover:scale-110" />
+            <div className="relative z-10 mx-auto mb-6 h-px w-8 bg-gold/30" />
+            <p className="relative z-10 px-2 text-xs font-serif italic leading-relaxed text-zinc-500">
               "When the three kingdoms clash at the river's edge, the wise commander keeps their reserve pieces in the palace shadows."
             </p>
-          </div>
-        </div>      </div>
+          </MobilePanelSection>
+        </div>
+      </div>
       </div>
     </div>
   );
