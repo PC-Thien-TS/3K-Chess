@@ -343,7 +343,7 @@ export default function AuthenticReplayBoard({
               <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#90714a]">Winner</p>
                 <p className="mt-1 text-sm font-serif text-[#35210f]">
-                  {snapshot.winner ? `${snapshot.winner} controls the last surviving command.` : 'No winner yet.'}
+                  {snapshot.winner ? `${snapshot.winner} wins and controls the last surviving command.` : 'No winner yet.'}
                 </p>
               </div>
               <div className="rounded-[1.3rem] border border-[#8b6433]/15 bg-white/45 px-4 py-3">

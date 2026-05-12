@@ -237,6 +237,7 @@ test('Authentic replay reducer: winner replay', () => {
 
   assert.equal(snapshot.winner, 'Wu');
   assert.ok(snapshot.eliminated.includes('Wei'));
+  assert.match(snapshot.lastMoveRecord?.note ?? '', /absorbed by Wu|Wu/i);
 });
 
 test('Authentic replay reducer: input state and history are not mutated', () => {

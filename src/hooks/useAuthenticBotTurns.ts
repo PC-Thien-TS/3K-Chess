@@ -14,6 +14,20 @@ type UseAuthenticBotTurnsParams = {
   setStatus: React.Dispatch<React.SetStateAction<string>>;
 };
 
+export function shouldScheduleAuthenticBotTurn({
+  enabled,
+  winner,
+  activeTurn,
+  controlModes,
+}: {
+  enabled: boolean;
+  winner: AuthenticBoardState['winner'];
+  activeTurn: AuthenticFaction;
+  controlModes: Record<AuthenticFaction, PlayerType>;
+}) {
+  return enabled && !winner && controlModes[activeTurn] === 'Bot';
+}
+
 export function useAuthenticBotTurns({
   enabled,
   gameState,
@@ -31,9 +45,14 @@ export function useAuthenticBotTurns({
     }
 
     const activeTurn = gameState.currentTurn;
-    const activeControl = controlModes[activeTurn];
+    const shouldRun = shouldScheduleAuthenticBotTurn({
+      enabled,
+      winner: gameState.winner,
+      activeTurn,
+      controlModes,
+    });
 
-    if (!enabled || gameState.winner || activeControl !== 'Bot') {
+    if (!shouldRun) {
       setIsBotThinking(false);
       return;
     }

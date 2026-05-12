@@ -275,6 +275,7 @@ export default function AuthenticBoard({
   const [gameState, setGameState] = useState<AuthenticBoardState>(createInitialAuthenticState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lastValidationReason, setLastValidationReason] = useState<string | null>(null);
+  const [savedReplayId, setSavedReplayId] = useState<string | null>(null);
   const [status, setStatus] = useState(
     roomMode === 'online'
       ? AUTHENTIC_LOCAL_ONLY_MESSAGE
@@ -314,6 +315,8 @@ export default function AuthenticBoard({
   const selectedPieceText = formatSelectedPiece(selectedPiece);
   const currentTurnControl = controlModes[gameState.currentTurn];
   const isBotTurn = isInteractive && !gameState.winner && currentTurnControl === 'Bot';
+  const latestMoveRecord = gameState.history[0] || null;
+  const finalEventSummary = latestMoveRecord?.note || status;
   const legalMoveMeta = useMemo(() => {
     const meta = new Map<string, { capture: boolean; special?: AuthenticSpecialMove }>();
     if (!selectedPiece) {
@@ -362,12 +365,14 @@ export default function AuthenticBoard({
     setGameState(createInitialAuthenticState());
     setSelectedId(null);
     setLastValidationReason(null);
+    setSavedReplayId(null);
     setStatus('Wu / Green opens the match. The first move cannot capture.');
   };
 
   const handleSaveLocally = React.useCallback(() => {
     const record = createArchiveRecord();
     saveMatchRecord(record);
+    setSavedReplayId(record.id);
     setStatus('Modern 3K chronicle saved to local archives.');
     return record;
   }, [createArchiveRecord]);
@@ -386,6 +391,7 @@ export default function AuthenticBoard({
       nextStatus?: string
     ) => {
       setLastValidationReason(null);
+      setSavedReplayId(null);
       setGameState((prev) => ({
         pieces: resolution.pieces,
         currentTurn: resolution.nextTurn || prev.currentTurn,
@@ -426,7 +432,11 @@ export default function AuthenticBoard({
         return false;
       }
 
-      commitResolution(actingPiece, resolution, `${gameState.currentTurn} Bot: ${decision.reason}.`);
+      commitResolution(
+        actingPiece,
+        resolution,
+        resolution.winner ? undefined : `${gameState.currentTurn} Bot: ${decision.reason}.`
+      );
       return true;
     },
     [commitResolution, gameState]
@@ -439,6 +449,17 @@ export default function AuthenticBoard({
     executeBotMove,
     setStatus,
   });
+  const boardLocked = !isInteractive || isBotTurn || isBotThinking || !!gameState.winner;
+
+  React.useEffect(() => {
+    if (!gameState.winner) {
+      return;
+    }
+
+    setSelectedId(null);
+    setLastValidationReason(null);
+  }, [gameState.winner]);
+
   const authenticTurnTitle = gameState.winner
     ? `${gameState.winner} wins`
     : isBotThinking && isBotTurn
@@ -580,7 +601,13 @@ export default function AuthenticBoard({
                   <h2 className="text-2xl font-serif font-black uppercase tracking-[0.12em] text-[#35210f] sm:text-3xl">
                     {authenticTurnTitle}
                   </h2>
-                  {!gameState.winner && <ControlBadge control={currentTurnControl} />}
+                  {gameState.winner ? (
+                    <span className={cn('rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em]', FACTION_CARD_THEME[gameState.winner])}>
+                      {gameState.winner} wins
+                    </span>
+                  ) : (
+                    <ControlBadge control={currentTurnControl} />
+                  )}
                 </div>
                 <p className="max-w-3xl text-sm font-serif italic leading-relaxed text-[#6d5334]">
                   {authenticTurnDetail}
@@ -708,9 +735,10 @@ export default function AuthenticBoard({
                       <button
                         type="button"
                         onClick={() => handlePointClick(x, y)}
+                        disabled={boardLocked}
                         className={cn(
                           'absolute z-10 h-[6.8%] w-[6.8%] rounded-full bg-transparent touch-manipulation transition-transform sm:h-[5.8%] sm:w-[5.8%] lg:h-[4.8%] lg:w-[4.8%]',
-                          isInteractive && !isBotTurn && !gameState.winner
+                          !boardLocked
                             ? 'cursor-pointer active:scale-[1.1] active:bg-[#7a5730]/10 active:ring-2 active:ring-[#8b6433]/20'
                             : 'cursor-default'
                         )}
@@ -794,7 +822,7 @@ export default function AuthenticBoard({
 
                 {gameState.pieces.map((piece) => {
                   const isSelected = piece.id === selectedId;
-                  const isSelectablePiece = piece.owner === gameState.currentTurn && isInteractive && !isBotTurn && !gameState.winner;
+                  const isSelectablePiece = piece.owner === gameState.currentTurn && !boardLocked;
                   const isMuted =
                     piece.owner !== 'Han' &&
                     piece.owner !== gameState.currentTurn &&
@@ -977,6 +1005,31 @@ export default function AuthenticBoard({
             </p>
           </div>
 
+          {gameState.winner && (
+            <div className="rounded-[2rem] border border-[#8b6433]/25 bg-[linear-gradient(180deg,#f4ead3_0%,#ead7b0_100%)] p-5 shadow-[0_18px_50px_rgba(57,32,15,0.18)] sm:rounded-[2.5rem] sm:p-8">
+              <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
+                <Trophy size={20} />
+                <span className="text-[10px] font-black uppercase tracking-[0.35em]">Final Result</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-serif font-black uppercase tracking-[0.12em] text-[#35210f] sm:text-3xl">
+                  {gameState.winner} wins
+                </h2>
+                <span className={cn('rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em]', FACTION_CARD_THEME[gameState.winner])}>
+                  Last active kingdom
+                </span>
+              </div>
+              <p className="mt-4 text-sm font-serif italic leading-relaxed text-[#6d5334]">
+                {finalEventSummary}
+              </p>
+              {!savedReplayId && (
+                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#8b5d17]">
+                  Save the match to unlock replay from this board.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="rounded-[2rem] border border-[#8b6433]/20 bg-[#f7eedb] p-4 sm:p-6">
             <div className="mb-4 flex items-center gap-3 text-[#6f4c28]">
               <ScrollText size={18} />
@@ -1072,6 +1125,15 @@ export default function AuthenticBoard({
               <Save size={16} />
               Save Match
             </button>
+            {savedReplayId && (
+              <Link
+                to={`/replay/${savedReplayId}`}
+                className="flex items-center justify-center gap-3 rounded-2xl border border-[#8b6433]/20 bg-white/40 px-6 py-4 text-center text-[11px] font-black uppercase tracking-[0.24em] text-[#35210f] transition-all hover:bg-white/55 active:scale-[0.98] sm:px-8 sm:py-5 sm:text-xs sm:tracking-[0.3em]"
+              >
+                <ScrollText size={16} />
+                Replay Battle
+              </Link>
+            )}
             {context === 'practice' ? (
               <Link
                 to={authenticSetupHref}

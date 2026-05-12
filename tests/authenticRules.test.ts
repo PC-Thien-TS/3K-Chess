@@ -435,6 +435,36 @@ test('Authentic: Army absorption transfers defeated pieces to the attacker', () 
   assert.ok(next.pieces.some((piece) => piece.id === 'wei-s' && piece.owner === 'Wu'));
 });
 
+test('Authentic: checkmate and army absorption can resolve the final winner immediately', () => {
+  const state = makeState({
+    currentTurn: 'Wu',
+    moveNumber: 1,
+    pieces: [
+      makePiece('wu-g', 'G', 'Wu', 1, 8),
+      makePiece('shu-g', 'G', 'Shu', 8, 1),
+      makePiece('shu-s', 'S', 'Shu', 4, 1),
+      makePiece('wu-r-left', 'R', 'Wu', 7, 3),
+      makePiece('wu-r-right', 'R', 'Wu', 9, 3),
+      makePiece('wu-r-finisher', 'R', 'Wu', 8, 5),
+    ],
+  });
+
+  const actingPiece = state.pieces.find((piece) => piece.id === 'wu-r-finisher');
+  assert.ok(actingPiece, 'Missing wu-r-finisher');
+
+  const resolution = applyAuthenticMove(state, actingPiece, { x: 8, y: 3 });
+  assert.ok(resolution, 'Expected a legal move resolution');
+
+  assert.equal(resolution.winner, 'Wu');
+  assert.equal(resolution.nextTurn, null);
+  assert.ok(resolution.eliminated.includes('Shu'));
+  assert.ok(resolution.moveRecord.special?.includes('CHECKMATE'));
+  assert.ok(resolution.moveRecord.special?.includes('ABSORB_ARMY'));
+  assert.ok(resolution.moveRecord.eliminated?.includes('Shu'));
+  assert.ok(resolution.pieces.some((piece) => piece.id === 'shu-s' && piece.owner === 'Wu'));
+  assert.match(resolution.status, /Wu wins/i);
+});
+
 test('Authentic: Victory resolves when one faction remains', () => {
   const state = makeState({
     currentTurn: 'Wu',
@@ -446,7 +476,15 @@ test('Authentic: Victory resolves when one faction remains', () => {
     ],
   });
 
+  const actingPiece = state.pieces.find((piece) => piece.id === 'wu-r');
+  assert.ok(actingPiece, 'Missing wu-r');
+
+  const resolution = applyAuthenticMove(state, actingPiece, { x: 8, y: 15 });
+  assert.ok(resolution, 'Expected a legal move resolution');
+
   const next = advanceState(state, 'wu-r', { x: 8, y: 15 });
+  assert.equal(resolution.winner, 'Wu');
+  assert.equal(resolution.nextTurn, null);
   assert.equal(next.winner, 'Wu');
 });
 

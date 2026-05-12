@@ -1032,7 +1032,9 @@ export function applyAuthenticMove(
     }
   }
 
+  const newlyEliminated = resolution.eliminated.filter((faction) => !state.eliminated.includes(faction));
   moveRecord.special = resolution.specials.length ? resolution.specials : moveRecord.special;
+  moveRecord.eliminated = newlyEliminated.length ? newlyEliminated : moveRecord.eliminated;
   if (resolution.statusSuffix) {
     moveRecord.note = `${moveRecord.note} ${resolution.statusSuffix}`.trim();
   } else {
@@ -1050,7 +1052,7 @@ export function applyAuthenticMove(
 
   let status = moveRecord.note;
   if (resolution.winner) {
-    status = `${resolution.winner} controls the last surviving command and wins the board.`;
+    status = `${moveRecord.note} ${resolution.winner} wins.`;
   } else if (resolution.checkedPriorityQueue.length > 0) {
     status = `${moveRecord.note} ${resolution.checkedPriorityQueue[0]} has immediate check priority.`;
   }
