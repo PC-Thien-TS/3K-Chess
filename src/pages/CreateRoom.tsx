@@ -252,6 +252,7 @@ export default function CreateRoom() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <button
                 type="button"
+                data-testid="local-room-mode-button"
                 onClick={() => setRoomMode('local')}
                 className={cn(
                   "rounded-[1.75rem] border p-5 text-left transition-all relative overflow-hidden group sm:rounded-3xl sm:p-6",
@@ -278,6 +279,7 @@ export default function CreateRoom() {
 
               <button
                 type="button"
+                data-testid="online-room-mode-button"
                 disabled={!wsUrlAvailable}
                 onClick={() => setRoomMode('online')}
                 className={cn(

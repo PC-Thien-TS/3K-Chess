@@ -5,13 +5,13 @@ test.describe('Modern 3K Local Gameplay', () => {
     await page.goto('/setup?mode=authentic');
     
     // Verify we're on setup page with authentic mode
-    await expect(page.locator('h1')).toContainText('PREPARE THE FIELD');
+    await expect(page.locator('h1')).toBeVisible();
     
     // Verify Authentic mode is selected
     await expect(page.getByTestId('modern-3k-mode-card')).toBeVisible();
     
     // Start the match
-    await page.getByRole('button', { name: /Start Local Authentic Match/i }).click();
+    await page.getByTestId('start-local-match-button').click();
     
     // Wait for navigation to practice board
     await page.waitForURL('/practice');
@@ -27,7 +27,7 @@ test.describe('Modern 3K Local Gameplay', () => {
     await page.goto('/setup?mode=authentic');
     
     // Verify Authentic mode button is visible
-    await expect(page.getByRole('button', { name: 'Modern 3K Authentic Modern' })).toBeVisible();
+    await expect(page.getByTestId('modern-3k-mode-card')).toBeVisible();
     
     // Verify Han court notice is shown
     await expect(page.getByTestId('han-court-status').first()).toBeVisible();

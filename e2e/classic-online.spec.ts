@@ -27,7 +27,7 @@ test.describe('Classic Online 2-tab Flow', () => {
     try {
       await host.page.goto('/rooms/create?mode=classic');
       await host.page.getByTestId('player-name-input').fill('Host Alpha');
-      await host.page.getByRole('button', { name: /Online WebSocket/i }).click();
+      await host.page.getByTestId('online-room-mode-button').click();
       await host.page.getByTestId('create-online-room-button').click();
 
       await host.page.waitForURL(/\/rooms\/[A-Z0-9-]+$/);

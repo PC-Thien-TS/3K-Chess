@@ -5,27 +5,24 @@ test.describe('Classic Local Gameplay', () => {
     await page.goto('/setup');
     
     // Verify we're on setup page
-    await expect(page.locator('h1')).toContainText(/PREPARE THE FIELD/i);
+    await expect(page.locator('h1')).toBeVisible();
     
     // Select Classic mode (should be default)
-    await expect(page.getByText(/Classic 3-Player Xiangqi/i)).toBeVisible();
+    await expect(page.getByTestId('classic-mode-card')).toBeVisible();
     
     // Start the match
-    await page.getByRole('button', { name: /Start Local Match/i }).click();
+    await page.getByTestId('start-local-match-button').click();
     
     // Wait for navigation to practice board
     await page.waitForURL('/practice');
-    
-    // Verify board loaded
-    await expect(page.getByText('Shu')).toBeVisible();
-    
-    // Verify initial turn is Shu
-    await expect(page.getByText('Shu')).toBeVisible();
     
     // Select a piece (Shu's Pawn at position 5,2)
     // Note: This is a basic test - actual selectors may need adjustment based on board implementation
     const boardArea = page.getByTestId('classic-board');
     await expect(boardArea).toBeVisible();
+
+    // Verify initial turn is Shu
+    await expect(page.getByTestId('current-turn-label')).toContainText('Shu');
     
     // Make a legal move if selectors are stable
     // For now, just verify the board is interactive
@@ -36,6 +33,6 @@ test.describe('Classic Local Gameplay', () => {
     await page.goto('/setup');
     
     // Verify Classic mode button is visible
-    await expect(page.getByRole('button', { name: 'Classic 3-Player Xiangqi' })).toBeVisible();
+    await expect(page.getByTestId('classic-mode-card')).toBeVisible();
   });
 });

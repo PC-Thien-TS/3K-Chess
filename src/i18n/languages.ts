@@ -1,4 +1,4 @@
-export const DEFAULT_LANGUAGE = 'en' as const;
+export const DEFAULT_LANGUAGE = 'vi' as const;
 export const I18N_STORAGE_KEY = 'threeKingdomsChess.language';
 
 export const LANGUAGE_OPTIONS = [
