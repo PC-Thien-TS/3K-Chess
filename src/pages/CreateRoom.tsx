@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Shield, Sword, User, Settings2, Zap } from 'lucide-react';
@@ -32,6 +32,33 @@ export default function CreateRoom() {
   const [roomMode, setRoomMode] = useState<'local' | 'online'>(wsUrlAvailable ? 'online' : 'local');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(gameMode === 'authentic' ? AUTHENTIC_DISABLED_MESSAGE : null);
+  const createTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const createRequestActiveRef = useRef(false);
+  const cleanupOnlineCreateRef = useRef<(() => void) | null>(null);
+
+  const clearCreateTimeout = () => {
+    if (createTimeoutRef.current) {
+      clearTimeout(createTimeoutRef.current);
+      createTimeoutRef.current = null;
+    }
+  };
+
+  const finalizeCreateAttempt = () => {
+    clearCreateTimeout();
+    cleanupOnlineCreateRef.current?.();
+    cleanupOnlineCreateRef.current = null;
+    createRequestActiveRef.current = false;
+    setIsCreating(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearCreateTimeout();
+      cleanupOnlineCreateRef.current?.();
+      cleanupOnlineCreateRef.current = null;
+      createRequestActiveRef.current = false;
+    };
+  }, []);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,13 +75,20 @@ export default function CreateRoom() {
 
     setError(null);
     setIsCreating(true);
+    createRequestActiveRef.current = true;
+    clearCreateTimeout();
+    cleanupOnlineCreateRef.current?.();
+    cleanupOnlineCreateRef.current = null;
 
     if ((import.meta as any).env.DEV) {
       console.log(`[Strategic Command] Opening Chamber: Mode=${roomMode}, WS_Configured=${!!(import.meta as any).env.VITE_WS_URL}`);
     }
 
-    const timeout = setTimeout(() => {
-      if (isCreating) {
+    createTimeoutRef.current = setTimeout(() => {
+      if (createRequestActiveRef.current) {
+        cleanupOnlineCreateRef.current?.();
+        cleanupOnlineCreateRef.current = null;
+        createRequestActiveRef.current = false;
         setError("Creating the Classic room took too long. Please retry.");
         setIsCreating(false);
       }
@@ -64,31 +98,30 @@ export default function CreateRoom() {
       if (roomMode === 'online') {
         const wsUrl = (import.meta as any).env.VITE_WS_URL;
         if (!wsUrl) {
-          clearTimeout(timeout);
+          finalizeCreateAttempt();
           setError("WebSocket unavailable. Use Local Simulation or configure the backend.");
-          setIsCreating(false);
           return;
         }
 
         onlineRoomClient.connect();
         
         const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
-          clearTimeout(timeout);
+          finalizeCreateAttempt();
           setError(err === 'CANNOT_CONNECT' ? 'Cannot connect. Check the backend and retry.' : `Connection issue: ${err}`);
-          setIsCreating(false);
-          unsubscribeError();
         });
 
         const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
-          clearTimeout(timeout);
+          finalizeCreateAttempt();
           if ((import.meta as any).env.DEV) {
             console.log(`[Strategic Command] Online Chamber Synchronized: ${room.roomCode}`);
           }
           navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online', playerName: name, gameMode } });
-          setIsCreating(false);
+        });
+
+        cleanupOnlineCreateRef.current = () => {
           unsubscribeState();
           unsubscribeError();
-        });
+        };
 
         onlineRoomClient.createRoom({
           hostName: name,
@@ -147,7 +180,7 @@ export default function CreateRoom() {
       };
 
       saveWarRoom(newRoom);
-      clearTimeout(timeout);
+      finalizeCreateAttempt();
       
       if ((import.meta as any).env.DEV) {
         console.log(`[Strategic Command] Mission Accepted. Navigating to Chamber ${roomCode}`);
@@ -155,9 +188,8 @@ export default function CreateRoom() {
       
       navigate(`/rooms/${roomCode}`, { state: { mode: 'local', gameMode } });
     } catch (err: any) {
-      clearTimeout(timeout);
+      finalizeCreateAttempt();
       setError(err?.message || "Could not create the Classic room.");
-      setIsCreating(false);
     }
   };
 

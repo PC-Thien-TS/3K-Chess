@@ -51,7 +51,7 @@ class OnlineRoomClient {
     this.socket = io(wsUrl);
 
     this.socket.on("connect", () => {
-      console.log("Strategic Command: Connected to War Room Cloud");
+      console.log("Strategic Command: Connected to Classic room sync");
       this.connectionStateListeners.forEach(cb => cb(true));
     });
 
@@ -94,7 +94,7 @@ class OnlineRoomClient {
     });
 
     this.socket.on("disconnect", () => {
-      console.warn("Strategic Command: Disconnected from War Room Cloud");
+      console.warn("Strategic Command: Disconnected from Classic room sync");
       this.connectionStateListeners.forEach(cb => cb(false));
     });
   }

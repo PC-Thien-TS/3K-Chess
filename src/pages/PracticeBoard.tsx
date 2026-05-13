@@ -22,7 +22,6 @@ import {
   validateBoardIntegrity
 } from '@/src/rules/classicThreeKingdomRules';
 import type { BotDecision } from '@/src/ai/botAI';
-import { runRuleEngineDevTests } from '@/src/rules/threeKingdomRules.devTests';
 import { useMatchContext } from '@/src/context/MatchContext';
 import { Save, Download, PlayCircle } from 'lucide-react';
 import { applyClassicMoveTransition } from '@/src/rules/classicMoveReducer';
@@ -335,10 +334,6 @@ function ClassicPracticeBoard() {
   React.useEffect(() => {
     appliedMoveIdsRef.current = appliedMoveIds;
   }, [appliedMoveIds]);
-
-  React.useEffect(() => {
-    runRuleEngineDevTests();
-  }, []);
 
   const clearSelection = React.useCallback(() => {
     setSelectedId(null);

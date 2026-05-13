@@ -203,7 +203,7 @@ io.on('connection', (socket) => {
 
 httpServer.listen(PORT, () => {
   console.log(`[Strategic Command] 3K Chess WebSocket server listening on port ${PORT}`);
-  console.log(`[Strategic Command] Battlefield Cloud active at http://localhost:${PORT}`);
+  console.log(`[Strategic Command] Classic online backend active at http://localhost:${PORT}`);
   console.log(`[Strategic Command] Allowed Origins: ${allowedOrigins.join(', ')}`);
 });
 

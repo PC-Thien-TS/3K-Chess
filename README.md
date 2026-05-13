@@ -192,6 +192,9 @@ npm run server
 npm run test
 npm run lint
 npm run build
+npm run test:e2e
+npm run test:e2e:ui
+npm run clean
 ```
 
 ## Release Notes
