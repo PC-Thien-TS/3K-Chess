@@ -49,7 +49,7 @@ export default function Footer() {
       </div>
 
       <div className="mx-auto mt-20 flex max-w-7xl flex-col items-center justify-between gap-3 border-t border-white/5 px-6 pt-8 text-center text-[10px] uppercase tracking-[0.2em] opacity-50 md:flex-row">
-        <p>© 2026 Three Kingdoms Chess. Indie strategy build in active development.</p>
+        <p>&copy; 2026 Three Kingdoms Chess. Indie strategy build in active development.</p>
         <p>Classic online requires a reachable backend. Modern 3K remains local-only.</p>
       </div>
     </footer>

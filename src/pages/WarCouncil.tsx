@@ -1,94 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Plus, 
-  Users, 
-  ChevronLeft, 
-  Trash2, 
-  Play, 
-  Search, 
+import { useEffect, useState, type MouseEvent } from 'react';
+import { motion } from 'motion/react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Plus,
+  Users,
+  ChevronLeft,
+  Trash2,
+  Play,
+  Search,
   Map as MapIcon,
   Sword,
-  ShieldCheck,
-  Zap,
-  Info
+  Info,
 } from 'lucide-react';
-import { listWarRooms, deleteWarRoom, WarRoom } from '@/src/storage/warRooms';
+import { listWarRooms, deleteWarRoom, type WarRoom } from '@/src/storage/warRooms';
 import { cn } from '@/src/lib/utils';
 
 export default function WarCouncil() {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<WarRoom[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setRooms(listWarRooms());
   }, []);
 
-  const handleDelete = (code: string, e: React.MouseEvent) => {
+  const handleDelete = (code: string, e: MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Dismantle this war room? All tactical data will be lost.")) {
+    if (confirm('Dismantle this saved room? All local tactical data will be lost.')) {
       deleteWarRoom(code);
       setRooms(listWarRooms());
     }
   };
 
-  const filteredRooms = rooms.filter(r => 
-    r.roomCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.hostName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRooms = rooms.filter(
+    (room) =>
+      room.roomCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      room.hostName.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+  const hasSavedRooms = rooms.length > 0;
+  const hasSearch = searchTerm.trim().length > 0;
 
   return (
-    <div className="pt-24 min-h-screen container mx-auto px-6 pb-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+    <div className="container mx-auto min-h-screen px-6 pb-12 pt-24">
+      <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <div>
-          <Link to="/" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-4">
+          <Link
+            to="/"
+            className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gold transition-colors hover:text-white"
+          >
             <ChevronLeft size={16} /> To the Throne Room
           </Link>
-          <h1 className="text-4xl md:text-6xl font-serif font-black text-white tracking-widest uppercase">
-            WAR <span className="text-gold italic">COUNCIL</span>
+          <h1 className="text-4xl font-black uppercase tracking-widest text-white md:text-6xl font-serif">
+            WAR <span className="italic text-gold">COUNCIL</span>
           </h1>
-          <p className="text-zinc-500 font-serif italic text-lg opacity-80 mt-2">
-            "Coordinate with allies and plan the unification of the realm."
+          <p className="mt-3 max-w-3xl font-serif text-base text-zinc-400 opacity-90 md:text-lg">
+            Create a Classic online room, join by code or invite link, or reopen saved rooms from this device.
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-          <Link to="/rooms/join" className="flex-1 sm:flex-none border border-white/10 text-white px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 hover:bg-white/5">
+        <div className="flex w-full flex-col gap-4 sm:flex-row md:w-auto">
+          <Link
+            to="/rooms/create"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gold px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-black shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all hover:bg-white sm:flex-none"
+          >
+            <Plus size={16} /> Create Classic Room
+          </Link>
+          <Link
+            to="/rooms/join"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-white/5 sm:flex-none"
+          >
             <Users size={16} className="text-gold" /> Join Room
           </Link>
-          <Link to="/rooms/create" className="flex-1 sm:flex-none bg-gold hover:bg-white text-black px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
-            <Plus size={16} /> Create Room
+          <Link
+            to="/how-to-play"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-gold/20 px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-gold transition-all hover:bg-gold/10 sm:flex-none"
+          >
+            <Sword size={16} /> How to Play
           </Link>
         </div>
       </div>
 
-      <div className="bg-gold/5 border border-gold/10 p-4 rounded-2xl mb-12 flex items-start gap-4">
-        <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center text-gold shrink-0 mt-1">
+      <div className="mb-12 flex items-start gap-4 rounded-2xl border border-gold/10 bg-gold/5 p-4">
+        <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/10 text-gold">
           <Info size={20} />
         </div>
         <div>
-          <h4 className="text-gold text-xs font-bold uppercase tracking-widest mb-1">Strategist's Advisory</h4>
-          <p className="text-zinc-400 text-sm italic">
-            Classic online WebSocket rooms are available when the backend is reachable. You can also continue with local tactical simulations on this device.
+          <h4 className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Strategist&apos;s Advisory</h4>
+          <p className="text-sm text-zinc-400">
+            Saved rooms shown here are local to this browser/device. They are not a global public room directory.
+          </p>
+          <p className="mt-2 text-sm text-zinc-500">
+            Use Join Room if a friend sent you a Classic room code or invite link. Modern 3K is local-only and starts
+            from Modern 3K Local.
           </p>
         </div>
       </div>
 
-      <div className="mb-10 relative">
+      <div className="mb-6">
+        <h2 className="text-2xl font-serif font-bold uppercase tracking-widest text-white">Local Room History</h2>
+        <p className="mt-2 max-w-3xl text-sm text-zinc-500">
+          These entries are stored in this browser and are not a global public room directory.
+        </p>
+      </div>
+
+      <div className="relative mb-10">
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gold opacity-40" size={20} />
-        <input 
-          type="text" 
-          placeholder="Search by host or room code..."
+        <input
+          type="text"
+          placeholder="Search saved rooms by host or room code..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-5 pl-16 pr-6 text-white placeholder:text-zinc-700 focus:outline-none focus:border-gold/30 transition-all font-serif"
+          className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-5 pl-16 pr-6 font-serif text-white transition-all placeholder:text-zinc-700 focus:border-gold/30 focus:outline-none"
         />
       </div>
 
       {filteredRooms.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredRooms.map((room, idx) => (
             <motion.div
               layout
@@ -97,58 +124,74 @@ export default function WarCouncil() {
               transition={{ delay: idx * 0.05 }}
               key={room.roomCode}
               onClick={() => navigate(`/rooms/${room.roomCode}`)}
-              className="group glass-dark border border-white/5 p-8 rounded-[2.5rem] hover:border-gold/30 transition-all cursor-pointer relative overflow-hidden"
+              className="group relative cursor-pointer overflow-hidden rounded-[2.5rem] border border-white/5 p-8 transition-all hover:border-gold/30 glass-dark"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex justify-between items-start mb-8">
+              <div className="absolute right-0 top-0 h-32 w-32 translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/5 blur-3xl opacity-0 transition-opacity group-hover:opacity-100" />
+
+              <div className="mb-8 flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em] mb-2 block">Room Command</span>
-                  <h3 className="text-2xl font-serif text-gold font-black tracking-widest uppercase">{room.roomCode}</h3>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
+                    Saved Room Code
+                  </span>
+                  <h3 className="text-2xl font-serif font-black uppercase tracking-widest text-gold">{room.roomCode}</h3>
                 </div>
-                <div className={cn(
-                  "px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest border",
-                  room.status === 'playing' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-gold/10 border-gold/20 text-gold"
-                )}>
+                <div
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-[8px] font-bold uppercase tracking-widest',
+                    room.status === 'playing'
+                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+                      : 'border-gold/20 bg-gold/10 text-gold',
+                  )}
+                >
                   {room.status}
                 </div>
               </div>
 
-              <div className="space-y-6 mb-8">
+              <div className="mb-8 space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 border border-white/10 group-hover:border-gold/30 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-zinc-400 transition-colors group-hover:border-gold/30">
                     <Sword size={18} />
                   </div>
                   <div>
-                    <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest block">Commander In Chief</span>
-                    <p className="text-white font-serif italic">{room.hostName}</p>
+                    <span className="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">Host</span>
+                    <p className="font-serif italic text-white">{room.hostName}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
                   {Object.values(room.slots).map((slot, i) => (
-                    <div key={i} className={cn(
-                      "flex-1 h-1.5 rounded-full",
-                      slot.occupantType === 'human' ? "bg-gold" : 
-                      slot.occupantType === 'bot' ? "bg-white/20" : "bg-white/5"
-                    )} />
+                    <div
+                      key={i}
+                      className={cn(
+                        'h-1.5 flex-1 rounded-full',
+                        slot.occupantType === 'human'
+                          ? 'bg-gold'
+                          : slot.occupantType === 'bot'
+                            ? 'bg-white/20'
+                            : 'bg-white/5',
+                      )}
+                    />
                   ))}
                 </div>
-                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-500">
                   <span>Occupancy</span>
-                  <span className="text-white">{Object.values(room.slots).filter(s => s.occupantType !== 'empty').length}/3 Slots</span>
+                  <span className="text-white">
+                    {Object.values(room.slots).filter((slot) => slot.occupantType !== 'empty').length}/3 Slots
+                  </span>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-6 border-t border-white/5">
-                <button 
-                  className="flex-1 bg-white/5 group-hover:bg-gold group-hover:text-black py-4 rounded-2xl text-[9px] font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2"
+              <div className="flex gap-2 border-t border-white/5 pt-6">
+                <Link
+                  to={`/rooms/${room.roomCode}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white/5 py-4 text-[9px] font-bold uppercase tracking-[0.2em] transition-all group-hover:bg-gold group-hover:text-black"
                 >
-                  <Play size={12} fill="currentColor" /> Enter Lobby
-                </button>
-                <button 
+                  <Play size={12} fill="currentColor" /> Reopen Saved Room
+                </Link>
+                <button
                   onClick={(e) => handleDelete(room.roomCode, e)}
-                  className="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 px-4 rounded-2xl transition-all"
+                  className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 text-rose-500 transition-all hover:bg-rose-500 hover:text-white"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -157,14 +200,40 @@ export default function WarCouncil() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-          <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center text-zinc-700 mb-6">
+        <div className="flex flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-white/5 py-24 text-center">
+          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-white/5 text-zinc-700">
             <MapIcon size={40} />
           </div>
-          <h3 className="text-2xl font-serif font-bold text-white mb-2 uppercase tracking-widest">No Active Chambers</h3>
-          <p className="text-zinc-500 font-serif italic max-w-sm">
-            The war council remains silent. Establish a new room to begin planning your next campaign.
+          <h3 className="mb-2 text-2xl font-serif font-bold uppercase tracking-widest text-white">
+            {hasSavedRooms ? 'No Saved Rooms Match This Search' : 'No Saved Rooms On This Device Yet'}
+          </h3>
+          <p className="max-w-xl font-serif italic text-zinc-500">
+            {hasSavedRooms && hasSearch
+              ? 'Try a different room code or host name, or use Join Room if a friend sent you a Classic invite link.'
+              : 'Create a Classic online room or join one with a code/invite link.'}
           </p>
+          {!hasSavedRooms && (
+            <div className="mt-8 flex w-full max-w-2xl flex-col gap-3 px-6 sm:flex-row sm:justify-center">
+              <Link
+                to="/rooms/create"
+                className="rounded-2xl bg-gold px-6 py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-black transition-all hover:bg-white"
+              >
+                Create Classic Room
+              </Link>
+              <Link
+                to="/rooms/join"
+                className="rounded-2xl border border-white/10 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-white transition-all hover:bg-white/5"
+              >
+                Join Room
+              </Link>
+              <Link
+                to="/how-to-play"
+                className="rounded-2xl border border-gold/20 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-gold transition-all hover:bg-gold/10"
+              >
+                How to Play
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
