@@ -6,6 +6,7 @@ import { getWarRoom, normalizeRoomCode, isValidRoomCode } from '@/src/storage/wa
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { cn } from '@/src/lib/utils';
 import { normalizeGameMode } from '@/shared/gameModes';
+import { useI18n } from '@/src/i18n/useI18n';
 
 function extractRoomCodeFromInput(value: string): string {
   const trimmed = value.trim();
@@ -27,6 +28,7 @@ function extractRoomCodeFromInput(value: string): string {
 }
 
 export default function JoinRoom() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [roomCode, setRoomCode] = useState("");
   const [playerName, setPlayerName] = useState(localStorage.getItem('last_commander_name') || "");
@@ -72,7 +74,7 @@ export default function JoinRoom() {
     const submittedPlayerName = playerName;
 
     if (!isValidRoomCode(code)) {
-        setError("Invalid room code. Paste the Classic room code or a full invite link such as /rooms/WEI-PZR9.");
+        setError(t('joinRoom.errors.invalidRoomCode'));
         return;
     }
 
@@ -95,7 +97,7 @@ export default function JoinRoom() {
     // 2. Try online if configured
     const wsUrl = (import.meta as any).env.VITE_WS_URL;
     if (!wsUrl) {
-        setError("WebSocket unavailable. This Classic room is not stored on this device.");
+        setError(t('joinRoom.errors.webSocketUnavailable'));
         finalizeJoinAttempt();
         return;
     }
@@ -106,7 +108,7 @@ export default function JoinRoom() {
     joinTimeoutRef.current = setTimeout(() => {
       if (joinRequestActiveRef.current && joinRequestId === joinRequestIdRef.current) {
         finalizeJoinAttempt();
-        setError("Cannot connect to that Classic room. Check the code and try again.");
+        setError(t('joinRoom.errors.timeout'));
       }
     }, 5000);
 
@@ -115,7 +117,7 @@ export default function JoinRoom() {
         return;
       }
       finalizeJoinAttempt();
-        setError(err === 'CANNOT_CONNECT' ? 'Cannot connect. Check the backend and retry.' : `Connection issue: ${err}`);
+        setError(err === 'CANNOT_CONNECT' ? t('joinRoom.errors.cannotConnect') : `${t('joinRoom.errors.connectionIssuePrefix')}: ${err}`);
     });
 
     const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
@@ -143,13 +145,13 @@ export default function JoinRoom() {
     <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col items-center">
       <div className="w-full max-w-lg">
         <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-8">
-          <ChevronLeft size={16} /> Return to Classic Rooms
+          <ChevronLeft size={16} /> {t('joinRoom.back')}
         </Link>
         <h1 className="mb-2 text-center text-3xl font-serif font-black uppercase tracking-[0.14em] text-white sm:text-4xl md:text-5xl md:tracking-widest">
-          JOIN <span className="text-gold italic">CLASSIC ROOM</span>
+          {t('joinRoom.titleMain')} <span className="text-gold italic">{t('joinRoom.titleAccent')}</span>
         </h1>
         <p className="mb-8 text-center text-base font-serif italic text-zinc-500 sm:mb-12 sm:text-lg">
-          Enter a Classic room code. Modern 3K is local-only and does not use room codes.
+          {t('joinRoom.subtitle')}
         </p>
 
         <form onSubmit={handleJoin} className="glass-dark relative space-y-6 overflow-hidden rounded-[2rem] border border-white/5 p-5 shadow-2xl sm:space-y-8 sm:rounded-[3.5rem] sm:p-12">
@@ -157,13 +159,13 @@ export default function JoinRoom() {
           
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.4em] flex items-center gap-2">
-              <User size={14} className="text-gold" /> Commander Designation
+              <User size={14} className="text-gold" /> {t('joinRoom.commanderDesignation')}
             </label>
             <input 
               type="text" 
               required
               data-testid="player-name-input"
-              placeholder="Your name..."
+              placeholder={t('joinRoom.commanderPlaceholder')}
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 text-lg tracking-wide text-white placeholder:text-zinc-700 transition-all focus:outline-none focus:border-gold/30 font-serif sm:px-8 sm:py-6 sm:text-xl"
@@ -172,14 +174,14 @@ export default function JoinRoom() {
 
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.4em] flex items-center gap-2">
-              <Key size={14} className="text-gold" /> Enter a Classic room code
+              <Key size={14} className="text-gold" /> {t('joinRoom.roomCodeLabel')}
             </label>
             <div className="relative">
               <input 
                 type="text" 
                 required
                 data-testid="room-code-input"
-                placeholder="Paste code or full invite link"
+                placeholder={t('joinRoom.roomCodePlaceholder')}
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value)}
                 className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 text-2xl uppercase tracking-[0.24em] text-white placeholder:text-zinc-700 transition-all focus:outline-none focus:border-gold/30 font-mono sm:px-10 sm:py-8 sm:text-4xl sm:tracking-[0.3em]"
@@ -187,8 +189,7 @@ export default function JoinRoom() {
               <div className="absolute left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-gold/20 rounded-full" />
             </div>
             <p className="text-[10px] font-serif italic leading-relaxed text-zinc-500">
-              Paste a raw code like <span className="font-mono uppercase text-zinc-400">WEI-PZR9</span> or a full invite link like{' '}
-              <span className="font-mono text-zinc-400">https://.../rooms/WEI-PZR9</span>.
+              {t('joinRoom.roomCodeHelp')}
             </p>
           </div>
 
@@ -216,18 +217,20 @@ export default function JoinRoom() {
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-400 rounded-full"
                 />
-                Connecting...
+                {t('joinRoom.connecting')}
               </>
-            ) : "Access Chamber"}
+            ) : t('joinRoom.submit')}
           </button>
           
           <div className="flex flex-col gap-2 items-center opacity-60">
             <div className="w-12 h-[1px] bg-white/10" />
             <p className="text-[9px] text-zinc-500 font-serif italic text-center uppercase tracking-widest leading-relaxed">
-              Enter a Classic room code or paste a full invite link. <br/>
-              Modern 3K is local-only and does not use room codes. <br/>
-              Local simulation chambers remain client-side. <br/>
-              Classic online joining requires a reachable backend.
+              {t<string[]>('joinRoom.footerLines').map((line, index) => (
+                <React.Fragment key={line}>
+                  {index > 0 && <br />}
+                  {line}
+                </React.Fragment>
+              ))}
             </p>
           </div>
         </form>

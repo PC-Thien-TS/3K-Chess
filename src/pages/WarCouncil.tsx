@@ -14,8 +14,10 @@ import {
 } from 'lucide-react';
 import { listWarRooms, deleteWarRoom, type WarRoom } from '@/src/storage/warRooms';
 import { cn } from '@/src/lib/utils';
+import { useI18n } from '@/src/i18n/useI18n';
 
 export default function WarCouncil() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<WarRoom[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,7 +28,7 @@ export default function WarCouncil() {
 
   const handleDelete = (code: string, e: MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Dismantle this saved room? All local tactical data will be lost.')) {
+    if (confirm(t('rooms.deleteConfirm'))) {
       deleteWarRoom(code);
       setRooms(listWarRooms());
     }
@@ -48,13 +50,13 @@ export default function WarCouncil() {
             to="/"
             className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gold transition-colors hover:text-white"
           >
-            <ChevronLeft size={16} /> To the Throne Room
+            <ChevronLeft size={16} /> {t('rooms.backHome')}
           </Link>
           <h1 className="text-4xl font-black uppercase tracking-widest text-white md:text-6xl font-serif">
-            WAR <span className="italic text-gold">COUNCIL</span>
+            {t('rooms.titleMain')} <span className="italic text-gold">{t('rooms.titleAccent')}</span>
           </h1>
           <p className="mt-3 max-w-3xl font-serif text-base text-zinc-400 opacity-90 md:text-lg">
-            Create a Classic online room, join by code or invite link, or reopen saved rooms from this device.
+            {t('rooms.subtitle')}
           </p>
         </div>
 
@@ -63,19 +65,19 @@ export default function WarCouncil() {
             to="/rooms/create"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gold px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-black shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all hover:bg-white sm:flex-none"
           >
-            <Plus size={16} /> Create Classic Room
+            <Plus size={16} /> {t('rooms.createClassicRoom')}
           </Link>
           <Link
             to="/rooms/join"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-white/5 sm:flex-none"
           >
-            <Users size={16} className="text-gold" /> Join Room
+            <Users size={16} className="text-gold" /> {t('rooms.joinRoom')}
           </Link>
           <Link
             to="/how-to-play"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-gold/20 px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-gold transition-all hover:bg-gold/10 sm:flex-none"
           >
-            <Sword size={16} /> How to Play
+            <Sword size={16} /> {t('common.howToPlay')}
           </Link>
         </div>
       </div>
@@ -85,21 +87,20 @@ export default function WarCouncil() {
           <Info size={20} />
         </div>
         <div>
-          <h4 className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Strategist&apos;s Advisory</h4>
+          <h4 className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">{t('rooms.strategistAdvisory')}</h4>
           <p className="text-sm text-zinc-400">
-            Saved rooms shown here are local to this browser/device. They are not a global public room directory.
+            {t('rooms.advisoryPrimary')}
           </p>
           <p className="mt-2 text-sm text-zinc-500">
-            Use Join Room if a friend sent you a Classic room code or invite link. Modern 3K is local-only and starts
-            from Modern 3K Local.
+            {t('rooms.advisorySecondary')}
           </p>
         </div>
       </div>
 
       <div className="mb-6">
-        <h2 className="text-2xl font-serif font-bold uppercase tracking-widest text-white">Local Room History</h2>
+        <h2 className="text-2xl font-serif font-bold uppercase tracking-widest text-white">{t('rooms.localRoomHistory')}</h2>
         <p className="mt-2 max-w-3xl text-sm text-zinc-500">
-          These entries are stored in this browser and are not a global public room directory.
+          {t('rooms.localRoomHistoryDescription')}
         </p>
       </div>
 
@@ -107,7 +108,7 @@ export default function WarCouncil() {
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gold opacity-40" size={20} />
         <input
           type="text"
-          placeholder="Search saved rooms by host or room code..."
+          placeholder={t('rooms.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full rounded-2xl border border-white/10 bg-white/[0.03] py-5 pl-16 pr-6 font-serif text-white transition-all placeholder:text-zinc-700 focus:border-gold/30 focus:outline-none"
@@ -131,7 +132,7 @@ export default function WarCouncil() {
               <div className="mb-8 flex items-start justify-between">
                 <div>
                   <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
-                    Saved Room Code
+                    {t('rooms.savedRoomCode')}
                   </span>
                   <h3 className="text-2xl font-serif font-black uppercase tracking-widest text-gold">{room.roomCode}</h3>
                 </div>
@@ -143,7 +144,7 @@ export default function WarCouncil() {
                       : 'border-gold/20 bg-gold/10 text-gold',
                   )}
                 >
-                  {room.status}
+                  {t(`rooms.status.${room.status}`)}
                 </div>
               </div>
 
@@ -153,7 +154,7 @@ export default function WarCouncil() {
                     <Sword size={18} />
                   </div>
                   <div>
-                    <span className="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">Host</span>
+                    <span className="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">{t('rooms.host')}</span>
                     <p className="font-serif italic text-white">{room.hostName}</p>
                   </div>
                 </div>
@@ -174,9 +175,9 @@ export default function WarCouncil() {
                   ))}
                 </div>
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                  <span>Occupancy</span>
+                  <span>{t('rooms.occupancy')}</span>
                   <span className="text-white">
-                    {Object.values(room.slots).filter((slot) => slot.occupantType !== 'empty').length}/3 Slots
+                    {Object.values(room.slots).filter((slot) => slot.occupantType !== 'empty').length}/3 {t('rooms.slotsSuffix')}
                   </span>
                 </div>
               </div>
@@ -187,7 +188,7 @@ export default function WarCouncil() {
                   onClick={(e) => e.stopPropagation()}
                   className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white/5 py-4 text-[9px] font-bold uppercase tracking-[0.2em] transition-all group-hover:bg-gold group-hover:text-black"
                 >
-                  <Play size={12} fill="currentColor" /> Reopen Saved Room
+                  <Play size={12} fill="currentColor" /> {t('rooms.reopenSavedRoom')}
                 </Link>
                 <button
                   onClick={(e) => handleDelete(room.roomCode, e)}
@@ -205,12 +206,12 @@ export default function WarCouncil() {
             <MapIcon size={40} />
           </div>
           <h3 className="mb-2 text-2xl font-serif font-bold uppercase tracking-widest text-white">
-            {hasSavedRooms ? 'No Saved Rooms Match This Search' : 'No Saved Rooms On This Device Yet'}
+            {hasSavedRooms ? t('rooms.emptySearchTitle') : t('rooms.emptyTitle')}
           </h3>
           <p className="max-w-xl font-serif italic text-zinc-500">
             {hasSavedRooms && hasSearch
-              ? 'Try a different room code or host name, or use Join Room if a friend sent you a Classic invite link.'
-              : 'Create a Classic online room or join one with a code/invite link.'}
+              ? t('rooms.emptySearchBody')
+              : t('rooms.emptyBody')}
           </p>
           {!hasSavedRooms && (
             <div className="mt-8 flex w-full max-w-2xl flex-col gap-3 px-6 sm:flex-row sm:justify-center">
@@ -218,19 +219,19 @@ export default function WarCouncil() {
                 to="/rooms/create"
                 className="rounded-2xl bg-gold px-6 py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-black transition-all hover:bg-white"
               >
-                Create Classic Room
+                {t('rooms.createClassicRoom')}
               </Link>
               <Link
                 to="/rooms/join"
                 className="rounded-2xl border border-white/10 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-white transition-all hover:bg-white/5"
               >
-                Join Room
+                {t('rooms.joinRoom')}
               </Link>
               <Link
                 to="/how-to-play"
                 className="rounded-2xl border border-gold/20 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-gold transition-all hover:bg-gold/10"
               >
-                How to Play
+                {t('common.howToPlay')}
               </Link>
             </div>
           )}

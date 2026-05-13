@@ -11,7 +11,7 @@ test.describe('Classic Local Gameplay', () => {
     await expect(page.getByText(/Classic 3-Player Xiangqi/i)).toBeVisible();
     
     // Start the match
-    await page.getByRole('button', { name: /SEAL FATE/i }).click();
+    await page.getByRole('button', { name: /Start Local Match/i }).click();
     
     // Wait for navigation to practice board
     await page.waitForURL('/practice');

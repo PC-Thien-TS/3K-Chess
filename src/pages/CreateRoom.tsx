@@ -7,20 +7,21 @@ import { Faction, BotDifficulty } from '@/src/rules/classicThreeKingdomRules';
 import { cn } from '@/src/lib/utils';
 import { onlineRoomClient } from '@/src/services/onlineRoomClient';
 import { DEFAULT_GAME_MODE, GAME_MODE_META, GameMode, GAME_MODE_RULESETS, normalizeGameMode } from '@/shared/gameModes';
-const AUTHENTIC_DISABLED_MESSAGE =
-  'Modern 3K is local-only. Start it from /setup?mode=authentic.';
-const BOT_DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
-  easy: 'Casual',
-  normal: 'Tactical',
-  hard: 'Aggressive',
-};
-const BOT_DIFFICULTY_NOTES: Record<BotDifficulty, string> = {
-  easy: 'Lighter scoring and more variance.',
-  normal: 'Balanced pressure and safer trades.',
-  hard: 'Sharper heuristics and stronger king safety.',
-};
+import { useI18n } from '@/src/i18n/useI18n';
 
 export default function CreateRoom() {
+  const { t } = useI18n();
+  const AUTHENTIC_DISABLED_MESSAGE = t<string>('createRoom.authDisabled');
+  const BOT_DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
+    easy: t('createRoom.difficulties.easy.label'),
+    normal: t('createRoom.difficulties.normal.label'),
+    hard: t('createRoom.difficulties.hard.label'),
+  };
+  const BOT_DIFFICULTY_NOTES: Record<BotDifficulty, string> = {
+    easy: t('createRoom.difficulties.easy.note'),
+    normal: t('createRoom.difficulties.normal.note'),
+    hard: t('createRoom.difficulties.hard.note'),
+  };
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [hostName, setHostName] = useState(localStorage.getItem('last_commander_name') || "");
@@ -89,7 +90,7 @@ export default function CreateRoom() {
         cleanupOnlineCreateRef.current?.();
         cleanupOnlineCreateRef.current = null;
         createRequestActiveRef.current = false;
-        setError("Creating the Classic room took too long. Please retry.");
+        setError(t('createRoom.errors.creatingTimedOut'));
         setIsCreating(false);
       }
     }, 5000);
@@ -99,7 +100,7 @@ export default function CreateRoom() {
         const wsUrl = (import.meta as any).env.VITE_WS_URL;
         if (!wsUrl) {
           finalizeCreateAttempt();
-          setError("WebSocket unavailable. Use Local Simulation or configure the backend.");
+          setError(t('createRoom.errors.webSocketUnavailable'));
           return;
         }
 
@@ -107,7 +108,7 @@ export default function CreateRoom() {
         
         const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
           finalizeCreateAttempt();
-          setError(err === 'CANNOT_CONNECT' ? 'Cannot connect. Check the backend and retry.' : `Connection issue: ${err}`);
+          setError(err === 'CANNOT_CONNECT' ? t('createRoom.errors.cannotConnect') : `${t('createRoom.errors.connectionIssuePrefix')}: ${err}`);
         });
 
         const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
@@ -189,7 +190,7 @@ export default function CreateRoom() {
       navigate(`/rooms/${roomCode}`, { state: { mode: 'local', gameMode } });
     } catch (err: any) {
       finalizeCreateAttempt();
-      setError(err?.message || "Could not create the Classic room.");
+      setError(err?.message || t('createRoom.errors.genericCreateFailure'));
     }
   };
 
@@ -197,19 +198,19 @@ export default function CreateRoom() {
     <div className="pt-24 min-h-screen container mx-auto px-4 pb-12 sm:px-6 flex flex-col items-center">
       <div className="w-full max-w-2xl">
         <Link to="/rooms" className="flex items-center gap-2 text-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-8">
-          <ChevronLeft size={16} /> Return to Classic Rooms
+          <ChevronLeft size={16} /> {t('createRoom.back')}
         </Link>
         <h1 className="mb-2 text-3xl font-serif font-black uppercase tracking-[0.14em] text-white sm:text-4xl md:text-5xl md:tracking-widest">
-          ESTABLISH <span className="text-gold italic">CLASSIC ROOM</span>
+          {t('createRoom.titleMain')} <span className="text-gold italic">{t('createRoom.titleAccent')}</span>
         </h1>
         <p className="mb-8 text-base font-serif italic text-zinc-500 sm:mb-12 sm:text-lg">
-          Classic rooms support online sync, local war-room play, bots, and replay-ready matches.
+          {t('createRoom.subtitle')}
         </p>
 
         <form onSubmit={handleCreate} className="space-y-8 sm:space-y-10">
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
-              <Shield size={14} className="text-gold" /> Campaign Mode
+              <Shield size={14} className="text-gold" /> {t('createRoom.campaignMode')}
             </label>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {(['classic', 'authentic'] as GameMode[]).map((mode) => (
@@ -227,18 +228,18 @@ export default function CreateRoom() {
                   )}
                 >
                   <div className="text-[10px] font-bold uppercase tracking-widest text-gold mb-2">
-                    {mode === 'authentic' ? 'Local Only' : GAME_MODE_META[mode].shortLabel}
+                    {mode === 'authentic' ? t('createRoom.localOnly') : t(`modes.${mode}.shortLabel`)}
                   </div>
                   <h4 className="text-white text-base font-serif font-black uppercase mb-2">
-                    {GAME_MODE_META[mode].label}
+                    {t(`modes.${mode}.label`)}
                   </h4>
-                  <p className="text-[10px] text-zinc-600 font-serif italic">{GAME_MODE_META[mode].description}</p>
+                  <p className="text-[10px] text-zinc-600 font-serif italic">{t(`modes.${mode}.description`)}</p>
                 </button>
               ))}
             </div>
             {gameMode === 'authentic' && (
               <p className="text-[10px] text-amber-300/80 font-serif italic">
-                Modern 3K is local-only. Start it from /setup?mode=authentic.
+                {t('createRoom.authDisabled')}
               </p>
             )}
           </div>
@@ -246,7 +247,7 @@ export default function CreateRoom() {
           {/* Room Mode Toggle */}
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
-              <Zap size={14} className="text-gold" /> Engagement Layer
+              <Zap size={14} className="text-gold" /> {t('createRoom.engagementLayer')}
             </label>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <button
@@ -269,9 +270,9 @@ export default function CreateRoom() {
                 <h4 className={cn(
                     "text-[10px] font-bold uppercase tracking-widest",
                     roomMode === 'local' ? "text-white" : "text-zinc-500"
-                  )}>Local Simulation</h4>
+                  )}>{t('createRoom.localSimulation')}</h4>
                 </div>
-                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">Stored only on this device. Best for solo training or same-room tactics.</p>
+                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">{t('createRoom.localSimulationDescription')}</p>
                 {roomMode === 'local' && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />}
               </button>
 
@@ -297,15 +298,15 @@ export default function CreateRoom() {
                 <h4 className={cn(
                     "text-[10px] font-bold uppercase tracking-widest",
                     roomMode === 'online' ? "text-white" : "text-zinc-500"
-                  )}>Online WebSocket</h4>
+                  )}>{t('createRoom.onlineWebSocket')}</h4>
                 </div>
-                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">Classic online WebSocket room sync for cross-device play when the backend is reachable.</p>
+                <p className="text-[10px] text-zinc-600 font-serif italic ml-10">{t('createRoom.onlineWebSocketDescription')}</p>
                 {roomMode === 'online' && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />}
               </button>
             </div>
             {!wsUrlAvailable && roomMode === 'online' && (
               <p className="text-[9px] text-rose-500/80 font-serif italic text-center">
-                Classic online backend is currently unavailable. Please use Local Simulation.
+                {t('createRoom.backendUnavailableNotice')}
               </p>
             )}
           </div>
@@ -313,14 +314,14 @@ export default function CreateRoom() {
           {/* Host Name */}
           <div className="space-y-4">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
-              <User size={14} className="text-gold" /> Commander's Title
+              <User size={14} className="text-gold" /> {t('createRoom.commanderTitle')}
             </label>
             <div className="relative">
               <input 
                 type="text" 
                 required
                 data-testid="player-name-input"
-                placeholder="Enter your name or title..."
+                placeholder={t('createRoom.commanderPlaceholder')}
                 value={hostName}
                 onChange={(e) => setHostName(e.target.value)}
                 className="w-full rounded-[1.75rem] border border-white/10 bg-white/[0.03] px-6 py-5 text-lg tracking-wide text-white placeholder:text-zinc-700 transition-all focus:outline-none focus:border-gold/30 font-serif sm:rounded-3xl sm:px-10 sm:py-8 sm:text-2xl"
@@ -334,13 +335,13 @@ export default function CreateRoom() {
           {/* Faction Selection */}
           <div className="space-y-6">
             <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-[0.3em] flex items-center gap-2">
-              <Shield size={14} className="text-gold" /> Initial Allegiance
+              <Shield size={14} className="text-gold" /> {t('createRoom.initialAllegiance')}
             </label>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
               {[
-                { id: 'Shu', name: 'Benevolence', color: 'bg-shu', textColor: 'text-shu' },
-                { id: 'Wei', name: 'Authority', color: 'bg-wei', textColor: 'text-wei' },
-                { id: 'Wu', name: 'Prosperity', color: 'bg-wu', textColor: 'text-wu' }
+                { id: 'Shu', name: t('createRoom.factions.Shu'), color: 'bg-shu' },
+                { id: 'Wei', name: t('createRoom.factions.Wei'), color: 'bg-wei' },
+                { id: 'Wu', name: t('createRoom.factions.Wu'), color: 'bg-wu' }
               ].map(f => (
                 <button
                   key={f.id}
@@ -380,9 +381,9 @@ export default function CreateRoom() {
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <h4 className="text-white text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                  <Settings2 size={16} className="text-gold" /> Strategic Automata
+                  <Settings2 size={16} className="text-gold" /> {t('createRoom.strategicAutomata')}
                 </h4>
-                <p className="text-zinc-500 text-[10px] font-serif italic">Allow tactical bots to fill unoccupied slots.</p>
+                <p className="text-zinc-500 text-[10px] font-serif italic">{t('createRoom.automataDescription')}</p>
               </div>
               <button
                 type="button"
@@ -401,7 +402,7 @@ export default function CreateRoom() {
 
             {allowBots && (
               <div className="space-y-4">
-                <label className="text-zinc-600 text-[9px] uppercase font-bold tracking-widest">Bot Tactical Difficulty</label>
+                <label className="text-zinc-600 text-[9px] uppercase font-bold tracking-widest">{t('createRoom.botDifficulty')}</label>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {(['easy', 'normal', 'hard'] as BotDifficulty[]).map((d) => (
                     <button
@@ -434,12 +435,12 @@ export default function CreateRoom() {
               disabled={isCreating || gameMode === 'authentic' || (roomMode === 'online' && !wsUrlAvailable)}
               className="flex w-full items-center justify-center gap-3 rounded-[1.75rem] bg-gold py-5 text-[11px] font-bold uppercase tracking-[0.28em] text-black shadow-[0_0_30px_rgba(212,175,55,0.2)] transition-all hover:bg-white disabled:opacity-50 sm:rounded-[2rem] sm:py-6 sm:text-xs sm:tracking-[0.4em]"
             >
-              <Sword size={20} /> {gameMode === 'authentic' ? "Local Only" : isCreating ? "Creating..." : "Initialize Room"}
+              <Sword size={20} /> {gameMode === 'authentic' ? t('createRoom.localOnlyButton') : isCreating ? t('createRoom.creatingButton') : t('createRoom.createButton')}
             </button>
 
             {roomMode === 'online' && !wsUrlAvailable && (
               <p className="text-rose-500/80 text-[10px] font-serif italic text-center mt-4">
-                WebSocket unavailable. Use Local Simulation to create a Classic room without a backend.
+                {t('createRoom.errors.createWithoutBackend')}
               </p>
             )}
 

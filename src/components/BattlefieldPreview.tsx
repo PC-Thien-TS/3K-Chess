@@ -1,42 +1,31 @@
 import { motion } from 'motion/react';
 import { Archive, Bot, LayoutGrid, ShieldAlert, Users } from 'lucide-react';
-
-const modeCards = [
-  {
-    title: 'Classic Board',
-    accent: 'border-gold/20 bg-white/[0.03]',
-    icon: LayoutGrid,
-    body:
-      'Classic is the main competitive mode. It supports local play, online WebSocket rooms, bot factions, replay, and archive.',
-    bullets: [
-      'Cinematic tactical board presentation',
-      'Server-authoritative move validation online',
-      'Invite links and room codes',
-    ],
-  },
-  {
-    title: 'Modern 3K Board',
-    accent: 'border-[#8c6331]/20 bg-[linear-gradient(180deg,#f4ead3_0%,#ead7b0_100%)]',
-    icon: ShieldAlert,
-    body:
-      'Modern 3K is the local-only authentic ruleset. It supports Han court mechanics, alliance pressure, local bots, and local replay.',
-    bullets: [
-      'Physical tabletop-style board identity',
-      'Han court and alliance systems',
-      'Local-only in the current build',
-    ],
-  },
-];
+import { useI18n } from '@/src/i18n/useI18n';
 
 export default function BattlefieldPreview() {
+  const { t } = useI18n();
+  const modeCards = [
+    {
+      ...t<Array<{ title: string; body: string; bullets: string[] }>>('battlefieldPreview.cards')[0],
+      accent: 'border-gold/20 bg-white/[0.03]',
+      icon: LayoutGrid,
+    },
+    {
+      ...t<Array<{ title: string; body: string; bullets: string[] }>>('battlefieldPreview.cards')[1],
+      accent: 'border-[#8c6331]/20 bg-[linear-gradient(180deg,#f4ead3_0%,#ead7b0_100%)]',
+      icon: ShieldAlert,
+    },
+  ];
+  const proofItems = t<Array<{ title: string; detail: string }>>('battlefieldPreview.proofItems');
+
   return (
     <section id="battlefield-preview" className="max-w-7xl mx-auto scroll-mt-20 overflow-hidden px-6 py-32">
       <div className="mb-16 text-center">
         <h2 className="mb-6 text-4xl font-serif font-bold tracking-[0.05em] text-white md:text-6xl">
-          Two Modes. <span className="text-gold italic font-normal">One Real Build.</span>
+          {t('battlefieldPreview.title')}
         </h2>
         <p className="mx-auto max-w-3xl text-lg leading-relaxed text-zinc-400">
-          Three Kingdoms Chess is not a board mockup or marketing shell. Classic and Modern 3K both ship as playable routes with different goals, rules emphasis, and board presentation.
+          {t('battlefieldPreview.description')}
         </p>
       </div>
 
@@ -65,24 +54,12 @@ export default function BattlefieldPreview() {
         </div>
 
         <div className="glass-dark rounded-[2.5rem] border border-white/6 p-8 shadow-2xl">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.35em] text-gold">What This Build Proves</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.35em] text-gold">{t('battlefieldPreview.proofTitle')}</h3>
           <div className="mt-6 space-y-4">
             {[
-              {
-                title: 'Playable Routes',
-                detail: 'Home, setup, lobby, live boards, replay, and archive all route into working game states.',
-                icon: Users,
-              },
-              {
-                title: 'Bots',
-                detail: 'Classic supports local and host-driven online bots. Modern 3K supports local bots only.',
-                icon: Bot,
-              },
-              {
-                title: 'Replay Archive',
-                detail: 'Saved Classic and Modern 3K matches can be reviewed from the archive without changing live gameplay rules.',
-                icon: Archive,
-              },
+              { ...proofItems[0], icon: Users },
+              { ...proofItems[1], icon: Bot },
+              { ...proofItems[2], icon: Archive },
             ].map((item) => (
               <div key={item.title} className="rounded-[1.6rem] border border-white/6 bg-white/[0.03] px-5 py-5">
                 <div className="flex items-center gap-3">

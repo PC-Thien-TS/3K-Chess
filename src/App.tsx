@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { MatchProvider } from './context/MatchContext';
+import { I18nProvider } from './i18n/I18nProvider';
+import { useI18n } from './i18n/useI18n';
 
 const Home = lazy(() => import('./pages/Home'));
 const HowToPlay = lazy(() => import('./pages/HowToPlay'));
@@ -17,16 +19,18 @@ const WarRoomLobby = lazy(() => import('./pages/WarRoomLobby'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function RouteLoadingFallback() {
+  const { t } = useI18n();
+
   return (
     <div className="flex min-h-[calc(100vh-12rem)] items-center justify-center px-4 py-20">
       <div className="glass-dark w-full max-w-md rounded-[2.5rem] border border-gold/20 p-10 text-center shadow-2xl">
         <div className="mx-auto mb-5 h-14 w-14 rounded-full border-2 border-gold/20 border-t-gold animate-spin" />
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gold">Deploying Route</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gold">{t('common.loadingRouteLabel')}</p>
         <h2 className="mt-4 text-2xl font-serif font-black uppercase tracking-[0.12em] text-white">
-          Loading battlefield...
+          {t('common.loadingRouteTitle')}
         </h2>
         <p className="mt-3 text-sm font-serif italic text-zinc-400">
-          Summoning the campaign map and command interface.
+          {t('common.loadingRouteBody')}
         </p>
       </div>
     </div>
@@ -82,9 +86,11 @@ function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Router>
-      <MatchProvider>
-        <Layout children={null} />
-      </MatchProvider>
+      <I18nProvider>
+        <MatchProvider>
+          <Layout children={null} />
+        </MatchProvider>
+      </I18nProvider>
     </Router>
   );
 }
