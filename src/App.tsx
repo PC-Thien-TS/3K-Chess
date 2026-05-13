@@ -8,13 +8,10 @@ import { useI18n } from './i18n/useI18n';
 
 const Home = lazy(() => import('./pages/Home'));
 const HowToPlay = lazy(() => import('./pages/HowToPlay'));
-const MatchSetup = lazy(() => import('./pages/MatchSetup'));
+const PlayHub = lazy(() => import('./pages/PlayHub'));
 const PracticeBoard = lazy(() => import('./pages/PracticeBoard'));
 const MatchArchive = lazy(() => import('./pages/MatchArchive'));
 const ReplayBoard = lazy(() => import('./pages/ReplayBoard'));
-const WarCouncil = lazy(() => import('./pages/WarCouncil'));
-const CreateRoom = lazy(() => import('./pages/CreateRoom'));
-const JoinRoom = lazy(() => import('./pages/JoinRoom'));
 const WarRoomLobby = lazy(() => import('./pages/WarRoomLobby'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -58,13 +55,14 @@ function Layout({ children }: { children: React.ReactNode }) {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/how-to-play" element={<HowToPlay />} />
-            <Route path="/setup" element={<MatchSetup />} />
+            <Route path="/play" element={<PlayHub />} />
+            <Route path="/setup" element={<PlayHub />} />
             <Route path="/practice" element={<PracticeBoard />} />
             <Route path="/archive" element={<MatchArchive />} />
             <Route path="/replay/:matchId" element={<ReplayBoard />} />
-            <Route path="/rooms" element={<WarCouncil />} />
-            <Route path="/rooms/create" element={<CreateRoom />} />
-            <Route path="/rooms/join" element={<JoinRoom />} />
+            <Route path="/rooms" element={<PlayHub />} />
+            <Route path="/rooms/create" element={<PlayHub />} />
+            <Route path="/rooms/join" element={<PlayHub />} />
             <Route path="/rooms/:roomCode" element={<WarRoomLobby />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

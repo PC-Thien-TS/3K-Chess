@@ -15,8 +15,8 @@ test.describe('Archive Page', () => {
   });
 
   test('saved Modern 3K local record opens in read-only replay', async ({ page }) => {
-    await page.goto('/setup?mode=authentic');
-    await page.getByTestId('start-local-match-button').click();
+    await page.goto('/play?section=modern3k&mode=authentic');
+    await page.getByTestId('start-authentic-match-button').click();
     await page.waitForURL('/practice');
 
     await page.getByRole('button', { name: 'Point 3, 4' }).click();

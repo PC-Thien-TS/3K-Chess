@@ -26,6 +26,11 @@ Three Kingdoms Chess is a two-mode strategy project built around a 3-player Xian
 
 ## Features
 
+### Play Hub
+- `/play` is the main pre-game entry page.
+- `/setup`, `/rooms`, `/rooms/create`, and `/rooms/join` remain compatible entry routes.
+- Classic local setup, Classic online create/join, Modern 3K local setup, and local room history are available from the unified page.
+
 ### Classic
 - Local practice matches
 - Online room creation and join flow
@@ -115,7 +120,7 @@ What these cover:
 - reducer and replay tests
 - Authentic rules tests
 - Classic online authority and reconnect tests
-- Playwright route, local, archive, and Classic online room flows
+- Playwright route, Play Hub, local, archive, and Classic online room flows
 - TypeScript typecheck
 - production build verification
 

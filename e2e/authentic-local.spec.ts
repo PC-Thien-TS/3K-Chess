@@ -2,16 +2,16 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Modern 3K Local Gameplay', () => {
   test('start Authentic local match and verify board', async ({ page }) => {
-    await page.goto('/setup?mode=authentic');
+    await page.goto('/play?section=modern3k&mode=authentic');
     
     // Verify we're on setup page with authentic mode
-    await expect(page.locator('h1')).toBeVisible();
+    await expect(page.getByTestId('play-hub-page')).toBeVisible();
     
     // Verify Authentic mode is selected
     await expect(page.getByTestId('modern-3k-mode-card')).toBeVisible();
     
     // Start the match
-    await page.getByTestId('start-local-match-button').click();
+    await page.getByTestId('start-authentic-match-button').click();
     
     // Wait for navigation to practice board
     await page.waitForURL('/practice');
@@ -24,7 +24,7 @@ test.describe('Modern 3K Local Gameplay', () => {
   });
 
   test('Authentic mode shows correct features', async ({ page }) => {
-    await page.goto('/setup?mode=authentic');
+    await page.goto('/play?section=modern3k&mode=authentic');
     
     // Verify Authentic mode button is visible
     await expect(page.getByTestId('modern-3k-mode-card')).toBeVisible();

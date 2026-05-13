@@ -35,6 +35,41 @@ const en = {
   navbar: {
     cta: 'Play Classic Online',
   },
+  playHub: {
+    kicker: 'Unified Play Hub',
+    title: 'Choose How to Play',
+    subtitle: 'Play Classic locally, create or join a Classic online room, or play Modern 3K locally.',
+    classicLocal: {
+      title: 'Classic Local',
+      description: 'Set up a Classic local match with human or bot factions, then start the board from this page.',
+    },
+    classicOnline: {
+      title: 'Classic Online',
+      description: 'Create a Classic online room or join one with a room code or invite link. Online rooms require a reachable backend.',
+    },
+    createRoom: {
+      title: 'Create Room',
+      description: 'Start a Classic online room, choose your faction, and share the room code or invite link.',
+    },
+    joinRoom: {
+      title: 'Join Room',
+      description: 'Enter a Classic room code or paste a full invite link from another player.',
+    },
+    modern3k: {
+      title: 'Modern 3K Local',
+      description: 'Play Modern 3K locally with Human/Bot control for Wu, Wei, and Shu.',
+    },
+    localHistory: {
+      title: 'Local Room History',
+      description: 'Reopen saved rooms from this browser or device.',
+    },
+    modern3kLocalOnly: 'Modern 3K is local-only. Online rooms are not available for Modern 3K yet.',
+    savedRoomsLocalOnly: 'These rooms are saved in this browser/device and are not a global public room directory.',
+    startClassicLocal: 'Start Classic Local',
+    startModern3kLocal: 'Start Modern 3K Local',
+    createClassicRoom: 'Create Classic Room',
+    joinClassicRoom: 'Join Classic Room',
+  },
   footer: {
     description:
       'Three Kingdoms Chess is an indie strategy project inspired by 3-player Xiangqi variants and Three Kingdoms themes. It is not presented as an official licensed product.',

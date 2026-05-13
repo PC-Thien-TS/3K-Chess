@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Classic Local Gameplay', () => {
   test('start Classic local match and make a move', async ({ page }) => {
-    await page.goto('/setup');
+    await page.goto('/play?section=classic-local');
     
     // Verify we're on setup page
-    await expect(page.locator('h1')).toBeVisible();
+    await expect(page.getByTestId('play-hub-page')).toBeVisible();
     
     // Select Classic mode (should be default)
     await expect(page.getByTestId('classic-mode-card')).toBeVisible();
@@ -30,7 +30,7 @@ test.describe('Classic Local Gameplay', () => {
   });
 
   test('Classic mode shows correct features', async ({ page }) => {
-    await page.goto('/setup');
+    await page.goto('/play?section=classic-local');
     
     // Verify Classic mode button is visible
     await expect(page.getByTestId('classic-mode-card')).toBeVisible();

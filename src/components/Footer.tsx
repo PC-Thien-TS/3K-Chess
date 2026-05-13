@@ -25,9 +25,9 @@ export default function Footer() {
         <div>
           <h4 className="mb-6 font-serif font-bold tracking-wider text-white">{t('footer.playTitle')}</h4>
           <ul className="space-y-4 text-xs uppercase tracking-widest">
-            <li><Link to="/rooms/create?mode=classic" className="hover:text-white">{t('common.playClassicOnline')}</Link></li>
-            <li><Link to="/setup?mode=classic" className="hover:text-white">{t('common.practiceClassic')}</Link></li>
-            <li><Link to="/setup?mode=authentic" className="hover:text-white">{t('common.modern3kLocal')}</Link></li>
+            <li><Link to="/play?section=create" className="hover:text-white">{t('common.playClassicOnline')}</Link></li>
+            <li><Link to="/play?section=classic-local" className="hover:text-white">{t('common.practiceClassic')}</Link></li>
+            <li><Link to="/play?section=modern3k&mode=authentic" className="hover:text-white">{t('common.modern3kLocal')}</Link></li>
             <li><Link to="/archive" className="hover:text-white">{t('common.openArchive')}</Link></li>
             <li><Link to="/how-to-play" className="hover:text-white">{t('common.howToPlay')}</Link></li>
           </ul>

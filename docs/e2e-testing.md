@@ -45,10 +45,12 @@ npx playwright test e2e/classic-online.spec.ts
 
 #### Basic Routes (`e2e/routes.spec.ts`)
 - Home page loads
-- Setup page loads
-- Setup page with authentic mode loads
-- Create room page loads
-- Join room page loads
+- Play Hub page loads at `/play`
+- Setup page loads as a Play Hub compatibility route
+- Setup page with authentic mode loads as a Modern 3K focused compatibility route
+- Rooms page loads as a Classic online/local history compatibility route
+- Create room page loads as a Play Hub create-room compatibility route
+- Join room page loads as a Play Hub join-room compatibility route
 - Archive page loads
 - Unknown route shows NotFound
 
@@ -73,8 +75,8 @@ npx playwright test e2e/classic-online.spec.ts
 
 #### Classic Online 2-Tab (`e2e/classic-online.spec.ts`)
 - Starts the backend and frontend through Playwright `webServer`
-- Creates a Classic online room
-- Joins the room from a second browser context
+- Creates a Classic online room from the unified Play Hub flow
+- Joins the room from a second browser context through the unified Play Hub flow
 - Claims a second faction slot
 - Marks ready, fills the third slot with a bot, and starts the match
 - Verifies both tabs enter the Classic board

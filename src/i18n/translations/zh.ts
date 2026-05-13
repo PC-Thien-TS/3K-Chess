@@ -35,6 +35,41 @@ const zh = {
   navbar: {
     cta: '在线经典模式',
   },
+  playHub: {
+    kicker: '统一游玩入口',
+    title: '选择玩法',
+    subtitle: '本地游玩经典模式，创建或加入经典在线房间，或本地游玩现代三国。',
+    classicLocal: {
+      title: '经典本地模式',
+      description: '设置经典本地对局，可选择玩家或 Bot 阵营，然后从本页开始棋盘。',
+    },
+    classicOnline: {
+      title: '经典在线模式',
+      description: '创建经典在线房间，或通过房间代码/邀请链接加入。在线房间需要可访问的后端。',
+    },
+    createRoom: {
+      title: '创建房间',
+      description: '创建经典在线房间，选择初始阵营，并分享房间代码或邀请链接。',
+    },
+    joinRoom: {
+      title: '加入房间',
+      description: '输入经典房间代码，或粘贴其他玩家发来的完整邀请链接。',
+    },
+    modern3k: {
+      title: '本地现代三国',
+      description: '本地游玩现代三国，可为吴、魏、蜀选择玩家或 Bot 控制。',
+    },
+    localHistory: {
+      title: '本地房间记录',
+      description: '重新打开保存在此浏览器或设备中的房间。',
+    },
+    modern3kLocalOnly: 'Modern 3K 仅支持本地游玩。目前 Modern 3K 还没有在线房间。',
+    savedRoomsLocalOnly: '这些房间保存在此浏览器/设备中，并不是全球公开房间列表。',
+    startClassicLocal: '开始经典本地模式',
+    startModern3kLocal: '开始本地现代三国',
+    createClassicRoom: '创建经典房间',
+    joinClassicRoom: '加入经典房间',
+  },
   footer: {
     description:
       'Three Kingdoms Chess 是一个独立策略项目，灵感来自三人象棋变体与三国题材。本项目并不宣称为官方授权产品。',

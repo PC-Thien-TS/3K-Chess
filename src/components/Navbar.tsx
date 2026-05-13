@@ -6,9 +6,9 @@ import { useI18n } from '@/src/i18n/useI18n';
 import LanguageSelector from './LanguageSelector';
 
 const navItems = [
-  { key: 'common.play', path: '/#play-now', icon: Play },
-  { key: 'common.classicRooms', path: '/rooms', icon: Users },
-  { key: 'common.modern3kLocal', path: '/setup?mode=authentic', icon: Shield },
+  { key: 'common.play', path: '/play', icon: Play },
+  { key: 'common.classicRooms', path: '/play?section=online', icon: Users },
+  { key: 'common.modern3kLocal', path: '/play?section=modern3k&mode=authentic', icon: Shield },
   { key: 'common.archive', path: '/archive', icon: Archive },
   { key: 'common.howToPlay', path: '/how-to-play', icon: Book },
 ];
@@ -53,7 +53,7 @@ export default function Navbar() {
         <LanguageSelector className="flex" />
 
         <Link 
-          to="/rooms/create?mode=classic" 
+          to="/play?section=create" 
           className="hidden rounded-full bg-gold px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 sm:block"
         >
           {t('navbar.cta')}

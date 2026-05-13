@@ -139,20 +139,20 @@ export default function Home() {
             transition={{ delay: 0.6, duration: 1, ease: 'easeOut' }}
             className="flex flex-col items-stretch justify-center gap-4 pt-6 sm:gap-5 md:flex-row md:items-center md:pt-8"
           >
-            <Link to="/rooms/create?mode=classic" className="group relative w-full overflow-hidden rounded-2xl bg-gold px-8 py-5 text-base font-black uppercase tracking-[0.2em] text-black shadow-[0_20px_60px_rgba(212,175,55,0.4)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:px-10 sm:py-6 sm:text-lg sm:tracking-[0.24em] md:w-auto">
+            <Link to="/play?section=create" className="group relative w-full overflow-hidden rounded-2xl bg-gold px-8 py-5 text-base font-black uppercase tracking-[0.2em] text-black shadow-[0_20px_60px_rgba(212,175,55,0.4)] transition-all hover:scale-105 hover:bg-white active:scale-95 sm:px-10 sm:py-6 sm:text-lg sm:tracking-[0.24em] md:w-auto">
               <span className="relative z-10 flex items-center gap-3">
                 {t('common.playClassicOnline')} <ArrowRight size={22} className="transition-transform group-hover:translate-x-2" />
               </span>
               <div className="absolute inset-0 bg-white opacity-0 transition-opacity group-hover:opacity-10" />
             </Link>
 
-            <Link to="/setup?mode=classic" className="group relative w-full overflow-hidden rounded-2xl border border-white/10 px-8 py-5 text-base font-black uppercase tracking-[0.2em] text-white transition-all hover:scale-105 hover:bg-white/10 active:scale-95 glass-dark sm:px-10 sm:py-6 sm:text-lg sm:tracking-[0.24em] md:w-auto">
+            <Link to="/play?section=classic-local" className="group relative w-full overflow-hidden rounded-2xl border border-white/10 px-8 py-5 text-base font-black uppercase tracking-[0.2em] text-white transition-all hover:scale-105 hover:bg-white/10 active:scale-95 glass-dark sm:px-10 sm:py-6 sm:text-lg sm:tracking-[0.24em] md:w-auto">
               <span className="relative z-10 flex items-center gap-3">
                 {t('common.practiceClassic')} <Play size={20} className="text-gold transition-transform group-hover:scale-125" fill="currentColor" />
               </span>
             </Link>
 
-            <Link to="/setup?mode=authentic" className="group relative w-full overflow-hidden rounded-2xl border border-gold/20 px-8 py-5 text-base font-black uppercase tracking-[0.2em] text-white transition-all hover:scale-105 hover:bg-gold/10 active:scale-95 glass-dark sm:px-10 sm:py-6 sm:text-lg sm:tracking-[0.24em] md:w-auto">
+            <Link to="/play?section=modern3k&mode=authentic" className="group relative w-full overflow-hidden rounded-2xl border border-gold/20 px-8 py-5 text-base font-black uppercase tracking-[0.2em] text-white transition-all hover:scale-105 hover:bg-gold/10 active:scale-95 glass-dark sm:px-10 sm:py-6 sm:text-lg sm:tracking-[0.24em] md:w-auto">
               <span className="relative z-10 flex items-center gap-3">
                 {t('common.playModern3kLocal')} <ArrowRight size={20} className="text-gold transition-transform group-hover:translate-x-1" />
               </span>
@@ -312,13 +312,13 @@ export default function Home() {
             {t('home.finalTitle')}
           </h2>
           <div className="flex flex-col justify-center gap-4 md:flex-row">
-            <Link to="/rooms/create?mode=classic" className="w-full rounded-full bg-gold px-8 py-4 font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 md:w-auto md:px-12 md:py-5">
+            <Link to="/play?section=create" className="w-full rounded-full bg-gold px-8 py-4 font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 md:w-auto md:px-12 md:py-5">
               {t('common.playClassicOnline')}
             </Link>
-            <Link to="/setup?mode=classic" className="w-full rounded-full bg-white/10 px-8 py-4 font-bold uppercase tracking-widest text-white transition-colors hover:bg-white/20 md:w-auto md:px-12 md:py-5">
+            <Link to="/play?section=classic-local" className="w-full rounded-full bg-white/10 px-8 py-4 font-bold uppercase tracking-widest text-white transition-colors hover:bg-white/20 md:w-auto md:px-12 md:py-5">
               {t('common.practiceClassic')}
             </Link>
-            <Link to="/setup?mode=authentic" className="w-full rounded-full border border-gold/20 bg-white/5 px-8 py-4 font-bold uppercase tracking-widest text-white transition-colors hover:bg-gold/10 md:w-auto md:px-12 md:py-5">
+            <Link to="/play?section=modern3k&mode=authentic" className="w-full rounded-full border border-gold/20 bg-white/5 px-8 py-4 font-bold uppercase tracking-widest text-white transition-colors hover:bg-gold/10 md:w-auto md:px-12 md:py-5">
               {t('common.playModern3kLocal')}
             </Link>
             <Link to="/archive" className="w-full rounded-full border border-white/10 bg-white/5 px-8 py-4 font-bold uppercase tracking-widest text-white transition-colors hover:bg-white/10 md:w-auto md:px-12 md:py-5">

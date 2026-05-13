@@ -26,9 +26,10 @@ test.describe('Classic Online 2-tab Flow', () => {
 
     try {
       await host.page.goto('/rooms/create?mode=classic');
-      await host.page.getByTestId('player-name-input').fill('Host Alpha');
-      await host.page.getByTestId('online-room-mode-button').click();
-      await host.page.getByTestId('create-online-room-button').click();
+      const createPanel = host.page.getByTestId('create-room-panel');
+      await createPanel.getByTestId('player-name-input').fill('Host Alpha');
+      await createPanel.getByTestId('online-room-mode-button').click();
+      await createPanel.getByTestId('create-online-room-button').click();
 
       await host.page.waitForURL(/\/rooms\/[A-Z0-9-]+$/);
       const roomCode = (await host.page.getByTestId('room-code-display').textContent())?.trim();
@@ -46,9 +47,10 @@ test.describe('Classic Online 2-tab Flow', () => {
       await expect(host.page.getByTestId('faction-slot-wei')).toContainText('Claim Command');
 
       await guest.page.goto('/rooms/join');
-      await guest.page.getByTestId('player-name-input').fill('Guest Beta');
-      await guest.page.getByTestId('room-code-input').fill(inviteUrl);
-      await guest.page.getByTestId('join-room-button').click();
+      const joinPanel = guest.page.getByTestId('join-room-panel');
+      await joinPanel.getByTestId('player-name-input').fill('Guest Beta');
+      await joinPanel.getByTestId('room-code-input').fill(inviteUrl);
+      await joinPanel.getByTestId('join-room-button').click();
 
       await guest.page.waitForURL(new RegExp(`/rooms/${roomCode}$`));
       await expect(guest.page.getByTestId('room-code-display')).toContainText(roomCode!);

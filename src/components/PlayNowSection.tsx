@@ -8,17 +8,17 @@ export default function PlayNowSection() {
   const modes = [
     {
       ...t<Array<{ title: string; description: string; button: string }>>('playNow.modes')[0],
-      path: '/rooms/create?mode=classic',
+      path: '/play?section=create',
       icon: Users,
     },
     {
       ...t<Array<{ title: string; description: string; button: string }>>('playNow.modes')[1],
-      path: '/setup?mode=classic',
+      path: '/play?section=classic-local',
       icon: Sword,
     },
     {
       ...t<Array<{ title: string; description: string; button: string }>>('playNow.modes')[2],
-      path: '/setup?mode=authentic',
+      path: '/play?section=modern3k&mode=authentic',
       icon: Play,
     },
     {

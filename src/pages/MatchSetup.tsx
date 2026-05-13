@@ -416,7 +416,7 @@ export default function MatchSetup() {
           </button>
           <button
             onClick={handleStart}
-            data-testid="start-local-match-button"
+            data-testid={localGameMode === 'authentic' ? 'start-authentic-match-button' : 'start-local-match-button'}
             className="flex w-full items-center justify-center gap-4 rounded-2xl bg-gold px-8 py-5 text-[11px] font-black uppercase tracking-[0.28em] text-black shadow-[0_20px_50px_rgba(212,175,55,0.35)] transition-all hover:scale-[1.03] hover:bg-white active:scale-95 md:w-auto md:px-16 md:py-6 md:text-[12px] md:tracking-[0.4em]"
           >
             {localGameMode === 'authentic' ? t('matchSetup.buttons.startAuthentic') : t('matchSetup.buttons.startClassic')}

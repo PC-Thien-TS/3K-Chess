@@ -35,6 +35,41 @@ const vi = {
   navbar: {
     cta: 'Chơi Classic online',
   },
+  playHub: {
+    kicker: 'Trung tâm chơi',
+    title: 'Chọn cách chơi',
+    subtitle: 'Chơi Classic cục bộ, tạo hoặc tham gia phòng Classic online, hoặc chơi Modern 3K cục bộ.',
+    classicLocal: {
+      title: 'Classic cục bộ',
+      description: 'Thiết lập trận Classic cục bộ với người chơi hoặc bot, rồi bắt đầu bàn chơi từ trang này.',
+    },
+    classicOnline: {
+      title: 'Classic online',
+      description: 'Tạo phòng Classic online hoặc tham gia bằng mã phòng/liên kết mời. Phòng online cần backend có thể truy cập.',
+    },
+    createRoom: {
+      title: 'Tạo phòng',
+      description: 'Tạo phòng Classic online, chọn phe ban đầu và chia sẻ mã phòng hoặc liên kết mời.',
+    },
+    joinRoom: {
+      title: 'Vào phòng',
+      description: 'Nhập mã phòng Classic hoặc dán liên kết mời đầy đủ từ người chơi khác.',
+    },
+    modern3k: {
+      title: 'Modern 3K cục bộ',
+      description: 'Chơi Modern 3K cục bộ với điều khiển Người/Bot cho Wu, Wei và Shu.',
+    },
+    localHistory: {
+      title: 'Lịch sử phòng trên thiết bị',
+      description: 'Mở lại các phòng đã lưu từ trình duyệt hoặc thiết bị này.',
+    },
+    modern3kLocalOnly: 'Modern 3K là chế độ cục bộ. Hiện chưa có phòng online cho Modern 3K.',
+    savedRoomsLocalOnly: 'Các phòng này được lưu trên trình duyệt/thiết bị này, không phải danh sách phòng công khai toàn cầu.',
+    startClassicLocal: 'Bắt đầu Classic cục bộ',
+    startModern3kLocal: 'Bắt đầu Modern 3K cục bộ',
+    createClassicRoom: 'Tạo phòng Classic',
+    joinClassicRoom: 'Vào phòng Classic',
+  },
   footer: {
     description:
       'Three Kingdoms Chess là một dự án chiến thuật indie lấy cảm hứng từ các biến thể cờ tướng ba người và chủ đề Tam Quốc. Trò chơi không được giới thiệu như một sản phẩm có giấy phép chính thức.',
