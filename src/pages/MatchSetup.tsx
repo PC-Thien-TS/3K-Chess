@@ -208,7 +208,7 @@ export default function MatchSetup() {
             className={cn(
               'group glass-dark relative flex cursor-pointer flex-col gap-6 overflow-hidden rounded-[2rem] border-2 p-5 shadow-2xl transition-all duration-500 hover:-translate-y-2 sm:gap-8 sm:rounded-[3rem] sm:p-8 sm:hover:-translate-y-4 xl:rounded-[3.5rem] xl:p-10',
               FACTION_VISUALS[f].color,
-              localPrimary === f ? 'border-gold/50 shadow-[0_0_80px_rgba(212,175,55,0.15)] ring-1 ring-gold/20' : 'border-white/5 hover:border-white/10',
+              localPrimary === f ? 'border-gold/50 shadow-[0_0_80px_rgba(212,175,55,0.15)] ring-1 ring-gold/20' : 'border-white/15 bg-white/[0.025] hover:border-white/25 hover:bg-white/[0.04]',
             )}
           >
             <div className="pointer-events-none absolute inset-0 bg-gold/[0.01]" />
@@ -218,14 +218,14 @@ export default function MatchSetup() {
 
             <div className="relative z-10 flex items-start justify-between">
               <div className="flex flex-col gap-1">
-                <span className="mb-2 text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Dominion III</span>
+                <span className="mb-2 text-[10px] font-black uppercase tracking-[0.4em] opacity-65">Dominion III</span>
                 <h3 className="text-4xl font-serif font-black uppercase italic tracking-tighter text-white">{t(`matchSetup.factionLabels.${f}.name`)}</h3>
                 <span className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-gold transition-all group-hover:tracking-[0.4em]">{t(`matchSetup.factionLabels.${f}.theme`)}</span>
               </div>
               <div
                 className={cn(
                   'flex h-12 w-12 items-center justify-center rounded-2xl border-2 transition-all duration-500',
-                  localPrimary === f ? 'scale-110 border-gold bg-gold text-black shadow-2xl' : 'border-white/10 bg-white/5 text-zinc-700 group-hover:border-white/20 group-hover:bg-white/10',
+                  localPrimary === f ? 'scale-110 border-gold bg-gold text-black shadow-2xl' : 'border-white/20 bg-white/[0.08] text-zinc-400 group-hover:border-white/35 group-hover:bg-white/[0.12] group-hover:text-gold',
                 )}
               >
                 {localPrimary === f ? <Shield size={24} /> : <Zap size={24} />}
@@ -234,7 +234,7 @@ export default function MatchSetup() {
 
             <div className="relative z-10 h-px bg-white/5 shadow-inner" />
 
-            <p className="relative z-10 min-h-[60px] text-sm font-serif italic leading-relaxed text-zinc-500 opacity-70 transition-opacity group-hover:opacity-100">
+            <p className="relative z-10 min-h-[60px] text-sm font-serif italic leading-relaxed text-zinc-400 opacity-90 transition-opacity group-hover:text-zinc-300 group-hover:opacity-100">
               {t(`matchSetup.factionLabels.${f}.description`)}
             </p>
 

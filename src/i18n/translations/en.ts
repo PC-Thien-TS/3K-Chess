@@ -273,11 +273,11 @@ const en = {
     emptySearchBody: 'Try a different room code or host name, or use Join Room if a friend sent you a Classic invite link.',
   },
   createRoom: {
-    authDisabled: 'Modern 3K is local-only. Start it from /setup?mode=authentic.',
+    authDisabled: 'Modern 3K is local-only. Choose the Modern 3K card on the Play page.',
     difficulties: {
-      easy: { label: 'Casual', note: 'Lighter scoring and more variance.' },
-      normal: { label: 'Tactical', note: 'Balanced pressure and safer trades.' },
-      hard: { label: 'Aggressive', note: 'Sharper heuristics and stronger king safety.' },
+      easy: { label: 'Easy', note: 'Lighter play with more randomness.' },
+      normal: { label: 'Tactical', note: 'Balanced attack and safety.' },
+      hard: { label: 'Hard', note: 'More aggressive evaluation and stronger general safety.' },
     },
     back: 'Return to Classic Rooms',
     titleMain: 'ESTABLISH',
@@ -299,12 +299,12 @@ const en = {
       Wei: 'Authority',
       Wu: 'Prosperity',
     },
-    strategicAutomata: 'Strategic Automata',
-    automataDescription: 'Allow tactical bots to fill unoccupied slots.',
+    strategicAutomata: 'Tactical Bots',
+    automataDescription: 'Let bots control the remaining factions.',
     botDifficulty: 'Bot Tactical Difficulty',
     createButton: 'Initialize Room',
     creatingButton: 'Creating...',
-    localOnlyButton: 'Local Only',
+    localOnlyButton: 'Switch to Modern 3K Local',
     errors: {
       creatingTimedOut: 'Creating the Classic room took too long. Please retry.',
       webSocketUnavailable: 'WebSocket unavailable. Use Local Simulation or configure the backend.',
@@ -375,14 +375,14 @@ const en = {
       treatyTitle: 'Treaty of the Three Kingdoms',
     },
     difficultyLabels: {
-      easy: 'Casual (Easy)',
-      normal: 'Tactical (Normal)',
-      hard: 'Aggressive (Hard)',
+      easy: 'Easy',
+      normal: 'Tactical',
+      hard: 'Hard',
     },
     difficultyNotes: {
-      easy: 'Light scoring with extra randomness.',
-      normal: 'Balanced tactical pressure and safer exchanges.',
-      hard: 'Aggressive heuristic with stronger king-safety weighting.',
+      easy: 'Lighter play with more randomness.',
+      normal: 'Balanced attack and safety.',
+      hard: 'More aggressive evaluation and stronger general safety.',
     },
     summary: {
       modeSuffix: 'Mode',
@@ -394,8 +394,8 @@ const en = {
     },
     buttons: {
       retreat: 'Retreat',
-      startClassic: 'Start Local Match',
-      startAuthentic: 'Start Local Authentic Match',
+      startClassic: 'Start Classic Local',
+      startAuthentic: 'Start Modern 3K Local',
     },
   },
 } as const;

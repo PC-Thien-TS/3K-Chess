@@ -273,11 +273,11 @@ const vi = {
     emptySearchBody: 'Hãy thử mã phòng hoặc tên chủ phòng khác, hoặc dùng Vào phòng nếu bạn được gửi liên kết mời Classic.',
   },
   createRoom: {
-    authDisabled: 'Modern 3K là chế độ cục bộ. Hãy bắt đầu từ /setup?mode=authentic.',
+    authDisabled: 'Modern 3K là chế độ cục bộ. Hãy chọn thẻ Modern 3K trong trang Chơi.',
     difficulties: {
-      easy: { label: 'Thư giãn', note: 'Chấm điểm nhẹ hơn và nhiều ngẫu nhiên hơn.' },
-      normal: { label: 'Chiến thuật', note: 'Áp lực cân bằng và đổi quân an toàn hơn.' },
-      hard: { label: 'Áp đảo', note: 'Đánh giá quyết liệt hơn và ưu tiên an toàn tướng cao hơn.' },
+      easy: { label: 'Thư giãn', note: 'Chơi nhẹ nhàng, nhiều ngẫu nhiên hơn.' },
+      normal: { label: 'Chiến thuật', note: 'Cân bằng giữa tấn công và an toàn.' },
+      hard: { label: 'Áp đảo', note: 'Đánh giá quyết liệt hơn và ưu tiên an toàn tướng.' },
     },
     back: 'Quay lại phòng Classic',
     titleMain: 'THIẾT LẬP',
@@ -299,12 +299,12 @@ const vi = {
       Wei: 'Uy quyền',
       Wu: 'Thịnh vượng',
     },
-    strategicAutomata: 'Máy chiến lược',
-    automataDescription: 'Cho phép bot chiến thuật lấp các vị trí còn trống.',
+    strategicAutomata: 'Bot chiến thuật',
+    automataDescription: 'Cho bot điều khiển các phe còn lại.',
     botDifficulty: 'Độ khó bot chiến thuật',
     createButton: 'Khởi tạo phòng',
     creatingButton: 'Đang tạo...',
-    localOnlyButton: 'Chỉ cục bộ',
+    localOnlyButton: 'Chuyển sang Modern 3K cục bộ',
     errors: {
       creatingTimedOut: 'Tạo phòng Classic mất quá lâu. Vui lòng thử lại.',
       webSocketUnavailable: 'WebSocket không khả dụng. Hãy dùng Mô phỏng cục bộ hoặc cấu hình backend.',
@@ -375,14 +375,14 @@ const vi = {
       treatyTitle: 'Hiệp ước Tam Quốc',
     },
     difficultyLabels: {
-      easy: 'Thư giãn (Dễ)',
-      normal: 'Chiến thuật (Thường)',
-      hard: 'Áp đảo (Khó)',
+      easy: 'Thư giãn',
+      normal: 'Chiến thuật',
+      hard: 'Áp đảo',
     },
     difficultyNotes: {
-      easy: 'Chấm điểm nhẹ hơn với nhiều ngẫu nhiên hơn.',
-      normal: 'Áp lực chiến thuật cân bằng và đổi quân an toàn hơn.',
-      hard: 'Đánh giá quyết liệt với trọng số an toàn tướng cao hơn.',
+      easy: 'Chơi nhẹ nhàng, nhiều ngẫu nhiên hơn.',
+      normal: 'Cân bằng giữa tấn công và an toàn.',
+      hard: 'Đánh giá quyết liệt hơn và ưu tiên an toàn tướng.',
     },
     summary: {
       modeSuffix: 'Mode',
@@ -394,8 +394,8 @@ const vi = {
     },
     buttons: {
       retreat: 'Rút lui',
-      startClassic: 'Bắt đầu trận cục bộ',
-      startAuthentic: 'Bắt đầu trận Authentic cục bộ',
+      startClassic: 'Bắt đầu Classic cục bộ',
+      startAuthentic: 'Bắt đầu Modern 3K cục bộ',
     },
   },
 } as const;

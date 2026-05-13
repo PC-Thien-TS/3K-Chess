@@ -29,7 +29,7 @@ import {
   saveOnlineRoomSession,
 } from '@/src/services/onlineSessionStorage';
 const AUTHENTIC_DISABLED_MESSAGE =
-  'Modern 3K is local-only. Start it from /setup?mode=authentic.';
+  'Modern 3K is local-only. Choose the Modern 3K card on the Play page.';
 
 const FACTIONS: Faction[] = ['Shu', 'Wei', 'Wu'];
 const FACTION_COLORS = {

@@ -273,11 +273,11 @@ const zh = {
     emptySearchBody: '请尝试其他房间代码或房主名称，或者使用“加入房间”并粘贴朋友发来的 Classic 邀请链接。',
   },
   createRoom: {
-    authDisabled: 'Modern 3K 为仅本地模式。请从 /setup?mode=authentic 启动。',
+    authDisabled: '现代三国仅支持本地游玩。请在“开始游戏”页面选择现代三国卡片。',
     difficulties: {
-      easy: { label: '轻松', note: '评分更轻，随机性更高。' },
-      normal: { label: '战术', note: '压力更平衡，交换更稳妥。' },
-      hard: { label: '激进', note: '启发式更锐利，更重视将帅安全。' },
+      easy: { label: '休闲', note: '更轻松，随机性更高。' },
+      normal: { label: '战术', note: '兼顾进攻与安全。' },
+      hard: { label: '压制', note: '评估更强势，更重视将帅安全。' },
     },
     back: '返回 Classic 房间',
     titleMain: '建立',
@@ -299,12 +299,12 @@ const zh = {
       Wei: '权威',
       Wu: '繁荣',
     },
-    strategicAutomata: '战略机兵',
-    automataDescription: '允许战术 Bot 填补空缺席位。',
+    strategicAutomata: '战术机器人',
+    automataDescription: '让机器人控制其余阵营。',
     botDifficulty: 'Bot 战术难度',
     createButton: '初始化房间',
     creatingButton: '创建中...',
-    localOnlyButton: '仅本地',
+    localOnlyButton: '切换到本地现代三国',
     errors: {
       creatingTimedOut: '创建 Classic 房间耗时过长，请重试。',
       webSocketUnavailable: 'WebSocket 不可用。请使用本地模拟或配置后端。',
@@ -375,14 +375,14 @@ const zh = {
       treatyTitle: '三国盟约',
     },
     difficultyLabels: {
-      easy: '轻松（简单）',
-      normal: '战术（普通）',
-      hard: '激进（困难）',
+      easy: '休闲',
+      normal: '战术',
+      hard: '压制',
     },
     difficultyNotes: {
-      easy: '评分更轻，并带有更多随机性。',
-      normal: '战术压力更平衡，交换更稳妥。',
-      hard: '启发式更激进，更重视将帅安全。',
+      easy: '更轻松，随机性更高。',
+      normal: '兼顾进攻与安全。',
+      hard: '评估更强势，更重视将帅安全。',
     },
     summary: {
       modeSuffix: '模式',
@@ -394,8 +394,8 @@ const zh = {
     },
     buttons: {
       retreat: '返回',
-      startClassic: '开始本地对局',
-      startAuthentic: '开始本地 Authentic 对局',
+      startClassic: '开始本地经典模式',
+      startAuthentic: '开始本地现代三国',
     },
   },
 } as const;
