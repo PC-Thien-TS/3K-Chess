@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Key, User, ShieldAlert } from 'lucide-react';
@@ -32,13 +32,44 @@ export default function JoinRoom() {
   const [playerName, setPlayerName] = useState(localStorage.getItem('last_commander_name') || "");
   const [error, setError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const joinRequestActiveRef = useRef(false);
+  const joinRequestIdRef = useRef(0);
+  const cleanupOnlineJoinRef = useRef<(() => void) | null>(null);
+
+  const clearJoinTimeout = () => {
+    if (joinTimeoutRef.current) {
+      clearTimeout(joinTimeoutRef.current);
+      joinTimeoutRef.current = null;
+    }
+  };
+
+  const finalizeJoinAttempt = () => {
+    clearJoinTimeout();
+    cleanupOnlineJoinRef.current?.();
+    cleanupOnlineJoinRef.current = null;
+    joinRequestActiveRef.current = false;
+    setIsJoining(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearJoinTimeout();
+      cleanupOnlineJoinRef.current?.();
+      cleanupOnlineJoinRef.current = null;
+      joinRequestActiveRef.current = false;
+    };
+  }, []);
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     if (isJoining) return;
+
+    finalizeJoinAttempt();
     setError(null);
 
     const code = extractRoomCodeFromInput(roomCode);
+    const submittedPlayerName = playerName;
 
     if (!isValidRoomCode(code)) {
         setError("Invalid room code. Paste the Classic room code or a full invite link such as /rooms/WEI-PZR9.");
@@ -46,14 +77,18 @@ export default function JoinRoom() {
     }
 
     setIsJoining(true);
+    joinRequestActiveRef.current = true;
+    joinRequestIdRef.current += 1;
+    const joinRequestId = joinRequestIdRef.current;
     
     // Persist name
-    localStorage.setItem('last_commander_name', playerName);
+    localStorage.setItem('last_commander_name', submittedPlayerName);
     
     // 1. Prioritize local first as it's instant and requested by requirements
     const localRoom = getWarRoom(code);
     if (localRoom) {
-        navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName, mode: 'local', gameMode: normalizeGameMode(localRoom.roomRules?.gameMode) } });
+        finalizeJoinAttempt();
+        navigate(`/rooms/${localRoom.roomCode}`, { state: { playerName: submittedPlayerName, mode: 'local', gameMode: normalizeGameMode(localRoom.roomRules?.gameMode) } });
         return;
     }
     
@@ -61,40 +96,46 @@ export default function JoinRoom() {
     const wsUrl = (import.meta as any).env.VITE_WS_URL;
     if (!wsUrl) {
         setError("WebSocket unavailable. This Classic room is not stored on this device.");
-        setIsJoining(false);
+        finalizeJoinAttempt();
         return;
     }
 
     onlineRoomClient.connect();
-    
-    const timeout = setTimeout(() => {
+
+    // Tie the timeout to the current request id so stale attempts cannot overwrite a newer join flow.
+    joinTimeoutRef.current = setTimeout(() => {
+      if (joinRequestActiveRef.current && joinRequestId === joinRequestIdRef.current) {
+        finalizeJoinAttempt();
         setError("Cannot connect to that Classic room. Check the code and try again.");
-        setIsJoining(false);
-        cleanup();
+      }
     }, 5000);
 
-    const cleanup = () => {
-        clearTimeout(timeout);
-        unsubscribeState();
-        unsubscribeError();
-    };
-
     const unsubscribeError = onlineRoomClient.subscribeToErrors((err) => {
+      if (!joinRequestActiveRef.current || joinRequestId !== joinRequestIdRef.current) {
+        return;
+      }
+      finalizeJoinAttempt();
         setError(err === 'CANNOT_CONNECT' ? 'Cannot connect. Check the backend and retry.' : `Connection issue: ${err}`);
-        setIsJoining(false);
-        cleanup();
     });
 
     const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
+        if (!joinRequestActiveRef.current || joinRequestId !== joinRequestIdRef.current) {
+          return;
+        }
         if (room.roomCode === code) {
-            navigate(`/rooms/${room.roomCode}`, { state: { playerName, mode: 'online', gameMode: normalizeGameMode((room as any).roomRules?.gameMode) } });
-            cleanup();
+            finalizeJoinAttempt();
+            navigate(`/rooms/${room.roomCode}`, { state: { playerName: submittedPlayerName, mode: 'online', gameMode: normalizeGameMode((room as any).roomRules?.gameMode) } });
         }
     });
 
+    cleanupOnlineJoinRef.current = () => {
+      unsubscribeState();
+      unsubscribeError();
+    };
+
     onlineRoomClient.joinRoom({
         roomCode: code,
-        playerName
+        playerName: submittedPlayerName
     });
   };
 
