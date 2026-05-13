@@ -132,23 +132,23 @@ export default function MatchSetup() {
   };
 
   return (
-    <div className="container mx-auto flex min-h-screen flex-col items-center overflow-x-hidden px-4 pb-12 pt-24 sm:px-6">
+    <div className="container mx-auto flex min-h-0 flex-col items-center overflow-x-hidden px-4 pb-8 pt-14 sm:px-6 sm:pb-12 sm:pt-20 lg:pt-24">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-12 max-w-3xl text-center sm:mb-16"
+        className="mb-8 max-w-3xl text-center sm:mb-12 lg:mb-16"
       >
-        <span className="mb-4 block text-[10px] font-black uppercase tracking-[0.6em] text-gold animate-pulse">{t('matchSetup.heroKicker')}</span>
-        <h1 className="mb-6 text-4xl font-serif font-black uppercase leading-tight tracking-[0.08em] text-white shadow-xl sm:text-5xl md:text-8xl md:tracking-[0.1em]">
+        <span className="mb-3 block text-[9px] font-black uppercase tracking-[0.45em] text-gold animate-pulse sm:mb-4 sm:text-[10px] sm:tracking-[0.6em]">{t('matchSetup.heroKicker')}</span>
+        <h1 className="mb-4 text-3xl font-serif font-black uppercase leading-tight tracking-[0.08em] text-white shadow-xl sm:mb-6 sm:text-5xl md:text-8xl md:tracking-[0.1em]">
           {t('matchSetup.heroTitleMain')} <span className="italic text-gold">{t('matchSetup.heroTitleAccent')}</span>
         </h1>
-        <div className="mx-auto mb-6 h-px w-16 bg-gold/30" />
-        <p className="text-lg font-serif italic leading-relaxed tracking-wide text-zinc-500 opacity-80 sm:text-xl">
+        <div className="mx-auto mb-4 h-px w-16 bg-gold/30 sm:mb-6" />
+        <p className="text-sm font-serif italic leading-relaxed tracking-wide text-zinc-500 opacity-80 sm:text-lg lg:text-xl">
           "{t('matchSetup.heroSubtitle')}"
         </p>
       </motion.div>
 
-      <div className="mb-10 grid w-full max-w-5xl grid-cols-1 gap-4 sm:gap-6 md:mb-12 md:grid-cols-2">
+      <div className="mb-6 grid w-full max-w-5xl grid-cols-1 gap-3 sm:gap-5 md:mb-10 md:grid-cols-2">
         {(['classic', 'authentic'] as GameMode[]).map((mode) => (
           <button
             key={mode}
@@ -156,7 +156,7 @@ export default function MatchSetup() {
             data-testid={mode === 'classic' ? 'classic-mode-card' : 'modern-3k-mode-card'}
             onClick={() => handleModeSelect(mode)}
             className={cn(
-              'glass-dark rounded-[2rem] border p-5 text-left shadow-2xl transition-all sm:rounded-[2.5rem] sm:p-8',
+              'glass-dark rounded-[1.5rem] border p-4 text-left shadow-2xl transition-all sm:rounded-[2.5rem] sm:p-8',
               localGameMode === mode
                 ? 'border-gold/40 bg-gold/[0.06]'
                 : 'border-white/5 bg-white/[0.02] hover:border-white/10',
@@ -173,7 +173,7 @@ export default function MatchSetup() {
                 )}
               />
             </div>
-            <h3 className="mb-3 text-2xl font-serif font-black uppercase tracking-tight text-white">
+            <h3 className="mb-2 text-xl font-serif font-black uppercase tracking-tight text-white sm:mb-3 sm:text-2xl">
               {t(`modes.${mode}.label`)}
             </h3>
             <p className="text-sm font-serif italic leading-relaxed text-zinc-500">
@@ -187,17 +187,17 @@ export default function MatchSetup() {
       </div>
 
       {isAuthenticMode && (
-        <div className="mb-10 w-full max-w-5xl rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-serif italic text-amber-100 sm:mb-12 sm:rounded-[2rem] sm:p-6">
+        <div className="mb-6 w-full max-w-5xl rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-serif italic text-amber-100 sm:mb-10 sm:rounded-[2rem] sm:p-6">
           {AUTHENTIC_PREVIEW_MESSAGE}
         </div>
       )}
       {modeNotice && localGameMode === 'classic' && (
-        <div className="mb-10 w-full max-w-5xl rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-serif italic text-amber-100 sm:mb-12 sm:rounded-[2rem] sm:p-6">
+        <div className="mb-6 w-full max-w-5xl rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-serif italic text-amber-100 sm:mb-10 sm:rounded-[2rem] sm:p-6">
           {modeNotice}
         </div>
       )}
 
-      <div className="mb-12 grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 xl:mb-16 xl:gap-10">
+      <div className="mb-8 grid w-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-8 xl:mb-16 xl:gap-10">
         {FACTIONS.map((f, idx) => (
           <motion.div
             key={f}
@@ -206,7 +206,7 @@ export default function MatchSetup() {
             transition={{ delay: idx * 0.15, type: 'spring', stiffness: 100 }}
             onClick={() => handleSelectPrimary(f)}
             className={cn(
-              'group glass-dark relative flex cursor-pointer flex-col gap-6 overflow-hidden rounded-[2rem] border-2 p-5 shadow-2xl transition-all duration-500 hover:-translate-y-2 sm:gap-8 sm:rounded-[3rem] sm:p-8 sm:hover:-translate-y-4 xl:rounded-[3.5rem] xl:p-10',
+              'group glass-dark relative flex cursor-pointer flex-col gap-4 overflow-hidden rounded-[2rem] border-2 p-5 shadow-2xl transition-all duration-500 hover:-translate-y-2 sm:gap-8 sm:rounded-[3rem] sm:p-8 sm:hover:-translate-y-4 xl:rounded-[3.5rem] xl:p-10',
               FACTION_VISUALS[f].color,
               localPrimary === f ? 'border-gold/50 shadow-[0_0_80px_rgba(212,175,55,0.15)] ring-1 ring-gold/20' : 'border-white/15 bg-white/[0.025] hover:border-white/25 hover:bg-white/[0.04]',
             )}
@@ -219,7 +219,7 @@ export default function MatchSetup() {
             <div className="relative z-10 flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <span className="mb-2 text-[10px] font-black uppercase tracking-[0.4em] opacity-65">Dominion III</span>
-                <h3 className="text-4xl font-serif font-black uppercase italic tracking-tighter text-white">{t(`matchSetup.factionLabels.${f}.name`)}</h3>
+                <h3 className="text-3xl font-serif font-black uppercase italic tracking-tighter text-white sm:text-4xl">{t(`matchSetup.factionLabels.${f}.name`)}</h3>
                 <span className="mt-1 text-[11px] font-black uppercase tracking-[0.3em] text-gold transition-all group-hover:tracking-[0.4em]">{t(`matchSetup.factionLabels.${f}.theme`)}</span>
               </div>
               <div
@@ -238,7 +238,7 @@ export default function MatchSetup() {
               {t(`matchSetup.factionLabels.${f}.description`)}
             </p>
 
-            <div className="relative z-10 mt-4 flex flex-col gap-6">
+            <div className="relative z-10 mt-2 flex flex-col gap-4 sm:mt-4 sm:gap-6">
               {isAuthenticMode ? (
                 <div className="flex flex-col gap-3">
                   <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white opacity-30">{t('matchSetup.sections.localCommand')}</span>
@@ -394,7 +394,7 @@ export default function MatchSetup() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="glass-dark relative mb-12 flex w-full max-w-5xl flex-col gap-6 overflow-hidden rounded-[2rem] border-2 border-white/5 p-5 shadow-3xl sm:gap-8 sm:rounded-[3rem] sm:p-8 md:flex-row md:items-center md:justify-between xl:gap-10 xl:rounded-[4rem] xl:p-12"
+        className="glass-dark relative mb-8 flex w-full max-w-5xl flex-col gap-5 overflow-hidden rounded-[2rem] border-2 border-white/5 p-5 shadow-3xl sm:mb-12 sm:gap-8 sm:rounded-[3rem] sm:p-8 md:flex-row md:items-center md:justify-between xl:gap-10 xl:rounded-[4rem] xl:p-12"
       >
         <div className="pointer-events-none absolute inset-0 bg-gold/[0.01]" />
         <div className="relative z-10 flex flex-col gap-2">
