@@ -43,7 +43,7 @@ class OnlineRoomClient {
 
     const wsUrl = (import.meta as any).env.VITE_WS_URL;
     if (!wsUrl) {
-      console.warn("Strategic Command: WebSocket URL not configured. Online mode will be restricted.");
+      console.warn("Classic room sync: WebSocket URL not configured. Online mode will be restricted.");
       this.errorListeners.forEach(cb => cb("WebSocket server not configured. Online matches are currently unavailable."));
       return;
     }
@@ -51,12 +51,12 @@ class OnlineRoomClient {
     this.socket = io(wsUrl);
 
     this.socket.on("connect", () => {
-      console.log("Strategic Command: Connected to Classic room sync");
+      console.log("Classic room sync: connected");
       this.connectionStateListeners.forEach(cb => cb(true));
     });
 
     this.socket.on("connect_error", (error) => {
-      console.warn("Strategic Command: Connection error", error?.message || error);
+      console.warn("Classic room sync: connection error", error?.message || error);
       this.connectionStateListeners.forEach(cb => cb(false));
       this.errorListeners.forEach(cb => cb("CANNOT_CONNECT"));
     });
@@ -94,7 +94,7 @@ class OnlineRoomClient {
     });
 
     this.socket.on("disconnect", () => {
-      console.warn("Strategic Command: Disconnected from Classic room sync");
+      console.warn("Classic room sync: disconnected");
       this.connectionStateListeners.forEach(cb => cb(false));
     });
   }

@@ -82,7 +82,7 @@ export default function CreateRoom() {
     cleanupOnlineCreateRef.current = null;
 
     if ((import.meta as any).env.DEV) {
-      console.log(`[Strategic Command] Opening Chamber: Mode=${roomMode}, WS_Configured=${!!(import.meta as any).env.VITE_WS_URL}`);
+      console.log(`[Classic online room] Create requested: Mode=${roomMode}, WS_Configured=${!!(import.meta as any).env.VITE_WS_URL}`);
     }
 
     createTimeoutRef.current = setTimeout(() => {
@@ -114,7 +114,7 @@ export default function CreateRoom() {
         const unsubscribeState = onlineRoomClient.subscribeToRoomState((room) => {
           finalizeCreateAttempt();
           if ((import.meta as any).env.DEV) {
-            console.log(`[Strategic Command] Online Chamber Synchronized: ${room.roomCode}`);
+            console.log(`[Classic room sync] Online room created: ${room.roomCode}`);
           }
           navigate(`/rooms/${room.roomCode}`, { state: { mode: 'online', playerName: name, gameMode } });
         });
@@ -137,7 +137,7 @@ export default function CreateRoom() {
       // Local Simulation Mode
       const roomCode = generateRoomCode();
       if ((import.meta as any).env.DEV) {
-        console.log(`[Strategic Command] Initializing Local Archive: ${roomCode}`);
+        console.log(`[Classic online room] Creating local saved room: ${roomCode}`);
       }
       
       const slots: Record<Exclude<Faction, 'None'>, RoomFactionSlot> = {
@@ -184,7 +184,7 @@ export default function CreateRoom() {
       finalizeCreateAttempt();
       
       if ((import.meta as any).env.DEV) {
-        console.log(`[Strategic Command] Mission Accepted. Navigating to Chamber ${roomCode}`);
+        console.log(`[Classic online room] Navigating to room ${roomCode}`);
       }
       
       navigate(`/rooms/${roomCode}`, { state: { mode: 'local', gameMode } });

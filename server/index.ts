@@ -63,16 +63,16 @@ app.get('/health', (req, res) => {
 
 // WebSocket Integration
 io.on('connection', (socket) => {
-  console.log(`[Strategic Command] Commander Linked: ${socket.id}`);
+  console.log(`[Classic online backend] Socket connected: ${socket.id}`);
 
   socket.on(ClientMessage.CREATE_ROOM, (payload) => {
     try {
       const room = roomManager.createRoom(payload, socket.id);
       socket.join(room.roomCode);
       socket.emit(ServerMessage.ROOM_CREATED, room);
-      console.log(`[Strategic Command] Chamber Established: ${room.roomCode}`);
+      console.log(`[Classic online backend] Room created: ${room.roomCode}`);
     } catch (err: any) {
-      console.error(`[Strategic Command] CREATE_ROOM Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] CREATE_ROOM Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -84,7 +84,7 @@ io.on('connection', (socket) => {
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
       socket.emit(ServerMessage.ROOM_JOINED, room);
     } catch (err: any) {
-      console.error(`[Strategic Command] JOIN_ROOM Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] JOIN_ROOM Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -94,7 +94,7 @@ io.on('connection', (socket) => {
       const room = roomManager.joinSlot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
-      console.error(`[Strategic Command] JOIN_SLOT Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] JOIN_SLOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -104,7 +104,7 @@ io.on('connection', (socket) => {
       const room = roomManager.leaveSlot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
-      console.error(`[Strategic Command] LEAVE_SLOT Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] LEAVE_SLOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -114,7 +114,7 @@ io.on('connection', (socket) => {
       const room = roomManager.addBot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
-      console.error(`[Strategic Command] ADD_BOT Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] ADD_BOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -124,7 +124,7 @@ io.on('connection', (socket) => {
       const room = roomManager.removeBot(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
-      console.error(`[Strategic Command] REMOVE_BOT Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] REMOVE_BOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -134,7 +134,7 @@ io.on('connection', (socket) => {
       const room = roomManager.setReady(payload, socket.id);
       io.to(room.roomCode).emit(ServerMessage.ROOM_STATE, room);
     } catch (err: any) {
-      console.error(`[Strategic Command] SET_READY Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] SET_READY Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -144,7 +144,7 @@ io.on('connection', (socket) => {
       const room = roomManager.startMatch(payload.roomCode, socket.id);
       io.to(room.roomCode).emit(ServerMessage.MATCH_STARTED, room);
     } catch (err: any) {
-      console.error(`[Strategic Command] START_MATCH Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] START_MATCH Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -156,7 +156,7 @@ io.on('connection', (socket) => {
       const { room: validatedRoom, validatedPayload } = roomManager.validateSubmittedMove(payload, socket.id, joinedSocketRoom);
       io.to(validatedRoom.roomCode).emit(ServerMessage.MOVE_BROADCAST, validatedPayload);
     } catch (err: any) {
-      console.error(`[Strategic Command] SUBMIT_MOVE Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] SUBMIT_MOVE Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -167,7 +167,7 @@ io.on('connection', (socket) => {
       socket.join(snapshot.room.roomCode);
       socket.emit(ServerMessage.ROOM_SNAPSHOT, snapshot);
     } catch (err: any) {
-      console.error(`[Strategic Command] REQUEST_ROOM_SNAPSHOT Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] REQUEST_ROOM_SNAPSHOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -178,7 +178,7 @@ io.on('connection', (socket) => {
       socket.join(snapshot.room.roomCode);
       socket.emit(ServerMessage.MATCH_SNAPSHOT, snapshot);
     } catch (err: any) {
-      console.error(`[Strategic Command] REQUEST_MATCH_SNAPSHOT Error: ${err.message}`, { id: socket.id, payload });
+      console.error(`[Classic online backend] REQUEST_MATCH_SNAPSHOT Error: ${err.message}`, { id: socket.id, payload });
       socket.emit(ServerMessage.ERROR, err.message);
     }
   });
@@ -196,22 +196,22 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`[Strategic Command] Commander Delinked: ${socket.id}`);
+    console.log(`[Classic online backend] Socket disconnected: ${socket.id}`);
     roomManager.handleDisconnect(socket.id);
   });
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`[Strategic Command] 3K Chess WebSocket server listening on port ${PORT}`);
-  console.log(`[Strategic Command] Classic online backend active at http://localhost:${PORT}`);
-  console.log(`[Strategic Command] Allowed Origins: ${allowedOrigins.join(', ')}`);
+  console.log(`[Classic online backend] WebSocket server listening on port ${PORT}`);
+  console.log(`[Classic online backend] Active at http://localhost:${PORT}`);
+  console.log(`[Classic online backend] Allowed Origins: ${allowedOrigins.join(', ')}`);
 });
 
 // Safe Error Logging for unhandled errors
 process.on('uncaughtException', (err) => {
-  console.error('[Strategic Command] CRITICAL UNCAUGHT EXCEPTION:', err);
+  console.error('[Classic online backend] CRITICAL UNCAUGHT EXCEPTION:', err);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[Strategic Command] UNHANDLED REJECTION at:', promise, 'reason:', reason);
+  console.error('[Classic online backend] UNHANDLED REJECTION at:', promise, 'reason:', reason);
 });
