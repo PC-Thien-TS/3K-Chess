@@ -132,7 +132,7 @@ export default function WarRoomLobby() {
           return;
         }
         recoveryTimeout = setTimeout(() => {
-          setError('Cannot connect to Strategic Command.');
+          setError('Cannot connect to Classic online room.');
           setIsConnected(false);
           setIsReconnecting(false);
           setIsLoading(false);
@@ -203,7 +203,7 @@ export default function WarRoomLobby() {
           setRoom(null);
           setError('Room expired.');
         } else if (err === 'CANNOT_CONNECT') {
-          setError('Cannot connect to Strategic Command.');
+          setError('Cannot connect to Classic online room.');
         } else {
           setError(`Connection issue: ${err}`);
         }
@@ -259,7 +259,7 @@ export default function WarRoomLobby() {
       });
 
       if ((import.meta as any).env.DEV) {
-        console.log(`[Strategic Command] Synchronizing with Cloud Chamber: ${roomCode} for ${commanderName}`);
+        console.log(`[Classic room sync] Requesting room snapshot: ${roomCode} for ${commanderName}`);
       }
 
       if (onlineRoomClient.isConnected) {
@@ -307,7 +307,7 @@ export default function WarRoomLobby() {
     ? 'Local'
     : error === 'Room expired.'
       ? 'Room expired'
-      : error === 'Cannot connect to Strategic Command.'
+    : error === 'Cannot connect to Classic online room.'
         ? 'Cannot connect'
         : isReconnecting
           ? 'Reconnecting...'
@@ -318,7 +318,7 @@ export default function WarRoomLobby() {
     ? 'border-white/10 bg-white/5 text-zinc-300'
     : error === 'Room expired.'
       ? 'border-rose-500/20 bg-rose-500/10 text-rose-400'
-      : error === 'Cannot connect to Strategic Command.'
+      : error === 'Cannot connect to Classic online room.'
         ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
         : isReconnecting
           ? 'border-gold/20 bg-gold/10 text-gold'
@@ -402,7 +402,7 @@ export default function WarRoomLobby() {
 
   const addBot = (faction: Faction) => {
     if (room && !room.roomRules.allowBots) {
-      setError("Strategic Automata are forbidden in this chamber.");
+      setError("Bots are not allowed in this Classic online room.");
       return;
     }
 
@@ -539,7 +539,7 @@ export default function WarRoomLobby() {
   }
 
   if (!room && error) {
-    const title = error === 'Room expired.' ? 'Room Expired' : error === 'Cannot connect to Strategic Command.' ? 'Cannot Connect' : 'Tactical Breach';
+    const title = error === 'Room expired.' ? 'Room Expired' : error === 'Cannot connect to Classic online room.' ? 'Cannot Connect' : 'Tactical Breach';
     return (
       <div className="pt-24 min-h-screen flex flex-col items-center justify-center p-6">
          <div className="glass-dark border border-rose-500/20 p-12 rounded-[3rem] max-w-md w-full text-center space-y-8">

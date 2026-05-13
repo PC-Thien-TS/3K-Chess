@@ -24,13 +24,13 @@ export default function NotFound() {
             <Home size={16} /> Return Home
           </Link>
           <Link
-            to="/rooms/create?mode=classic"
+            to="/play?section=create"
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-4 text-[10px] font-bold uppercase tracking-[0.28em] text-black transition-all hover:bg-white"
           >
             <Users size={16} /> Play Classic Online
           </Link>
           <Link
-            to="/setup?mode=authentic"
+            to="/play?section=modern3k&mode=authentic"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gold/20 bg-gold/10 px-5 py-4 text-[10px] font-bold uppercase tracking-[0.28em] text-gold transition-all hover:bg-gold hover:text-black"
           >
             <Shield size={16} /> Play Modern 3K Local
